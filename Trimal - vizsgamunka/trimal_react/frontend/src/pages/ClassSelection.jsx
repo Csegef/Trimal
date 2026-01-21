@@ -61,7 +61,7 @@ const ClassSelection = () => {
             {/* Left Arrow */}
             <button
               onClick={handlePrev}
-              className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 flex-shrink-0"
+              className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 shrink-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +93,7 @@ const ClassSelection = () => {
                   <img
                     src={classes[currentIndex].gif}
                     alt={classes[currentIndex].name}
-                    className="w-full h-auto max-h-[400px] md:max-h-[450px] object-contain"
+                    className="w-full h-auto max-h-100 md:max-h-112.5 object-contain"
                     onError={(e) => {
                       e.target.onerror = null;
                       e.target.src = "fallback-image-url";
@@ -106,7 +106,7 @@ const ClassSelection = () => {
             {/* Right Arrow */}
             <button
               onClick={handleNext}
-              className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 flex-shrink-0"
+              className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 shrink-0"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

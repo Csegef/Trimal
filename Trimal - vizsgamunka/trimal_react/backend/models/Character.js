@@ -1,4 +1,22 @@
 const mongoose = require('mongoose');
+// {  Lokális játék DB struktúra
+//     _id: ObjectId,
+//     userId: ObjectId,        // Referencia az Auth DB-re
+//     username: String,        // Denormalizálva, gyorsabb lekérdezéshez
+//     character: {
+//       class: String,         // pl. "neanderthal", "homosapiens"
+//       className: String,     // pl. "Neanderthal", "Homo Sapiens"
+//       hairStyle: Number,     // 0-5 (0 = Bald)
+//       beardStyle: Number     // 0-5 (0 = Shaved)
+//     },
+//     stats: {                 // Később bővíthető
+//       level: Number,
+//       experience: Number,
+//       // stb.
+//     },
+//     createdAt: Date,
+//     updatedAt: Date
+//   }
 
 const CharacterSchema = new mongoose.Schema({
     user: {

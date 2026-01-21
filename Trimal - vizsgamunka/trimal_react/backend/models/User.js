@@ -1,5 +1,15 @@
 const mongoose = require('mongoose');
 
+// { MongoDB Auth DB struktúra:
+//     _id: ObjectId,
+//     username: String,        // Egyedi, minimum 3, maximum 20 karakter
+//     email: String,           // Egyedi, email formátum validálás
+//     password: String,        // Bcrypt hash-elve (min. 8 karakter)
+//     createdAt: Date,
+//     updatedAt: Date
+//   }
+
+
 const UserSchema = new mongoose.Schema({
     username: {
         type: String,
