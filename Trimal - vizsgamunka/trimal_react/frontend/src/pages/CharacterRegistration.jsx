@@ -89,50 +89,52 @@ const CharacterRegistration = () => {
 //   };
 
 const handleRegister = async () => {
-    if (!validateForm()) {
-      return;
-    }
-  
-    const registrationData = {
-      username,
-      email,
-      password,
-      character: {
-        class: selectedClass.id,
-        className: selectedClass.name,
-        hairStyle: hairIndex,
-        beardStyle: beardIndex,
-      },
-    };
-  
-    try {
-      // ITT JÖN A BACKEND HÍVÁS
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(registrationData),
-      });
-  
-      const data = await response.json();
-  
-      if (data.success) {
-        // Token mentése (localStorage vagy context)
-        localStorage.setItem('authToken', data.token);
-        
-        // Navigáció a játékba
-        navigate("/game");
-      } else {
-        // Hiba kezelés
-        alert(data.message);
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert('Something happened during registration!');
-    }
+  if (!validateForm()) {
+    return;
+  }
+
+  const registrationData = {
+    username,
+    email,
+    password,
+    character: {
+      class: selectedClass.id,
+      className: selectedClass.name,
+      hairStyle: hairIndex,
+      beardStyle: beardIndex,
+    },
   };
 
+  try {
+    // Backend hívás (később fog működni)
+    const response = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(registrationData),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      localStorage.setItem('authToken', data.token);
+      navigate("/maingame"); // ✅ Ez marad!
+    } else {
+      alert(data.message);
+    }
+  } catch (error) {
+    // ===== BACKEND BEÁLLÍTÁSA UTÁN TÖRÖLD EZT A RÉSZT =====
+    console.log('Backend még nincs, de adatokat mentettem:', registrationData);
+    localStorage.setItem('userData', JSON.stringify(registrationData));
+    navigate("/maingame"); // ⚠️ Ez ideiglenes, backend után törlendő
+    // ===== EDDIG TÖRÖLD =====
+    
+    // BACKEND BEÁLLÍTÁSA UTÁN EZT TARTSD MEG (uncomment):
+    // console.error('Registration error:', error);
+    // alert('Something happened during registration!');
+  }
+};
   return (
     <MainLayout>
       <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-4 md:gap-6 items-start justify-center p-3 md:p-4">
