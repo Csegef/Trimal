@@ -19,7 +19,8 @@ const MainLayout = ({ children }) => {
         {/* Header / Logo - kisebb */}
         <header className="flex justify-center py-3 md:py-4">
           <img 
-            src="./src/assets/logo1.png" 
+          // ./src/assets/logo1.png
+            src="/src/assets/design/covers/logo/logo1.png" 
             alt="Trimal RPG Logo" 
             className="h-28 md:h-44 lg:h-52 object-contain drop-shadow-2xl"
           />

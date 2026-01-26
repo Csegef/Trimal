@@ -150,7 +150,7 @@ const handleRegister = async () => {
             <div className="absolute inset-0 flex items-center justify-center">
               {/* Base Layer */}
               <img
-                src={`./src/assets/${selectedClass.prefix}_base.png`}
+                src={`./src/assets/design/character/base_character/${selectedClass.prefix}_base.png`}
                 alt="Base Character"
                 className="absolute z-0 h-full w-auto object-contain"
               />
@@ -158,7 +158,7 @@ const handleRegister = async () => {
               {/* Hair Layer */}
               {hairIndex > 0 && (
                 <img
-                  src={`/assets/character/hair/${selectedClass.prefix}-hair-${hairIndex}.png`}
+                  src={`/src/assets/design/character/hair/${selectedClass.prefix}-hair-${hairIndex}.png`}
                   alt="Hair"
                   className="absolute z-10 h-full w-auto object-contain"
                 />
@@ -167,7 +167,7 @@ const handleRegister = async () => {
               {/* Beard Layer */}
               {beardIndex > 0 && (
                 <img
-                  src={`/assets/character/beard/${selectedClass.prefix}-beard-${beardIndex}.png`}
+                  src={`/src/assets/design/character/beard/${selectedClass.prefix}-beard-${beardIndex}.png`}
                   alt="Beard"
                   className="absolute z-20 h-full w-auto object-contain"
                 />

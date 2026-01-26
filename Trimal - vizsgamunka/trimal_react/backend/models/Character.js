@@ -1,53 +1,38 @@
 const mongoose = require('mongoose');
-// {  Lokális játék DB struktúra
-//     _id: ObjectId,
-//     userId: ObjectId,        // Referencia az Auth DB-re
-//     username: String,        // Denormalizálva, gyorsabb lekérdezéshez
-//     character: {
-//       class: String,         // pl. "neanderthal", "homosapiens"
-//       className: String,     // pl. "Neanderthal", "Homo Sapiens"
-//       hairStyle: Number,     // 0-5 (0 = Bald)
-//       beardStyle: Number     // 0-5 (0 = Shaved)
-//     },
-//     stats: {                 // Később bővíthető
-//       level: Number,
-//       experience: Number,
-//       // stb.
-//     },
-//     createdAt: Date,
-//     updatedAt: Date
-//   }
 
 const CharacterSchema = new mongoose.Schema({
-    user: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    classType: {
+    username: {
         type: String,
-        enum: ['neanderthal', 'floresiensis', 'sapiens'],
         required: true
     },
-    hairIndex: {
-        type: Number,
-        required: true,
-        default: 0
+    character: {
+        class: {
+            type: String,
+            enum: ['neanderthal', 'floresiensis', 'sapiens'],
+            required: true
+        },
+        className: {
+            type: String,
+            required: true
+        },
+        hairStyle: {
+            type: Number,
+            default: 0
+        },
+        beardStyle: {
+            type: Number,
+            default: 0
+        }
     },
-    beardIndex: {
-        type: Number,
-        required: true,
-        default: 0
-    },
-    // Add stats or other attributes based on class
     stats: {
-        strength: Number,
-        agility: Number,
-        intelligence: Number
-        // ...
+        level: { type: Number, default: 1 },
+        experience: { type: Number, default: 0 }
     }
-});
-
-// REMINDER: When saving a character here, also save to Local DB!
+}, { timestamps: true });
 
 module.exports = mongoose.model('Character', CharacterSchema);
