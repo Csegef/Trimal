@@ -1,0 +1,7 @@
+Symlink letrehozasa:
+-Nyisd meg a Fájlkezelőt
+-Menj a projekt mappajaba: Trimal - vizsgamunka
+-Jobb klikk a setup-symlinks.bat fájlra
+    -Azert van egy ps1-es is ha esetleg ez nem mukodne
+-Valaszd: "Run as administrator"
+-Kattints "Yes" amikor a Windows kerdezi
