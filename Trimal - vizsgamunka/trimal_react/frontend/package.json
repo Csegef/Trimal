@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup:assets": "if exist \"setup-assets.bat\" (call setup-assets.bat) else (echo ⚠️  Run setup-assets.bat manually)",
+    "postinstall": "npm run setup:assets --silent",
+    "clean:assets": "if exist \"src/assets/design\" (rmdir /s /q \"src/assets/design\" 2>nul) else (echo Design folder not found)",
+    "reset:assets": "npm run clean:assets && npm run setup:assets",
+    "dev:with-assets": "npm run setup:assets --silent && vite",
+    "build:with-assets": "npm run setup:assets --silent && vite build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",

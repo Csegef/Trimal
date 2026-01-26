@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# ===========================================
+# TRIMAL SPECIFIC - DESIGN ASSETS (ÚJ!)
+# ===========================================
+/src/assets/design/
+src/assets/design
+assets/design/
+
+# ===========================================
+# ENVIRONMENT FILES (JÓ LENNE HOZZÁADNI)
+# ===========================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
