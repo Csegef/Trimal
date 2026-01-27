@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import MainLayout from "../layouts/MainLayout";
+import GameLayout from "../layouts/GameLayout";
 
 const MainGame = () => {
   const [userData, setUserData] = useState(null);
@@ -13,10 +13,10 @@ const MainGame = () => {
   }, []);
 
   return (
-    <MainLayout>
+    <GameLayout>
       <div className="w-full max-w-4xl mx-auto p-6">
         <div className="backdrop-blur-sm p-8 rounded-2xl border-4 shadow-2xl bg-stone-900/50 border-stone-700">
-          
+
           {/* Üdvözlő fejléc */}
           <h1 className="text-4xl md:text-5xl font-black text-amber-400 uppercase text-center mb-8 tracking-wider">
             🎮 Welcome to the Game! 🎮
@@ -65,7 +65,7 @@ const MainGame = () => {
 
         </div>
       </div>
-    </MainLayout>
+    </GameLayout>
   );
 };
 

@@ -7,15 +7,17 @@ import TermsAndConditions from './pages/TermAndConditions';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import MainGame from './pages/MainGame'
 import About from './pages/About';
+import CharacterSignIn from './pages/CharacterSignIn';
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<ClassSelection />} />
+        <Route path="/" element={<CharacterSignIn />} />
+        <Route path="/class-selection" element={<ClassSelection />} />
         <Route path="/create" element={<CharacterCreator />} />
         <Route path="/registration" element={<CharacterRegistration />} />
-        <Route path="/maingame" element={<MainGame/>} />
+        <Route path="/maingame" element={<MainGame />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />

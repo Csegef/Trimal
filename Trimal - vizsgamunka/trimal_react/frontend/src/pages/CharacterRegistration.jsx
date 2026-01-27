@@ -61,84 +61,94 @@ const CharacterRegistration = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-//   // Regisztráció kezelése
-//   const handleRegister = async () => {
-//     if (!validateForm()) {
-//       return;
-//     }
+  //   // Regisztráció kezelése
+  //   const handleRegister = async () => {
+  //     if (!validateForm()) {
+  //       return;
+  //     }
 
-//     // BACKEND INTEGRÁCIÓS PONT
-//     // Itt kell majd meghívni a backend API-t
-//     const registrationData = {
-//       username,
-//       email,
-//       password,
-//       character: {
-//         class: selectedClass.id,
-//         className: selectedClass.name,
-//         hairStyle: hairIndex,
-//         beardStyle: beardIndex,
-//       },
-//     };
+  //     // BACKEND INTEGRÁCIÓS PONT
+  //     // Itt kell majd meghívni a backend API-t
+  //     const registrationData = {
+  //       username,
+  //       email,
+  //       password,
+  //       character: {
+  //         class: selectedClass.id,
+  //         className: selectedClass.name,
+  //         hairStyle: hairIndex,
+  //         beardStyle: beardIndex,
+  //       },
+  //     };
 
-//     console.log("Registration Data:", registrationData);
+  //     console.log("Registration Data:", registrationData);
 
-//     // PLACEHOLDER - Backend hívás után majd ide jön a navigáció
-//     alert("Sikeres regisztráció! (Backend integráció függőben)");
-//     // navigate("/game"); // Később ez lesz a játék főképernyő
-//   };
+  //     // PLACEHOLDER - Backend hívás után majd ide jön a navigáció
+  //     alert("Sikeres regisztráció! (Backend integráció függőben)");
+  //     // navigate("/game"); // Később ez lesz a játék főképernyő
+  //   };
 
-const handleRegister = async () => {
-  if (!validateForm()) {
-    return;
-  }
-
-  const registrationData = {
-    username,
-    email,
-    password,
-    character: {
-      class: selectedClass.id,
-      className: selectedClass.name,
-      hairStyle: hairIndex,
-      beardStyle: beardIndex,
-    },
-  };
-
-  try {
-    // Backend hívás (később fog működni)
-    const response = await fetch('/api/auth/register', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(registrationData),
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      localStorage.setItem('authToken', data.token);
-      navigate("/maingame"); // ✅ Ez marad!
-    } else {
-      alert(data.message);
+  const handleRegister = async () => {
+    if (!validateForm()) {
+      return;
     }
-  } catch (error) {
-    // ===== BACKEND BEÁLLÍTÁSA UTÁN TÖRÖLD EZT A RÉSZT =====
-    console.log('Backend még nincs, de adatokat mentettem:', registrationData);
-    localStorage.setItem('userData', JSON.stringify(registrationData));
-    navigate("/maingame"); // ⚠️ Ez ideiglenes, backend után törlendő
-    // ===== EDDIG TÖRÖLD =====
-    
-    // BACKEND BEÁLLÍTÁSA UTÁN EZT TARTSD MEG (uncomment):
-    // console.error('Registration error:', error);
-    // alert('Something happened during registration!');
-  }
-};
+
+    const registrationData = {
+      username,
+      email,
+      password,
+      character: {
+        class: selectedClass.id,
+        className: selectedClass.name,
+        hairStyle: hairIndex,
+        beardStyle: beardIndex,
+      },
+      isVerified: false, // New users are not verified by default
+    };
+
+    try {
+      // Backend hívás (később fog működni)
+      // TODO: BACKEND - This is where the real registration endpoint will be called
+      /*
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(registrationData),
+      });
+  
+      const data = await response.json();
+  
+      if (data.success) {
+        alert("Registration successful! Please check your email (" + email + ") to verify your account.");
+        navigate("/"); // Redirect to Login
+      } else {
+        alert(data.message);
+      }
+      */
+
+      // ===== MOCK BACKEND LOGIC START - DELETE THIS BLOCK WHEN BACKEND IS READY =====
+      // Simulate sending email
+      console.log(`[MOCK EMAIL SERVICE] To: ${email}, Subject: Verify your account, Body: Click here to verify.`);
+      alert(`Registration successful! A verification email has been sent to ${email}. (Check console for mock email)`);
+
+      // Save to local storage with verified=false
+      localStorage.setItem('userData', JSON.stringify(registrationData));
+
+      // Redirect to Login page instead of MainGame
+      navigate("/");
+      // ===== MOCK BACKEND LOGIC END =====
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      alert('Something happened during registration!');
+    }
+  };
   return (
     <MainLayout>
       <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-4 md:gap-6 items-start justify-center p-3 md:p-4">
-        
+
         {/* Bal oldal: Karakter összefoglaló */}
         <div className="w-full lg:w-100 shrink-0 backdrop-blur-sm p-4 md:p-6 rounded-xl md:rounded-2xl border-4 shadow-xl bg-stone-900/50 border-stone-700">
           <h2 className="text-xl md:text-2xl font-black text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-2 md:pb-3 mb-4">

@@ -5,3 +5,6 @@ Symlink letrehozasa:
     -Azert van egy ps1-es is ha esetleg ez nem mukodne
 -Valaszd: "Run as administrator"
 -Kattints "Yes" amikor a Windows kerdezi
+
+
+****Ha esetleg nem indul el az azert van mert nem van abban a mappaban amiben a setup-symlinks.bat van. Ilyenkor azt kell csinalnod, hogy megnyitod a cmd abban a mappaban amiben a setup-symlinks.bat van es onnan elinditani azt -> siman csak beirod, hogy "setup-symlinks.bat" majd Enter-t.
