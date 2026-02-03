@@ -48,7 +48,7 @@ const CharacterCreator = () => {
           <div className="absolute inset-0 flex items-center justify-center">
             {/* Base Layer */}
             <img
-              src={`./src/assets/${prefix}_base.png`}
+              src={`./src/assets/design/character/base_character/${prefix}_base.png`}
               alt="Base Character"
               className="absolute z-0 h-full w-auto object-contain"
             />

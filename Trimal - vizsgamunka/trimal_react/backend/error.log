@@ -1,0 +1,58 @@
+2026-02-03T18:38:35.776Z - Attempting registration for: csege0306@gmail.com, sarika01
+2026-02-03T18:38:35.778Z - Checking existing user
+2026-02-03T18:38:35.823Z - Creating user...
+2026-02-03T18:38:35.967Z - EXCEPTION: Error: Cannot add or update a child row: a foreign key constraint fails (`trimal`.`user`, CONSTRAINT `user_ibfk_1` FOREIGN KEY (`specie_id`) REFERENCES `specie` (`id`))
+    at PromisePool.execute (E:\Downloads\TrimalBuild20260203\Trimal\Trimal - vizsgamunka\trimal_react\backend\node_modules\mysql2\lib\promise\pool.js:54:22)
+    at User.create (E:\Downloads\TrimalBuild20260203\Trimal\Trimal - vizsgamunka\trimal_react\backend\models\User.js:17:38)
+    at async E:\Downloads\TrimalBuild20260203\Trimal\Trimal - vizsgamunka\trimal_react\backend\routes\auth.js:45:21
+2026-02-03T18:41:23.926Z - Attempting registration for: csege0306@gmail.com, csegefekete1
+2026-02-03T18:41:23.927Z - Checking existing user
+2026-02-03T18:41:23.967Z - Creating user...
+2026-02-03T18:41:24.108Z - User created with ID: 6
+2026-02-03T18:41:24.109Z - Creating character...
+2026-02-03T18:41:24.141Z - Character created
+2026-02-03T18:41:24.166Z - User linked to character
+2026-02-03T18:41:24.167Z - Sending email...
+2026-02-03T19:00:02.303Z - Attempting registration for: kezdodikk50@gmail.com, csigabiga23
+2026-02-03T19:00:02.304Z - Checking existing user
+2026-02-03T19:00:02.341Z - Creating user...
+2026-02-03T19:00:02.478Z - User created with ID: 7
+2026-02-03T19:00:02.479Z - Creating character...
+2026-02-03T19:00:02.503Z - Character created
+2026-02-03T19:00:02.595Z - User linked to character
+2026-02-03T19:00:02.596Z - Sending email...
+2026-02-03T19:00:03.497Z - MAILER: Error sending email: Missing credentials for "PLAIN"
+2026-02-03T19:02:22.822Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=0
+2026-02-03T19:02:26.194Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=0
+2026-02-03T19:04:54.420Z - Attempting registration for: ezustjanos3@gmail.com, silverjohn123
+2026-02-03T19:04:54.421Z - Checking existing user
+2026-02-03T19:04:54.460Z - Creating user...
+2026-02-03T19:04:54.595Z - User created with ID: 8
+2026-02-03T19:04:54.596Z - Creating character...
+2026-02-03T19:04:54.644Z - Character created
+2026-02-03T19:04:54.667Z - User linked to character
+2026-02-03T19:04:54.668Z - Sending email...
+2026-02-03T19:04:54.900Z - MAILER: Error sending email: Missing credentials for "PLAIN"
+2026-02-03T19:05:43.318Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=17
+2026-02-03T19:07:01.225Z - Attempting registration for: janesco897@gmail.com, kukucskajoska1111
+2026-02-03T19:07:01.226Z - Checking existing user
+2026-02-03T19:07:01.266Z - Creating user...
+2026-02-03T19:07:01.418Z - User created with ID: 9
+2026-02-03T19:07:01.418Z - Creating character...
+2026-02-03T19:07:01.455Z - Character created
+2026-02-03T19:07:01.655Z - User linked to character
+2026-02-03T19:07:01.655Z - Sending email...
+2026-02-03T19:07:02.371Z - MAILER: Error sending email: Invalid login: 535-5.7.8 Username and Password not accepted. For more information, go to
+535 5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-43617e38ec5sm875835f8f.14 - gsmtp
+2026-02-03T19:16:47.847Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-03T19:17:53.509Z - Attempting registration for: feketecsegeistvan-40257@taszi.hu, gipszjakab55
+2026-02-03T19:17:53.510Z - Checking existing user
+2026-02-03T19:17:53.550Z - Creating user...
+2026-02-03T19:17:53.660Z - User created with ID: 10
+2026-02-03T19:17:53.660Z - Creating character...
+2026-02-03T19:17:53.711Z - Character created
+2026-02-03T19:17:53.759Z - User linked to character
+2026-02-03T19:17:53.760Z - Sending email...
+2026-02-03T19:17:55.051Z - MAILER: Verification email sent: 250 2.0.0 OK  1770146274 ffacd0b85a97d-4361805f25dsm745074f8f.29 - gsmtp
+2026-02-03T19:22:27.446Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-03T19:26:26.734Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19

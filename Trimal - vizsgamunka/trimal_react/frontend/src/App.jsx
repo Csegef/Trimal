@@ -8,6 +8,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import MainGame from './pages/MainGame'
 import About from './pages/About';
 import CharacterSignIn from './pages/CharacterSignIn';
+import EmailVerification from './pages/EmailVerification';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />
+        <Route path="/verify" element={<EmailVerification />} />
       </Routes>
     </Router>
   );

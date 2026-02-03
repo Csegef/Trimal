@@ -94,39 +94,33 @@ const CharacterRegistration = () => {
     }
 
     const registrationData = {
-      username,
+      nickname: username,
       email,
       password,
       character: {
-        class: selectedClass.id,
-        className: selectedClass.name,
-        hairStyle: hairIndex,
-        beardStyle: beardIndex,
-      },
-      isVerified: false, // New users are not verified by default
+        specie_name: selectedClass.name,
+        hair_style: hairIndex > 0 ? `${selectedClass.prefix}-hair-${hairIndex}` : null,
+        beard_style: beardIndex > 0 ? `${selectedClass.prefix}-beard-${beardIndex}` : null,
+      }
     };
 
     try {
-      // Backend hívás (később fog működni)
-      // TODO: BACKEND - This is where the real registration endpoint will be called
-      /*
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(registrationData),
       });
-  
+
       const data = await response.json();
-  
+
       if (data.success) {
-        alert("Registration successful! Please check your email (" + email + ") to verify your account.");
+        alert(data.message);
         navigate("/"); // Redirect to Login
       } else {
         alert(data.message);
       }
-      */
 
     } catch (error) {
       console.error('Registration error:', error);
