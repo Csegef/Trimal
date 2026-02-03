@@ -1,159 +1,101 @@
+// backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/User');
 const Character = require('../models/Character');
-const localDB = require('../localDB');
+const { sendWelcomeEmail } = require('../utils/mailer');
 
-const JWT_SECRET = process.env.JWT_SECRET || "secret";
+const JWT_SECRET = process.env.JWT_SECRET;
 
-// @route   POST api/auth/register
+// POST /api/auth/register
 router.post('/register', async (req, res) => {
-    try {
-        const { username, email, password, character } = req.body;
+  const pool = req.pool;
+  const { nickname, email, password, character } = req.body;
 
-        // 1. Validate input
-        if (!username || !email || !password || !character) {
-            return res.status(400).json({ success: false, message: 'Missing fields' });
-        }
+  if (!nickname || !email || !password || !character || !character.specie_name) {
+    return res.status(400).json({ success: false, message: 'Hiányzó adatok' });
+  }
 
-        if (username.length < 3 || username.length > 20) {
-            return res.status(400).json({ success: false, message: 'Username must be 3-20 characters' });
-        }
+  const userModel = new User(pool);
+  const charModel = new Character(pool);
 
-        if (password.length < 8) {
-            return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
-        }
-
-        // 2. Check if user exists in Mongo AND Local DB
-        const existingUserMongo = await User.findOne({ $or: [{ email }, { username }] });
-        const existingUsersLocal = localDB.getUsers();
-        const existingUserLocal = existingUsersLocal.find(u => u.email === email || u.username === username);
-
-        if (existingUserMongo || existingUserLocal) {
-            return res.status(400).json({ success: false, message: 'Email vagy username már használatban van' });
-        }
-
-        // 3. Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // 4. Save to Mongo
-        const newUser = new User({
-            username,
-            email,
-            password: hashedPassword
-        });
-        const savedUser = await newUser.save();
-
-        // 5. Save to Local DB
-        const localUser = {
-            id: savedUser._id.toString(),
-            username,
-            email,
-            password: hashedPassword,
-            createdAt: savedUser.createdAt,
-            updatedAt: savedUser.updatedAt
-        };
-        existingUsersLocal.push(localUser);
-        localDB.saveUsers(existingUsersLocal);
-
-        // Character save (Mongo + Local)
-        const newCharacter = new Character({
-            userId: savedUser._id,
-            username,
-            character: {
-                class: character.class,
-                className: character.className,
-                hairStyle: character.hairStyle,
-                beardStyle: character.beardStyle
-            }
-        });
-        const savedCharacter = await newCharacter.save();
-
-        const existingCharsLocal = localDB.getCharacters();
-        const localChar = {
-            id: savedCharacter._id.toString(),
-            userId: savedUser._id.toString(),
-            username,
-            character: {
-                class: character.class,
-                className: character.className,
-                hairStyle: character.hairStyle,
-                beardStyle: character.beardStyle
-            },
-            stats: savedCharacter.stats,
-            createdAt: savedCharacter.createdAt,
-            updatedAt: savedCharacter.updatedAt
-        };
-        existingCharsLocal.push(localChar);
-        localDB.saveCharacters(existingCharsLocal);
-
-        // 6. Return token (JWT)
-        const payload = { userId: savedUser._id };
-        const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
-
-        return res.json({
-            success: true,
-            token,
-            user: {
-                id: savedUser._id,
-                username: savedUser.username,
-                email: savedUser.email
-            },
-            character: {
-                id: savedCharacter._id,
-                class: savedCharacter.character.class,
-                className: savedCharacter.character.className
-            }
-        });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Server error' });
+  try {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'Email már használatban van' });
     }
+
+    // 1. Create User
+    const newUser = await userModel.create({ nickname, email, password });
+
+    // 2. Create Character
+    const newChar = await charModel.create({
+      userId: newUser.id,
+      specie_name: character.specie_name,
+      hair_style: character.hair_style || null,
+      beard_style: character.beard_style || null
+    });
+
+    // 3. Create JWT
+    const token = jwt.sign({ userId: newUser.id }, JWT_SECRET, { expiresIn: '7d' });
+
+    // 4. Send Welcome Email
+    // We don't await this so it doesn't block the response if SMTP is slow
+    sendWelcomeEmail(email, nickname).catch(err => console.error('Email send failed:', err));
+
+    res.json({
+      success: true,
+      token,
+      user: newUser,
+      character: newChar
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Hiba a regisztráció során' });
+  }
 });
 
-// @route   POST api/auth/login
+// POST /api/auth/login
 router.post('/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
+  const pool = req.pool;
+  const { email, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ success: false, message: 'Missing fields' });
-        }
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Hiányzó adatok' });
+  }
 
-        // Check MongoDB
-        const userMongo = await User.findOne({ email });
-        if (!userMongo) {
-            return res.status(400).json({ success: false, message: 'Email nem található' });
-        }
+  const userModel = new User(pool);
+  const charModel = new Character(pool);
 
-        // Check password
-        const isMatch = await bcrypt.compare(password, userMongo.password);
-        if (!isMatch) {
-            return res.status(400).json({ success: false, message: 'Hibás jelszó' });
-        }
-
-        // JWT
-        const token = jwt.sign({ userId: userMongo._id }, JWT_SECRET, { expiresIn: '7d' });
-
-        return res.json({
-            success: true,
-            token,
-            user: {
-                id: userMongo._id,
-                username: userMongo.username,
-                email: userMongo.email
-            }
-        });
-
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: 'Server error' });
+  try {
+    const user = await userModel.findByEmail(email);
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Felhasználó nem található' });
     }
+
+    const valid = await userModel.checkPassword(user, password);
+    if (!valid) {
+      return res.status(400).json({ success: false, message: 'Hibás jelszó' });
+    }
+
+    const characters = await charModel.findByUserId(user.id);
+
+    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, nickname: user.nickname, email: user.email },
+      character: characters[0] || null
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Hiba a belépés során' });
+  }
 });
 
 module.exports = router;

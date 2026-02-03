@@ -10,13 +10,18 @@ const CharacterSignIn = () => {
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    // Load last login identifier
+    // Check for existing session
     React.useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            navigate('/maingame');
+        }
+
         const lastLogin = localStorage.getItem('lastLogin');
         if (lastLogin) {
             setLoginIdentifier(lastLogin);
         }
-    }, []);
+    }, [navigate]);
 
 
     const handleLogin = async (e) => {
@@ -29,45 +34,31 @@ const CharacterSignIn = () => {
         }
 
         try {
-            // TODO: BACKEND - Replace this mock login with actual API call
-            // const response = await fetch('/api/auth/login', {
-            //   method: 'POST',
-            //   headers: { 'Content-Type': 'application/json' },
-            //   body: JSON.stringify({ loginIdentifier, password }),
-            // });
-            // const data = await response.json();
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: loginIdentifier, password }),
+            });
+            const data = await response.json();
 
-            // MOCK LOGIN LOGIC START
-            const storedData = localStorage.getItem('userData');
-
-            if (!storedData) {
-                setError("No user found. Please register first.");
-                return;
-            }
-
-            const userData = JSON.parse(storedData);
-
-            // Simple check (in real app, backend checks hash)
-            // Allow login with either username or email
-            const isMatch = (userData.username === loginIdentifier || userData.email === loginIdentifier) && userData.password === password;
-
-            if (isMatch) {
-                if (!userData.isVerified) {
-                    setError("Email not verified! Please check your inbox (or use Dev Tools)."); // In dev mode we might want a bypass
-                    // For development test, we might offer a button to simulate verification in a real scenario
-                    return;
-                }
-
-                // Remember last login
+            if (data.success) {
+                // Store auth data
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userData', JSON.stringify({
+                    username: data.user.nickname,
+                    email: data.user.email,
+                    character: {
+                        className: data.character ? data.character.specie_name : 'Unknown',
+                        hairStyle: data.character ? data.character.hair_style : 0,
+                        beardStyle: data.character ? data.character.beard_style : 0
+                    }
+                }));
                 localStorage.setItem('lastLogin', loginIdentifier);
 
-                // Simulate token
-                localStorage.setItem("authToken", "mock-jwt-token-12345");
-                navigate("/maingame");
+                navigate('/maingame');
             } else {
-                setError("Invalid credentials.");
+                setError(data.message || "Login failed");
             }
-            // MOCK LOGIN LOGIC END
 
         } catch (err) {
             console.error("Login Error:", err);

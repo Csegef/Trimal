@@ -128,18 +128,6 @@ const CharacterRegistration = () => {
       }
       */
 
-      // ===== MOCK BACKEND LOGIC START - DELETE THIS BLOCK WHEN BACKEND IS READY =====
-      // Simulate sending email
-      console.log(`[MOCK EMAIL SERVICE] To: ${email}, Subject: Verify your account, Body: Click here to verify.`);
-      alert(`Registration successful! A verification email has been sent to ${email}. (Check console for mock email)`);
-
-      // Save to local storage with verified=false
-      localStorage.setItem('userData', JSON.stringify(registrationData));
-
-      // Redirect to Login page instead of MainGame
-      navigate("/");
-      // ===== MOCK BACKEND LOGIC END =====
-
     } catch (error) {
       console.error('Registration error:', error);
       alert('Something happened during registration!');

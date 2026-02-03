@@ -1,38 +1,23 @@
-const mongoose = require('mongoose');
+// backend/models/Character.js
 
-const CharacterSchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
-    },
-    username: {
-        type: String,
-        required: true
-    },
-    character: {
-        class: {
-            type: String,
-            enum: ['neanderthal', 'floresiensis', 'sapiens'],
-            required: true
-        },
-        className: {
-            type: String,
-            required: true
-        },
-        hairStyle: {
-            type: Number,
-            default: 0
-        },
-        beardStyle: {
-            type: Number,
-            default: 0
-        }
-    },
-    stats: {
-        level: { type: Number, default: 1 },
-        experience: { type: Number, default: 0 }
+class Character {
+    constructor(pool) {
+      this.pool = pool;
     }
-}, { timestamps: true });
-
-module.exports = mongoose.model('Character', CharacterSchema);
+  
+    async create({ userId, specie_name, hair_style, beard_style }) {
+      const [result] = await this.pool.execute(
+        `INSERT INTO specie (user_id, specie_name, hair_style, beard_style, lvl, xp, created_at, updated_at) 
+         VALUES (?, ?, ?, ?, 1, 0, NOW(), NOW())`,
+        [userId, specie_name, hair_style, beard_style]
+      );
+      return { id: result.insertId, userId, specie_name, hair_style, beard_style, lvl: 1, xp: 0 };
+    }
+  
+    async findByUserId(userId) {
+      const [rows] = await this.pool.execute(`SELECT * FROM specie WHERE user_id = ?`, [userId]);
+      return rows;
+    }
+  }
+  
+  module.exports = Character;  
