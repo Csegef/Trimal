@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Gép: 127.0.0.1
--- Létrehozás ideje: 2025. Dec 15. 10:15
+-- Létrehozás ideje: 2026. Feb 03. 20:32
 -- Kiszolgáló verziója: 10.4.32-MariaDB
 -- PHP verzió: 8.2.12
 
@@ -242,8 +242,8 @@ CREATE TABLE `shop` (
 CREATE TABLE `specie` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
-  `shop_id` int(11) NOT NULL,
-  `quest_id` int(11) NOT NULL,
+  `shop_id` int(11) DEFAULT NULL,
+  `quest_id` int(11) DEFAULT NULL,
   `specie_name` enum('Neanderthal','Sapiens','Floresiensis') NOT NULL,
   `lvl` int(11) DEFAULT 1 CHECK (`lvl` >= 1),
   `xp` int(11) DEFAULT 0 CHECK (`xp` >= 0),
@@ -270,6 +270,17 @@ CREATE TABLE `specie` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- A tábla adatainak kiíratása `specie`
+--
+
+INSERT INTO `specie` (`id`, `user_id`, `shop_id`, `quest_id`, `specie_name`, `lvl`, `xp`, `stamina`, `base_health`, `base_strength`, `base_agility`, `base_luck`, `base_resistance`, `base_armor`, `hair_style`, `beard_style`, `inventory_capacity`, `inventory_state`, `slot_weapon`, `slot_armor_1`, `slot_armor_2`, `slot_armor_3`, `slot_armor_4`, `quest_1`, `quest_2`, `quest_3`, `created_at`, `updated_at`) VALUES
+(1, 6, NULL, NULL, 'Neanderthal', 1, 0, 100, 10, 10, 10, 10, 10, 0, 'n-hair-5', 'n-beard-3', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 18:41:24', '2026-02-03 18:41:24'),
+(2, 7, NULL, NULL, 'Sapiens', 1, 0, 100, 10, 10, 10, 10, 10, 0, NULL, 'hs-beard-4', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:00:02', '2026-02-03 19:00:02'),
+(3, 8, NULL, NULL, 'Floresiensis', 1, 0, 100, 10, 10, 10, 10, 10, 0, 'f-hair-3', 'f-beard-3', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:04:54', '2026-02-03 19:04:54'),
+(4, 9, NULL, NULL, 'Floresiensis', 1, 0, 100, 10, 10, 10, 10, 10, 0, 'f-hair-4', 'f-beard-3', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:07:01', '2026-02-03 19:07:01'),
+(5, 10, NULL, NULL, 'Neanderthal', 1, 0, 100, 10, 10, 10, 10, 10, 0, NULL, NULL, 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:17:53', '2026-02-03 19:17:53');
+
 -- --------------------------------------------------------
 
 --
@@ -278,15 +289,30 @@ CREATE TABLE `specie` (
 
 CREATE TABLE `user` (
   `id` int(11) NOT NULL,
-  `specie_id` int(11) NOT NULL,
+  `specie_id` int(11) DEFAULT NULL,
   `email` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `salt` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `nickname` varchar(20) NOT NULL,
   `last_login` date NOT NULL,
   `status` tinyint(1) NOT NULL,
   `currency` int(6) NOT NULL,
   `spec_currency` int(6) NOT NULL,
-  `description` text NOT NULL
+  `description` text NOT NULL,
+  `verification_token` varchar(255) DEFAULT NULL,
+  `is_verified` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- A tábla adatainak kiíratása `user`
+--
+
+INSERT INTO `user` (`id`, `specie_id`, `email`, `password`, `salt`, `nickname`, `last_login`, `status`, `currency`, `spec_currency`, `description`, `verification_token`, `is_verified`) VALUES
+(6, 1, 'csege0306@gmail.com', '$2b$10$x7T5unm0QVs9sn3OmCMgsemQ3dNQiE3PBph/Kxs9NY/Vrq3GD2Eiy', '$2b$10$x7T5unm0QVs9sn3OmCMgse', 'csegefekete1', '2026-02-03', 1, 0, 0, '', '2424af9166ab360ac876e1e4c2a01f8a946778e9beed2e1004333d6c9d03592a', 0),
+(7, 2, 'kezdodikk50@gmail.com', '$2b$10$IqwUAD62v6ozmztp15lXceUgkKVO0CDWjydnc4aZFYIjaOIOdItwS', '$2b$10$IqwUAD62v6ozmztp15lXce', 'csigabiga23', '2026-02-03', 1, 0, 0, '', '19a19218611ba2becf201130b55a7e054cc386e612958fcda3a60799d21b8184', 0),
+(8, 3, 'ezustjanos3@gmail.com', '$2b$10$JLckiRZ1CvA/H/Irg.ItKeNkTpwKjqT15FHf/WjJkcs1pt1R0bzdS', '$2b$10$JLckiRZ1CvA/H/Irg.ItKe', 'silverjohn123', '2026-02-03', 1, 0, 0, '', '68eb2c7a557b523703e4ac23ac73edcd5d5a6fbee373ec41d13b2e60baf7db15', 0),
+(9, 4, 'janesco897@gmail.com', '$2b$10$jkXNGOjlg.mkH8EqjjWUuOfKiEAEZew9EalbxgzDT9JI1hL36lrXi', '$2b$10$jkXNGOjlg.mkH8EqjjWUuO', 'kukucskajoska1111', '2026-02-03', 1, 0, 0, '', 'ff8837e2981ffcae37b7b5f3a4121eff1567099ea20516a0c0848c06cd41be5b', 0),
+(10, 5, 'feketecsegeistvan-40257@taszi.hu', '$2b$10$RC8i1dQ1aK8AZI4lYWv3OOmdNJJJ.9F8rnG85UaEk5I4UnSr89.pu', '$2b$10$RC8i1dQ1aK8AZI4lYWv3OO', 'gipszjakab55', '2026-02-03', 1, 0, 0, '', NULL, 1);
 
 --
 -- Indexek a kiírt táblákhoz
@@ -468,13 +494,13 @@ ALTER TABLE `shop`
 -- AUTO_INCREMENT a táblához `specie`
 --
 ALTER TABLE `specie`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT a táblához `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Megkötések a kiírt táblákhoz
