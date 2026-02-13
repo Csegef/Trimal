@@ -146,4 +146,36 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// POST /api/auth/logout
+router.post('/logout', async (req, res) => {
+  const pool = req.pool;
+  const token = req.headers.authorization?.split(' ')[1]; // Bearer token
+  
+  try {
+    if (token) {
+      // Itt lehetőséged van:
+      
+      // 1. Opció: Blacklistelni a tokent (ha van token blacklist táblád)
+      // await pool.execute('INSERT INTO token_blacklist (token, expires_at) VALUES (?, ?)', 
+      //   [token, new Date(Date.now() + 7*24*60*60*1000)]);
+      
+      // 2. Egyszerűbb: Csak sikerüzenet küldése
+      // A kliens oldalon úgyis törlődik a token
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Sikeres kijelentkezés' 
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Hiba a kijelentkezés során' 
+    });
+  }
+});
+
+
+
 module.exports = router;

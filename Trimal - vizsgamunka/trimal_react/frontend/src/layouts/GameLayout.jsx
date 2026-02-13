@@ -5,16 +5,48 @@ import { useNavigate } from "react-router-dom";
 const GameLayout = ({ children }) => {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    // TODO: BACKEND - Call logout API endpoint here in the future
-    // await fetch('/api/auth/logout', { method: 'POST' });
+  // const handleLogout = () => {
+  //   // TODO: BACKEND - Call logout API endpoint here in the future
+  //   // await fetch('/api/auth/logout', { method: 'POST' });
 
-    // Clear local storage (Mock Auth)
-    localStorage.removeItem("authToken"); // If we use token
-    // We might want to keep some userData or clear it all?
-    // localStorage.removeItem("userData"); // Optional: clear user data on logout
+  //   // Clear local storage (Mock Auth)
+  //   localStorage.removeItem("authToken"); // If we use token
+  //   // We might want to keep some userData or clear it all?
+  //   // localStorage.removeItem("userData"); // Optional: clear user data on logout
 
-    navigate("/"); // Redirect to Login page
+  //   navigate("/"); // Redirect to Login page
+  // };
+
+   const handleLogout = async () => {
+    try {
+      // Get token from localStorage
+      const token = localStorage.getItem("authToken");
+      
+      if (token) {
+        // Call logout API endpoint
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.error('Logout API error:', await response.text());
+        }
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage regardless of API response
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("userData");
+      localStorage.removeItem("characterData");
+      
+      // Redirect to login page
+      navigate("/");
+    }
   };
 
   return (
