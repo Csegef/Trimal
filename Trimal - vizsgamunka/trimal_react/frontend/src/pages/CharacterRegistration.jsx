@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 
@@ -21,6 +21,38 @@ const CharacterRegistration = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
+
+  // Jelszó erősség kalkulátor
+  const calculatePasswordStrength = (pass) => {
+    let strength = 0;
+    if (pass.length >= 8) strength += 1; // Hossz
+    if (/[A-Z]/.test(pass)) strength += 1; // Nagybetű
+    if (/[0-9]/.test(pass)) strength += 1; // Szám
+    if (/[^A-Za-z0-9]/.test(pass)) strength += 1; // Speciális karakter
+    return strength;
+  };
+
+  const getStrengthLabel = (strength) => {
+    if (strength <= 1) return { label: "Weak", color: "bg-red-500", text: "text-red-400" };
+    if (strength === 2) return { label: "Medium", color: "bg-yellow-500", text: "text-yellow-400" };
+    if (strength >= 3) return { label: "Strong", color: "bg-green-500", text: "text-green-400" };
+    return { label: "", color: "bg-transparent", text: "" };
+  };
+
+  const passStrength = calculatePasswordStrength(password);
+  const strengthInfo = getStrengthLabel(passStrength);
+
+  // Dynamic Password Match Validation
+  useEffect(() => {
+    if (confirmPassword && password === confirmPassword) {
+      setErrors(prev => {
+        const newErrs = { ...prev };
+        delete newErrs.confirmPassword;
+        return newErrs;
+      });
+    }
+  }, [password, confirmPassword]);
+
 
   // Validáció függvény
   const validateForm = () => {
@@ -231,9 +263,24 @@ const CharacterRegistration = () => {
 
             {/* Jelszó */}
             <div className="space-y-2">
-              <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
-                Password
-              </label>
+              <div className="flex justify-between items-end">
+                <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
+                  Password
+                </label>
+                {password && (
+                  <span className={`text-xs font-bold uppercase ${strengthInfo.text}`}>
+                    {strengthInfo.label}
+                  </span>
+                )}
+              </div>
+
+              {/* Strength Bar */}
+              {password && (
+                <div className="w-full h-1.5 bg-stone-800 rounded-full overflow-hidden flex mb-1">
+                  <div className={`h-full ${strengthInfo.color} transition-all duration-300`} style={{ width: `${(passStrength / 4) * 100}%` }}></div>
+                </div>
+              )}
+
               <input
                 type="password"
                 value={password}

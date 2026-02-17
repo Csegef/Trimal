@@ -12,57 +12,62 @@ const MainGame = () => {
     }
   }, []);
 
+  const getPlayerImage = () => {
+    if (!userData || !userData.character) return null;
+    const { className, hairStyle, beardStyle } = userData.character;
+
+    // Map className to prefix (e.g., Neanderthal -> n, Sapiens -> s, Floresiensis -> f)
+    let prefix = 'n';
+    if (className === 'Sapiens') prefix = 's';
+    if (className === 'Floresiensis') prefix = 'f';
+
+    return (
+      <div className="relative w-full h-full">
+        <img
+          src={`/src/assets/design/character/base_character/${prefix}_base.png`}
+          alt="Base Character"
+          className="absolute z-0 h-full w-auto object-contain bottom-0 left-0"
+        />
+        {hairStyle > 0 && (
+          <img
+            src={`/src/assets/design/character/hair/${prefix}-hair-${hairStyle}.png`}
+            alt="Hair"
+            className="absolute z-10 h-full w-auto object-contain bottom-0 left-0"
+          />
+        )}
+        {beardStyle > 0 && (
+          <img
+            src={`/src/assets/design/character/beard/${prefix}-beard-${beardStyle}.png`}
+            alt="Beard"
+            className="absolute z-20 h-full w-auto object-contain bottom-0 left-0"
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <GameLayout>
-      <div className="w-full max-w-4xl mx-auto p-6">
-        <div className="backdrop-blur-sm p-8 rounded-2xl border-4 shadow-2xl bg-stone-900/50 border-stone-700">
+      {/* Player Image (Bottom Left) - Framed */}
+      <div className="absolute bottom-4 left-4 w-40 h-40 md:w-48 md:h-48 z-20 bg-stone-900/70 rounded-xl border-4 border-amber-900/60 shadow-2xl p-2 backdrop-blur-sm">
+        <div className="relative w-full h-full">
+          {getPlayerImage()}
+        </div>
+      </div>
 
-          {/* Üdvözlő fejléc */}
-          <h1 className="text-4xl md:text-5xl font-black text-amber-400 uppercase text-center mb-8 tracking-wider">
-            🎮 Welcome to the Game! 🎮
-          </h1>
+      {/* Map Container - Framed and Centered - LARGER */}
+      <div className="relative w-full max-w-7xl h-[80vh] bg-stone-900/30 rounded-2xl border-4 border-stone-700/80 shadow-2xl overflow-hidden backdrop-blur-sm">
+        {/* Map Background */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/src/assets/design/backgrounds/map/trimal_map.png')",
+          }}
+        />
 
-          {/* Felhasználó adatok */}
-          {userData && (
-            <div className="bg-stone-800/70 rounded-xl p-6 mb-6 border-2 border-stone-600">
-              <h2 className="text-2xl font-bold text-amber-300 mb-4 uppercase">
-                Character Info
-              </h2>
-              <div className="space-y-3 text-stone-200">
-                <p className="text-lg">
-                  <span className="font-bold text-amber-400">Username:</span>{" "}
-                  {userData.username}
-                </p>
-                <p className="text-lg">
-                  <span className="font-bold text-amber-400">Email:</span>{" "}
-                  {userData.email}
-                </p>
-                <p className="text-lg">
-                  <span className="font-bold text-amber-400">Species:</span>{" "}
-                  {userData.character.className}
-                </p>
-                <p className="text-lg">
-                  <span className="font-bold text-amber-400">Hair Style:</span>{" "}
-                  {userData.character.hairStyle === 0 ? "Bald" : `Style ${userData.character.hairStyle}`}
-                </p>
-                <p className="text-lg">
-                  <span className="font-bold text-amber-400">Beard Style:</span>{" "}
-                  {userData.character.beardStyle === 0 ? "Shaved" : `Style ${userData.character.beardStyle}`}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Placeholder üzenet */}
-          <div className="bg-gradient-to-r from-amber-900/50 to-orange-900/50 rounded-xl p-6 border-2 border-amber-600">
-            <p className="text-xl text-center text-amber-100 font-semibold">
-              🚧 Game features coming soon! 🚧
-            </p>
-            <p className="text-center text-stone-300 mt-3">
-              The adventure will begin here...
-            </p>
-          </div>
-
+        {/* Content Overlay - for future game elements */}
+        <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
+          {/* Future game content will go here */}
         </div>
       </div>
     </GameLayout>

@@ -46,12 +46,45 @@ router.post('/register', async (req, res) => {
     logError(`User created with ID: ${newUser.id}`);
 
     logError('Creating character...');
+
+    // FETCH RANDOM QUESTS
+    const [easyQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "easy"');
+    const [mediumQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "medium"');
+    const [hardQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "hard"');
+
+    let q1 = null, q2 = null, q3 = null;
+    if (easyQuests.length > 0) q1 = easyQuests[Math.floor(Math.random() * easyQuests.length)].quest_id;
+    if (mediumQuests.length > 0) q2 = mediumQuests[Math.floor(Math.random() * mediumQuests.length)].quest_id;
+    if (hardQuests.length > 0) q3 = hardQuests[Math.floor(Math.random() * hardQuests.length)].quest_id;
+
+    // DEFAULT INVENTORY
+    const defaultInventory = {
+      capacity: 100,
+      used: 0,
+      currency: {
+        normal: 0,
+        spec: 0
+      },
+      items: [],
+      equipped: {
+        weapon: null,
+        armor_head: null,
+        armor_chest: null,
+        armor_legs: null,
+        armor_feet: null
+      }
+    };
+
     // 2. Create Character
     const newChar = await charModel.create({
       userId: newUser.id,
       specie_name: character.specie_name,
       hair_style: character.hair_style || null,
-      beard_style: character.beard_style || null
+      beard_style: character.beard_style || null,
+      inventory_json: JSON.stringify(defaultInventory),
+      quest_1: q1,
+      quest_2: q2,
+      quest_3: q3
     });
     logError('Character created');
 
@@ -150,28 +183,28 @@ router.post('/login', async (req, res) => {
 router.post('/logout', async (req, res) => {
   const pool = req.pool;
   const token = req.headers.authorization?.split(' ')[1]; // Bearer token
-  
+
   try {
     if (token) {
       // Itt lehetőséged van:
-      
+
       // 1. Opció: Blacklistelni a tokent (ha van token blacklist táblád)
       // await pool.execute('INSERT INTO token_blacklist (token, expires_at) VALUES (?, ?)', 
       //   [token, new Date(Date.now() + 7*24*60*60*1000)]);
-      
+
       // 2. Egyszerűbb: Csak sikerüzenet küldése
       // A kliens oldalon úgyis törlődik a token
     }
-    
-    res.json({ 
-      success: true, 
-      message: 'Sikeres kijelentkezés' 
+
+    res.json({
+      success: true,
+      message: 'Sikeres kijelentkezés'
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Hiba a kijelentkezés során' 
+    res.status(500).json({
+      success: false,
+      message: 'Hiba a kijelentkezés során'
     });
   }
 });
