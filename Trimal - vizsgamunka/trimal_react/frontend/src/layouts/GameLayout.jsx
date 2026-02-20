@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { Link } from 'react-router-dom';
 
 // TODO: BACKEND - This layout is specific for authenticated users.
 const GameLayout = ({ children }) => {
@@ -83,14 +84,21 @@ const GameLayout = ({ children }) => {
 
           {/* Center: Navigation Links (Stations) */}
           <nav className="hidden md:flex items-center gap-6">
-            {['Inventory', 'Tinkerer', 'Herbalists', "Shaman's hut", 'Mysterious cave'].map((station) => (
-              <button
-                key={station}
+            {[
+              { name: 'Inventory', path: '/inventory' },
+              { name: 'Tinkerer', path: '/tinkerer' },
+              { name: 'Herbalists', path: '/herbalists' },
+              { name: "Shaman's hut", path: '/shamans-hut' },
+              { name: 'Mysterious cave', path: '/mysterious-cave' }
+            ].map((station) => (
+              <Link
+                key={station.name}
+                to={station.path}
                 className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative group"
               >
-                {station}
+                {station.name}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
-              </button>
+              </Link>
             ))}
           </nav>
 

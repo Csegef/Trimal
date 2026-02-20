@@ -9,6 +9,7 @@ import MainGame from './pages/MainGame'
 import About from './pages/About';
 import CharacterSignIn from './pages/CharacterSignIn';
 import EmailVerification from './pages/EmailVerification';
+import Inventory from './pages/Inventory'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/create" element={<CharacterCreator />} />
         <Route path="/registration" element={<CharacterRegistration />} />
         <Route path="/maingame" element={<MainGame />} />
+        <Route path="/inventory" element={<Inventory />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />
