@@ -11,7 +11,6 @@ import React from "react";
 
 export const RARITY_COLOR = {
     common: "#9ca3af",
-
     rare: "#60a5fa",
     epic: "#c084fc",
     legendary: "#fbbf24",
@@ -66,11 +65,52 @@ export function resolveEquipSlot(item) {
         if (cat.includes("chest") || cat.includes("body") || cat.includes("torso")) return "armor_chest";
         if (cat.includes("leg") || cat.includes("pant") || cat.includes("trouser")) return "armor_legs";
         if (cat.includes("feet") || cat.includes("boot") || cat.includes("shoe")) return "armor_feet";
-        // Fallback: map by rarity order → chest
         return "armor_chest";
     }
     return null;
 }
+
+// ─── Image path resolver ──────────────────────────────────────────────────────
+
+/**
+ * Builds the correct image src path based on item type, rarity and category,
+ * matching the folder structure under /assets/design/items/.
+ *
+ * weapon  → items/weapon/{rarity}/{iconPath}
+ * armor   → items/armor/{rarity}/{iconPath}
+ * food    → items/food/{category}/{iconPath}   (category = heal | agility | strength | luck | resistence)
+ * misc    → items/misc/{iconPath}
+ *
+ * @param {object} item
+ * @returns {string|null}
+ */
+export function resolveItemImagePath(item) {
+    if (!item?.iconPath) return null;
+
+    const rarity = (item.rarity || "common").toLowerCase();
+    const category = (item.category || "").toLowerCase();
+    const base = "/assets/design/items";
+
+    switch (item.type) {
+        case "weapon":
+            return `${base}/weapon/${rarity}/${item.iconPath}`;
+
+        case "armor":
+            return `${base}/armor/${rarity}/${item.iconPath}`;
+
+        case "food":
+            // food sub-folder is the buff category (heal, agility, strength, luck, resistence)
+            return `${base}/food/${category}/${item.iconPath}`;
+
+        case "misc":
+            // misc has no rarity sub-folder
+            return `${base}/misc/${item.iconPath}`;
+
+        default:
+            return `${base}/${item.iconPath}`;
+    }
+}
+
 
 // ─── Per-type stat lines ──────────────────────────────────────────────────────
 
@@ -138,7 +178,8 @@ export function ItemSlotTile({ item, onClick }) {
         );
     }
 
-    const rarity = item.rarity || "common";
+    const rarity = (item.rarity || "common").toLowerCase();
+    const imageSrc = resolveItemImagePath(item);
 
     return (
         <button
@@ -149,9 +190,9 @@ export function ItemSlotTile({ item, onClick }) {
             }}
             className="relative w-full aspect-square rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1 p-1 hover:scale-105 transition-all duration-150"
         >
-            {item.iconPath ? (
+            {imageSrc ? (
                 <img
-                    src={`/assets/items/${item.iconPath}`}
+                    src={imageSrc}
                     alt={item.name}
                     className="w-8 h-8 object-contain"
                     onError={(e) => { e.target.style.display = "none"; }}
@@ -178,8 +219,9 @@ export function ItemSlotTile({ item, onClick }) {
 // One row in the "Item Details" list panel.
 
 export function ItemDetailRow({ item, isEquipped, onClick }) {
-    const rarity = item.rarity || "common";
+    const rarity = (item.rarity || "common").toLowerCase();
     const stats = getItemStats(item);
+    const imageSrc = resolveItemImagePath(item);
 
     return (
         <button
@@ -192,8 +234,8 @@ export function ItemDetailRow({ item, isEquipped, onClick }) {
         >
             {/* Icon */}
             <span className="text-base mt-0.5 shrink-0">
-                {item.iconPath
-                    ? <img src={item.iconPath} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.target.style.display = "none"; }} />
+                {imageSrc
+                    ? <img src={imageSrc} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.target.style.display = "none"; }} />
                     : getItemIcon(item)
                 }
             </span>

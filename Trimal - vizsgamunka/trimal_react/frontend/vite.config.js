@@ -7,8 +7,11 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
 
   server: {
+    fs: {
+      // Allow serving files from one level up to support symlinks outside the workspace
+      allow: ['..']
+    },
     proxy: {
-      // Minden /api/ kérés az Express backendhez megy (alapból :3000 vagy :5000)
       '/api': {
         target: 'http://localhost:5000',
         changeOrigin: true,
