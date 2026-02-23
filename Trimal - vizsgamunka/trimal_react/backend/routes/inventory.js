@@ -1,134 +1,190 @@
 // backend/routes/inventory.js
+// Direct MySQL implementation – no PHP proxy needed.
+// Inventory is stored as JSON in specie.inventory_json
+
 const express = require('express');
 const router = express.Router();
-const http = require('http');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// ─── PHP hívás helper ────────────────────────────────────────────────────────
-// Az Express backend HTTP-n hívja a XAMPP-on futó PHP inventory_api.php-t.
-// A PHP-k helye: C:/xampp/htdocs/trimal/api/
-// XAMPP alapból: http://localhost/trimal/api/inventory_api.php
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const PHP_BASE = process.env.PHP_BASE_URL || 'http://localhost/trimal/api/inventory_api.php';
+/** Load inventory JSON for a given specie (character) id */
+async function loadInventory(pool, specieId) {
+  const [rows] = await pool.execute(
+    'SELECT inventory_json FROM specie WHERE id = ?',
+    [specieId]
+  );
+  if (!rows[0]) return null;
 
-/**
- * HTTP kérést küld a PHP API-nak
- * @param {string} action - GET action
- * @param {string} method - HTTP method
- * @param {object|null} body - POST body
- * @param {number} playerId - játékos ID (specie ID)
- * @returns {Promise<object>} - PHP JSON válasz
- */
-function callPhp(action, method = 'GET', body = null, playerId) {
-  return new Promise((resolve, reject) => {
-    const url = new URL(PHP_BASE);
-    url.searchParams.set('action', action);
-    url.searchParams.set('player_id', playerId); // PHP oldalon ezt olvassuk session helyett
+  const raw = rows[0].inventory_json;
+  if (raw) {
+    try { return JSON.parse(raw); } catch { }
+  }
 
-    const postData = body ? JSON.stringify(body) : null;
-
-    const options = {
-      hostname: url.hostname,
-      port: url.port || 80,
-      path: url.pathname + url.search,
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Internal-Key': process.env.PHP_INTERNAL_KEY || 'trimal_internal_2024',
-        ...(postData ? { 'Content-Length': Buffer.byteLength(postData) } : {}),
-      },
-    };
-
-    const req = http.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error('PHP válasz nem JSON: ' + data.substring(0, 200)));
-        }
-      });
-    });
-
-    req.on('error', (err) => {
-      reject(new Error('PHP kapcsolat hiba: ' + err.message));
-    });
-
-    if (postData) req.write(postData);
-    req.end();
-  });
+  // Default structure
+  return {
+    capacity: 100,
+    used: 0,
+    currency: { normal: 0, spec: 0 },
+    items: [],
+    equipped: {
+      weapon: null,
+      armor_head: null,
+      armor_chest: null,
+      armor_legs: null,
+      armor_feet: null,
+    },
+  };
 }
 
-// ─── Middleware: minden route JWT-vel védett ─────────────────────────────────
+/** Persist inventory JSON back to the database */
+async function saveInventory(pool, specieId, inventory) {
+  await pool.execute(
+    'UPDATE specie SET inventory_json = ? WHERE id = ?',
+    [JSON.stringify(inventory), specieId]
+  );
+}
+
+/** Recalculate the `used` field (1 slot per unique stack) */
+function recalcUsed(inventory) {
+  inventory.used = inventory.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+}
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
 router.use(authMiddleware);
 
-// ─── GET /api/inventory ─ teljes inventory lekérése ──────────────────────────
+// ─── GET /api/inventory ───────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const playerId = req.user.specieId; // authMiddleware tölti fel
-    const data = await callPhp('get', 'GET', null, playerId);
-    res.json(data);
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Character not found' });
+    res.json({ success: true, data: inv });
   } catch (err) {
-    console.error('[Inventory] GET error:', err.message);
+    console.error('[Inventory] GET / error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ─── GET /api/inventory/player ─ játékos adatok (szint, statok, karakter) ───
+// ─── GET /api/inventory/player ────────────────────────────────────────────────
 router.get('/player', async (req, res) => {
   try {
-    const playerId = req.user.specieId;
-    const data = await callPhp('getPlayerInfo', 'GET', null, playerId);
-    res.json(data);
+    const [rows] = await req.pool.execute(
+      `SELECT s.id, s.specie_name, s.hair_style, s.beard_style,
+              s.lvl, s.xp,
+              u.nickname
+       FROM specie s
+       JOIN user u ON u.specie_id = s.id
+       WHERE s.id = ?`,
+      [req.user.specieId]
+    );
+
+    const row = rows[0];
+    if (!row) return res.status(404).json({ success: false, message: 'Player not found' });
+
+    const lvl = row.lvl || 1;
+    const xp = row.xp || 0;
+    const xpForNext = lvl * 100;
+
+    res.json({
+      success: true,
+      data: {
+        id: row.id,
+        name: row.nickname,
+        class: row.specie_name || 'Neanderthal',
+        hairStyle: row.hair_style || 0,
+        beardStyle: row.beard_style || 0,
+        lvl,
+        xp,
+        xpForNext,
+        stats: { strength: 5, agility: 5, intelligence: 5, endurance: 5 },
+      },
+    });
   } catch (err) {
     console.error('[Inventory] GET /player error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ─── POST /api/inventory/equip ───────────────────────────────────────────────
+// ─── POST /api/inventory/equip ────────────────────────────────────────────────
 router.post('/equip', async (req, res) => {
   try {
     const { slot, itemId } = req.body;
-    if (!slot || !itemId) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: slot, itemId' });
-    }
-    const playerId = req.user.specieId;
-    const data = await callPhp('equip', 'POST', { slot, itemId }, playerId);
-    res.json(data);
+    if (!slot || itemId == null)
+      return res.status(400).json({ success: false, message: 'Missing: slot, itemId' });
+
+    const validSlots = ['weapon', 'armor_head', 'armor_chest', 'armor_legs', 'armor_feet'];
+    if (!validSlots.includes(slot))
+      return res.status(400).json({ success: false, message: 'Invalid equipment slot' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    const item = inv.items.find(i => i.id == itemId);
+    if (!item) return res.status(400).json({ success: false, message: 'Item not found in inventory' });
+
+    if (slot === 'weapon' && item.type !== 'weapon')
+      return res.status(400).json({ success: false, message: 'Item is not a weapon' });
+    if (slot.startsWith('armor_') && item.type !== 'armor')
+      return res.status(400).json({ success: false, message: 'Item is not armor' });
+
+    inv.equipped[slot] = itemId;
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Item equipped' });
   } catch (err) {
     console.error('[Inventory] POST /equip error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ─── POST /api/inventory/unequip ────────────────────────────────────────────
+// ─── POST /api/inventory/unequip ─────────────────────────────────────────────
 router.post('/unequip', async (req, res) => {
   try {
     const { slot } = req.body;
-    if (!slot) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: slot' });
-    }
-    const playerId = req.user.specieId;
-    const data = await callPhp('unequip', 'POST', { slot }, playerId);
-    res.json(data);
+    if (!slot)
+      return res.status(400).json({ success: false, message: 'Missing: slot' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    inv.equipped[slot] = null;
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Item unequipped' });
   } catch (err) {
     console.error('[Inventory] POST /unequip error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ─── POST /api/inventory/sell ────────────────────────────────────────────────
+// ─── POST /api/inventory/sell ─────────────────────────────────────────────────
 router.post('/sell', async (req, res) => {
   try {
     const { itemType, itemId, quantity = 1 } = req.body;
-    if (!itemType || !itemId) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: itemType, itemId' });
-    }
-    const playerId = req.user.specieId;
-    const data = await callPhp('sellItem', 'POST', { itemType, itemId, quantity }, playerId);
-    res.json(data);
+    if (!itemType || itemId == null)
+      return res.status(400).json({ success: false, message: 'Missing: itemType, itemId' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    const idx = inv.items.findIndex(i => i.id == itemId && i.type === itemType);
+    if (idx === -1)
+      return res.status(400).json({ success: false, message: 'Item not found' });
+
+    const item = inv.items[idx];
+    const isEquipped = Object.values(inv.equipped || {}).includes(item.id);
+    if (isEquipped)
+      return res.status(400).json({ success: false, message: 'Cannot sell an equipped item' });
+
+    const sellQty = Math.min(quantity, item.quantity);
+    const sellPrice = (item.sell_price || 0) * sellQty;
+
+    item.quantity -= sellQty;
+    if (item.quantity <= 0) inv.items.splice(idx, 1);
+
+    inv.currency.normal = (inv.currency.normal || 0) + sellPrice;
+    recalcUsed(inv);
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: `Sold for ${sellPrice} gold` });
   } catch (err) {
     console.error('[Inventory] POST /sell error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -136,32 +192,66 @@ router.post('/sell', async (req, res) => {
 });
 
 // ─── POST /api/inventory/addItem ─────────────────────────────────────────────
-// Belső használatra (quest jutalom, loot) – frontendről általában nem hívják
 router.post('/addItem', async (req, res) => {
   try {
-    const { itemType, itemId, quantity = 1 } = req.body;
-    if (!itemType || !itemId) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: itemType, itemId' });
+    const { itemType, itemId, quantity = 1, itemData } = req.body;
+    if (!itemType || itemId == null)
+      return res.status(400).json({ success: false, message: 'Missing: itemType, itemId' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    const existing = inv.items.find(i => i.id == itemId && i.type === itemType);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      inv.items.push({
+        id: itemId,
+        type: itemType,
+        name: itemData?.name || 'Unknown Item',
+        rarity: itemData?.rarity || 'common',
+        quantity,
+        description: itemData?.description || '',
+        sell_price: itemData?.sell_price || 0,
+        iconPath: itemData?.iconPath || null,
+        ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0 }),
+        ...(itemType === 'armor' && { armor_point: itemData?.armor_point || 0, category: itemData?.category || 'Armor' }),
+        ...(itemType === 'food' && { category: itemData?.category || '', buff_id: itemData?.buff_id || null }),
+      });
     }
-    const playerId = req.user.specieId;
-    const data = await callPhp('addItem', 'POST', { itemType, itemId, quantity }, playerId);
-    res.json(data);
+
+    recalcUsed(inv);
+    if (inv.used > inv.capacity)
+      return res.status(400).json({ success: false, message: 'Inventory full' });
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Item added successfully' });
   } catch (err) {
     console.error('[Inventory] POST /addItem error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
 
-// ─── POST /api/inventory/removeItem ─────────────────────────────────────────
+// ─── POST /api/inventory/removeItem ──────────────────────────────────────────
 router.post('/removeItem', async (req, res) => {
   try {
     const { itemType, itemId, quantity = 1 } = req.body;
-    if (!itemType || !itemId) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: itemType, itemId' });
-    }
-    const playerId = req.user.specieId;
-    const data = await callPhp('removeItem', 'POST', { itemType, itemId, quantity }, playerId);
-    res.json(data);
+    if (!itemType || itemId == null)
+      return res.status(400).json({ success: false, message: 'Missing: itemType, itemId' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    const idx = inv.items.findIndex(i => i.id == itemId && i.type === itemType);
+    if (idx === -1)
+      return res.status(400).json({ success: false, message: 'Item not found' });
+
+    inv.items[idx].quantity -= quantity;
+    if (inv.items[idx].quantity <= 0) inv.items.splice(idx, 1);
+
+    recalcUsed(inv);
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Item removed successfully' });
   } catch (err) {
     console.error('[Inventory] POST /removeItem error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -172,9 +262,13 @@ router.post('/removeItem', async (req, res) => {
 router.post('/currency/add', async (req, res) => {
   try {
     const { normal = 0, spec = 0 } = req.body;
-    const playerId = req.user.specieId;
-    const data = await callPhp('addCurrency', 'POST', { normal, spec }, playerId);
-    res.json(data);
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    inv.currency.normal += Number(normal);
+    inv.currency.spec += Number(spec);
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Currency added' });
   } catch (err) {
     console.error('[Inventory] POST /currency/add error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -185,9 +279,16 @@ router.post('/currency/add', async (req, res) => {
 router.post('/currency/remove', async (req, res) => {
   try {
     const { normal = 0, spec = 0 } = req.body;
-    const playerId = req.user.specieId;
-    const data = await callPhp('removeCurrency', 'POST', { normal, spec }, playerId);
-    res.json(data);
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    if (inv.currency.normal < Number(normal) || inv.currency.spec < Number(spec))
+      return res.status(400).json({ success: false, message: 'Insufficient currency' });
+
+    inv.currency.normal -= Number(normal);
+    inv.currency.spec -= Number(spec);
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Currency removed' });
   } catch (err) {
     console.error('[Inventory] POST /currency/remove error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -198,12 +299,46 @@ router.post('/currency/remove', async (req, res) => {
 router.post('/quest/complete', async (req, res) => {
   try {
     const { questId } = req.body;
-    if (!questId) {
-      return res.status(400).json({ success: false, message: 'Hiányzó: questId' });
+    if (!questId)
+      return res.status(400).json({ success: false, message: 'Missing: questId' });
+
+    const pool = req.pool;
+
+    const [quests] = await pool.execute(
+      'SELECT * FROM quest WHERE quest_id = ?',
+      [questId]
+    );
+    const quest = quests[0];
+    if (!quest)
+      return res.status(404).json({ success: false, message: 'Quest not found' });
+
+    // Add currency to inventory
+    const inv = await loadInventory(pool, req.user.specieId);
+    if (inv) {
+      inv.currency.normal = (inv.currency.normal || 0) + (quest.currency || 0);
+      inv.currency.spec = (inv.currency.spec || 0) + (quest.spec_currency || 0);
+      await saveInventory(pool, req.user.specieId, inv);
     }
-    const playerId = req.user.specieId;
-    const data = await callPhp('completeQuest', 'POST', { questId }, playerId);
-    res.json(data);
+
+    // Add XP directly to specie row
+    const xpToAdd = quest.xp || 0;
+    if (xpToAdd > 0) {
+      const [specRows] = await pool.execute(
+        'SELECT lvl, xp FROM specie WHERE id = ?',
+        [req.user.specieId]
+      );
+      if (specRows[0]) {
+        let { lvl, xp } = specRows[0];
+        xp += xpToAdd;
+        while (xp >= lvl * 100) { xp -= lvl * 100; lvl++; }
+        await pool.execute(
+          'UPDATE specie SET xp = ?, lvl = ? WHERE id = ?',
+          [xp, lvl, req.user.specieId]
+        );
+      }
+    }
+
+    res.json({ success: true, message: 'Quest completed!' });
   } catch (err) {
     console.error('[Inventory] POST /quest/complete error:', err.message);
     res.status(500).json({ success: false, message: err.message });

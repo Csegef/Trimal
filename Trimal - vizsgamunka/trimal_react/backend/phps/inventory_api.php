@@ -1,78 +1,116 @@
 <?php
-// inventory_api.php
+// phps/inventory_api.php
+// Express backend hívja HTTP-n. Session helyett player_id + internal key.
+
+require_once 'config.php';
 require_once 'inventory_manager.php';
 
 header('Content-Type: application/json');
 
-// Csak bejelentkezett felhasználók számára
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    echo json_encode(['success' => false, 'message' => 'Not authenticated']);
+// ─── Belső kulcs ellenőrzés (csak Express hívhatja) ─────────────────────────
+$internalKey = $_SERVER['HTTP_X_INTERNAL_KEY'] ?? '';
+$expectedKey = defined('PHP_INTERNAL_KEY') ? PHP_INTERNAL_KEY : 'trimal_internal_2024';
+
+if ($internalKey !== $expectedKey) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Forbidden']);
     exit;
 }
 
-$playerId = $_SESSION['user_id']; // Feltételezve, hogy a user_id a specie id
+// ─── Player ID GET paraméterből ──────────────────────────────────────────────
+$playerId = $_GET['player_id'] ?? null;
+if (!$playerId || !is_numeric($playerId)) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Missing or invalid player_id']);
+    exit;
+}
+$playerId = (int)$playerId;
+
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
-
 $inventoryManager = new InventoryManager($pdo, $playerId);
 
 switch ($method) {
     case 'GET':
-        if ($action == 'get') {
-            $inventory = $inventoryManager->getInventory();
-            echo json_encode(['success' => true, 'data' => $inventory]);
+        switch ($action) {
+            case 'get':
+                echo json_encode(['success' => true, 'data' => $inventoryManager->getInventory()]);
+                break;
+            case 'getPlayerInfo':
+                $info = $inventoryManager->getPlayerInfo();
+                echo json_encode($info
+                    ? ['success' => true, 'data' => $info]
+                    : ['success' => false, 'message' => 'Player not found']
+                );
+                break;
+            default:
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Unknown GET action: ' . $action]);
         }
         break;
-        
+
     case 'POST':
         $input = json_decode(file_get_contents('php://input'), true);
-        
+        if ($input === null) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Invalid JSON body']);
+            exit;
+        }
+
         switch ($action) {
             case 'addItem':
-                $result = $inventoryManager->addItem(
-                    $input['itemType'],
-                    $input['itemId'],
+                echo json_encode($inventoryManager->addItem(
+                    $input['itemType'] ?? null,
+                    $input['itemId'] ?? null,
                     $input['quantity'] ?? 1
-                );
-                echo json_encode($result);
+                ));
                 break;
-                
             case 'removeItem':
-                $result = $inventoryManager->removeItem(
-                    $input['itemType'],
-                    $input['itemId'],
+                echo json_encode($inventoryManager->removeItem(
+                    $input['itemType'] ?? null,
+                    $input['itemId'] ?? null,
                     $input['quantity'] ?? 1
-                );
-                echo json_encode($result);
+                ));
                 break;
-                
+            case 'equip':
+                echo json_encode($inventoryManager->equipItem(
+                    $input['slot'] ?? null,
+                    $input['itemId'] ?? null
+                ));
+                break;
+            case 'unequip':
+                echo json_encode($inventoryManager->unequipItem($input['slot'] ?? null));
+                break;
+            case 'sellItem':
+                echo json_encode($inventoryManager->sellItem(
+                    $input['itemType'] ?? null,
+                    $input['itemId'] ?? null,
+                    $input['quantity'] ?? 1
+                ));
+                break;
             case 'addCurrency':
-                $result = $inventoryManager->addCurrency(
+                echo json_encode($inventoryManager->addCurrency(
                     $input['normal'] ?? 0,
                     $input['spec'] ?? 0
-                );
-                echo json_encode($result);
+                ));
                 break;
-                
-            case 'equip':
-                $result = $inventoryManager->equipItem(
-                    $input['slot'],
-                    $input['itemId']
-                );
-                echo json_encode($result);
+            case 'removeCurrency':
+                echo json_encode($inventoryManager->removeCurrency(
+                    $input['normal'] ?? 0,
+                    $input['spec'] ?? 0
+                ));
                 break;
-                
-            case 'unequip':
-                $result = $inventoryManager->unequipItem($input['slot']);
-                echo json_encode($result);
-                break;
-                
             case 'completeQuest':
-                $result = $inventoryManager->completeQuest($input['questId']);
-                echo json_encode($result);
+                echo json_encode($inventoryManager->completeQuest($input['questId'] ?? null));
                 break;
+            default:
+                http_response_code(400);
+                echo json_encode(['success' => false, 'message' => 'Unknown POST action: ' . $action]);
         }
         break;
+
+    default:
+        http_response_code(405);
+        echo json_encode(['success' => false, 'message' => 'Method not allowed']);
 }
 ?>
