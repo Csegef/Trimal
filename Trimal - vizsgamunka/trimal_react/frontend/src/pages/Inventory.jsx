@@ -1,7 +1,4 @@
 // src/pages/Inventory.jsx
-// Layout container for the inventory screen.
-// All item logic and rendering is in src/models/Item.jsx.
-
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import GameLayout from "../layouts/GameLayout";
 import {
@@ -17,10 +14,9 @@ import {
   isEquippable,
   resolveEquipSlot,
   ItemSlotTile,
-  ItemDetailRow,
 } from "../models/Item";
 
-// ─── Slot / stat display maps ─────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SLOT_LABELS = {
   weapon: { label: "Weapon" },
@@ -42,9 +38,24 @@ const INVENTORY_SLOT_COUNT = 10;
 // ─── PlayerCharacter ──────────────────────────────────────────────────────────
 
 function PlayerCharacter({ playerInfo }) {
-  if (!playerInfo) return null;
-  const cls = playerInfo.class || "Neanderthal";
+  const stored = localStorage.getItem("userData");
+  let char = null;
+  if (stored) {
+    try { char = JSON.parse(stored)?.character; } catch { }
+  }
+
+  const cls = char?.className || playerInfo?.class || "Neanderthal";
   const prefix = cls === "Sapiens" ? "s" : cls === "Floresiensis" ? "f" : "n";
+
+  const parseStyle = (val) => {
+    if (val == null) return 0;
+    if (typeof val === "number") return val;
+    const m = String(val).match(/(\d+)$/);
+    return m ? parseInt(m[1], 10) : 0;
+  };
+
+  const hairStyle = char?.hairStyle != null ? parseStyle(char.hairStyle) : parseStyle(playerInfo?.hairStyle);
+  const beardStyle = char?.beardStyle != null ? parseStyle(char.beardStyle) : parseStyle(playerInfo?.beardStyle);
 
   return (
     <div className="relative w-full h-full">
@@ -53,16 +64,16 @@ function PlayerCharacter({ playerInfo }) {
         alt="Character"
         className="absolute z-0 h-full w-auto object-contain bottom-0 left-0"
       />
-      {playerInfo.hairStyle > 0 && (
+      {hairStyle > 0 && (
         <img
-          src={`/src/assets/design/character/hair/${prefix}-hair-${playerInfo.hairStyle}.png`}
+          src={`/src/assets/design/character/hair/${prefix}-hair-${hairStyle}.png`}
           alt="Hair"
           className="absolute z-10 h-full w-auto object-contain bottom-0 left-0"
         />
       )}
-      {playerInfo.beardStyle > 0 && (
+      {beardStyle > 0 && (
         <img
-          src={`/src/assets/design/character/beard/${prefix}-beard-${playerInfo.beardStyle}.png`}
+          src={`/src/assets/design/character/beard/${prefix}-beard-${beardStyle}.png`}
           alt="Beard"
           className="absolute z-20 h-full w-auto object-contain bottom-0 left-0"
         />
@@ -76,26 +87,45 @@ function PlayerCharacter({ playerInfo }) {
 function EquipSlot({ slotKey, equippedItem, onClick }) {
   const { label } = SLOT_LABELS[slotKey];
   const rarity = equippedItem?.rarity || "common";
+  const isEmpty = !equippedItem;
 
   return (
     <button
       onClick={onClick}
       style={{
-        borderColor: equippedItem ? RARITY_COLOR[rarity] : "rgba(120,85,50,0.4)",
-        boxShadow: equippedItem ? `0 0 10px ${RARITY_GLOW[rarity]}` : "none",
+        borderColor: isEmpty ? "rgba(120,85,50,0.35)" : RARITY_COLOR[rarity],
+        boxShadow: isEmpty ? "none" : `0 0 10px ${RARITY_GLOW[rarity]}`,
+        background: "rgba(14,7,2,0.85)",
       }}
-      className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border-2 bg-stone-950/70 backdrop-blur-sm transition-all duration-200 hover:bg-stone-900/70"
+      className="flex flex-col items-center justify-center w-full h-20 rounded-xl border-2 backdrop-blur-sm transition-all duration-200 hover:bg-stone-900/60 gap-1 px-2"
     >
-      <div className="flex flex-col items-start min-w-0">
-        <span className="text-[10px] text-amber-600/60 uppercase tracking-widest leading-none">{label}</span>
-        {equippedItem ? (
-          <span className="text-xs font-semibold truncate" style={{ color: RARITY_COLOR[rarity] }}>
+      <span className="text-[9px] text-amber-700/60 uppercase tracking-widest leading-none">
+        {label}
+      </span>
+      {equippedItem ? (
+        <>
+          {equippedItem.iconPath ? (
+            <img
+              src={equippedItem.iconPath}
+              alt={equippedItem.name}
+              className="w-8 h-8 object-contain"
+              onError={(e) => { e.target.style.display = "none"; }}
+            />
+          ) : (
+            <span className="text-xl">
+              {equippedItem.type === "weapon" ? "⚔" : "🛡"}
+            </span>
+          )}
+          <span
+            className="text-[9px] font-semibold truncate w-full text-center leading-tight"
+            style={{ color: RARITY_COLOR[rarity] }}
+          >
             {equippedItem.name}
           </span>
-        ) : (
-          <span className="text-xs text-stone-600 italic">Empty</span>
-        )}
-      </div>
+        </>
+      ) : (
+        <span className="text-stone-700 text-xs italic">Empty</span>
+      )}
     </button>
   );
 }
@@ -175,11 +205,11 @@ function Toast({ toast }) {
 function Panel({ title, children }) {
   return (
     <div
-      className="rounded-2xl border border-stone-800/50 p-3"
+      className="rounded-2xl border border-stone-800/50 p-4"
       style={{ background: "rgba(14,7,2,0.88)", backdropFilter: "blur(8px)" }}
     >
       {title && (
-        <div className="text-amber-700/60 text-[10px] font-semibold tracking-widest uppercase mb-2">
+        <div className="text-amber-700/60 text-[10px] font-semibold tracking-widest uppercase mb-3">
           {title}
         </div>
       )}
@@ -220,7 +250,6 @@ const Inventory = () => {
   }, [showToast]);
 
   useEffect(() => {
-    // Fallback character appearance from localStorage while API loads
     const stored = localStorage.getItem("userData");
     if (stored) {
       try {
@@ -276,13 +305,15 @@ const Inventory = () => {
     return eqId ? (inventory.items.find((i) => i.id === eqId) ?? null) : null;
   };
 
-  // Bag grid – always show INVENTORY_SLOT_COUNT tiles
   const slots = Array.from({ length: INVENTORY_SLOT_COUNT }, (_, i) =>
     inventory?.items?.[i] ?? null
   );
 
+  const leftSlots = ["weapon", "armor_head", "armor_chest"];
+  const rightSlots = ["armor_legs", "armor_feet"];
+
   return (
-    <GameLayout>
+    <GameLayout currency={inventory?.currency}>
       {/* Background blur */}
       <div
         className="absolute inset-0 z-0"
@@ -301,14 +332,12 @@ const Inventory = () => {
         />
       )}
 
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 py-6 flex flex-col gap-5">
+      {/* Full-width container */}
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col gap-5">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-baseline gap-4 flex-wrap">
-          <h1
-            className="text-2xl font-bold tracking-widest text-amber-400 uppercase"
-            style={{ fontFamily: "'Cinzel', serif", textShadow: "0 0 20px rgba(251,191,36,0.35)" }}
-          >
+          <h1 className="text-2xl font-bold tracking-widest text-amber-400 uppercase">
             Equipment &amp; Bag
           </h1>
           {playerInfo && (
@@ -318,77 +347,116 @@ const Inventory = () => {
           )}
           {inventory && (
             <span className="ml-auto text-xs text-stone-500">
-              📦 {inventory.used}/{inventory.capacity} &nbsp;·&nbsp;
-              💰 {inventory.currency?.normal ?? 0} &nbsp;·&nbsp;
-              ✨ {inventory.currency?.spec ?? 0}
+              📦 {inventory.used}/{inventory.capacity}
             </span>
           )}
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center h-72">
-            <div
-              className="text-amber-600/70 animate-pulse text-lg tracking-widest"
-              style={{ fontFamily: "'Cinzel', serif" }}
-            >
+            <div className="text-amber-600/70 animate-pulse text-lg tracking-widest">
               Loading...
             </div>
           </div>
         ) : (
-          <div className="flex gap-5">
+          /* Two-column layout: character panel (left) + bag panel (right) */
+          <div className="grid grid-cols-[1fr_1fr] gap-5">
 
-            {/* ══ LEFT PANEL ══════════════════════════════════════════════════ */}
-            <div className="flex flex-col gap-3 w-64 shrink-0">
+            {/* ══ LEFT: Character + equipment + stats ══════════════════════ */}
+            <div className="flex flex-col gap-4">
 
-              {/* Character portrait */}
-              <div className="relative w-full h-48 md:h-56 bg-stone-900/70 rounded-xl border-4 border-amber-900/60 shadow-2xl p-2 backdrop-blur-sm overflow-hidden">
-                <div className="relative w-full h-full">
-                  <PlayerCharacter playerInfo={playerInfo} />
+              {/* Portrait panel */}
+              <div
+                className="rounded-2xl border border-stone-800/50 p-4"
+                style={{ background: "rgba(14,7,2,0.88)", backdropFilter: "blur(8px)" }}
+              >
+                {/* 3-col: left slots | portrait | right slots */}
+                <div className="grid grid-cols-[1fr_2fr_1fr] gap-3 items-stretch">
+
+                  {/* Left slots */}
+                  <div className="flex flex-col gap-2 justify-around">
+                    {leftSlots.map((slotKey) => {
+                      const eqItem = getEquippedItem(slotKey);
+                      return (
+                        <EquipSlot
+                          key={slotKey}
+                          slotKey={slotKey}
+                          equippedItem={eqItem}
+                          onClick={eqItem
+                            ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
+                            : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+
+                  {/* Portrait */}
+                  <div
+                    className="relative rounded-xl border-4 border-amber-900/60 overflow-hidden shadow-2xl backdrop-blur-sm"
+                    style={{
+                      height: "275px",
+                      background: "rgba(28, 25, 23, 0.7)",
+                    }}
+                  >
+                    <PlayerCharacter playerInfo={playerInfo} />
+                  </div>
+
+                  {/* Right slots */}
+                  <div className="flex flex-col gap-2 justify-around">
+                    {rightSlots.map((slotKey) => {
+                      const eqItem = getEquippedItem(slotKey);
+                      return (
+                        <EquipSlot
+                          key={slotKey}
+                          slotKey={slotKey}
+                          equippedItem={eqItem}
+                          onClick={eqItem
+                            ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
+                            : undefined
+                          }
+                        />
+                      );
+                    })}
+                  </div>
+
                 </div>
+
+                {/* Level + XP bar */}
                 {playerInfo && (
-                  <div className="absolute top-2 right-2 z-30 bg-stone-950/90 border border-amber-800/50 rounded-lg px-2 py-1 text-center">
-                    <div className="text-amber-400 text-xs font-bold" style={{ fontFamily: "'Cinzel', serif" }}>
-                      Lv.{playerInfo.lvl}
+                  <div className="mt-4 flex flex-col items-center gap-1.5">
+                    <span className="text-amber-400 text-sm font-bold">
+                      Level {playerInfo.lvl}
+                    </span>
+                    <div className="w-full h-2 rounded-full bg-stone-900/80 border border-stone-700/40 overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (playerInfo.xp / (playerInfo.xpForNext || 1)) * 100)}%`,
+                          background: "linear-gradient(90deg, #b45309, #f59e0b)",
+                          boxShadow: "0 0 6px rgba(251,191,36,0.5)",
+                        }}
+                      />
                     </div>
-                    <div className="text-stone-500 text-[9px]">
+                    <span className="text-stone-500 text-[10px]">
                       {playerInfo.xp} / {playerInfo.xpForNext} XP
-                    </div>
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Equipment slots */}
-              <Panel title="Equipment">
-                <div className="flex flex-col gap-1.5">
-                  {Object.keys(SLOT_LABELS).map((slotKey) => {
-                    const eqItem = getEquippedItem(slotKey);
-                    return (
-                      <EquipSlot
-                        key={slotKey}
-                        slotKey={slotKey}
-                        equippedItem={eqItem}
-                        onClick={eqItem
-                          ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
-                          : undefined
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              </Panel>
-
               {/* Statistics */}
               <Panel title="Statistics">
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                   {Object.entries(STAT_LABELS).map(([key, { label }]) => (
-                    <div key={key} className="flex items-center gap-2">
-                      <span className="text-stone-400 text-xs flex-1">{label}</span>
-                      <span className="text-amber-300 text-xs font-bold w-6 text-right">
+                    <div key={key} className="flex items-center gap-3">
+                      <span className="text-stone-400 text-sm flex-1">{label}</span>
+                      <span className="text-amber-300 text-sm font-bold w-8 text-right">
                         {playerInfo?.stats?.[key] ?? 0}
                       </span>
                       <button
                         title="Coming soon"
-                        className="w-5 h-5 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-xs flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90"
+                        className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90"
                       >
                         +
                       </button>
@@ -399,17 +467,15 @@ const Inventory = () => {
 
               {/* Active Effects */}
               <Panel title="Active Effects">
-                <div className="text-stone-600 text-xs italic">No active effects</div>
+                <div className="text-stone-600 text-sm italic">No active effects</div>
               </Panel>
 
             </div>
 
-            {/* ══ RIGHT PANEL ═════════════════════════════════════════════════ */}
-            <div className="flex-1 flex flex-col gap-3">
-
-              {/* Bag grid – uses ItemSlotTile from Item.jsx */}
+            {/* ══ RIGHT: Bag ═══════════════════════════════════════════════ */}
+            <div className="flex flex-col gap-4">
               <Panel title="Bag">
-                <div className="grid grid-cols-5 gap-2.5">
+                <div className="grid grid-cols-5 gap-3">
                   {slots.map((item, idx) => {
                     const actions = [];
                     if (item && isEquippable(item)) actions.push("equip");
@@ -424,44 +490,13 @@ const Inventory = () => {
                   })}
                 </div>
               </Panel>
-
-              {/* Detailed item list – uses ItemDetailRow from Item.jsx */}
-              {(inventory?.items?.length ?? 0) > 0 && (
-                <Panel title="Item Details">
-                  <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1 scrollbar-thin">
-                    {inventory.items.map((item, idx) => {
-                      const isEquipped = Object.values(inventory.equipped ?? {}).includes(item.id);
-                      const equippedSlot = isEquipped
-                        ? Object.entries(inventory.equipped).find(([, v]) => v === item.id)?.[0]
-                        : null;
-                      const actions = [];
-                      if (isEquipped) {
-                        actions.push("unequip");
-                      } else if (isEquippable(item)) {
-                        actions.push("equip");
-                      }
-                      actions.push("sell");
-
-                      return (
-                        <ItemDetailRow
-                          key={idx}
-                          item={item}
-                          isEquipped={isEquipped}
-                          onClick={(e) => openActionMenu(item, actions, equippedSlot, e)}
-                        />
-                      );
-                    })}
-                  </div>
-                </Panel>
-              )}
-
             </div>
+
           </div>
         )}
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(180,120,40,0.25); border-radius: 2px; }

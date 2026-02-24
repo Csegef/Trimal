@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Link } from 'react-router-dom';
 
 // TODO: BACKEND - This layout is specific for authenticated users.
-const GameLayout = ({ children }) => {
+const GameLayout = ({ children, currency }) => {
   const navigate = useNavigate();
 
 
@@ -73,11 +73,11 @@ const GameLayout = ({ children }) => {
             <div className="flex flex-col gap-1 bg-stone-900/40 p-1.5 rounded-lg border border-stone-700/50">
               <div className="flex items-center gap-2" title="Normal Currency">
                 <img src="/src/assets/design/currency/currency-normal.png" alt="Gold" className="w-5 h-5 drop-shadow" />
-                <span className="text-amber-300 font-bold text-sm drop-shadow-md">0</span> {/* TODO: Connect to User Data */}
+                <span className="text-amber-300 font-bold text-sm drop-shadow-md">{currency?.normal ?? 0}</span>
               </div>
               <div className="flex items-center gap-2" title="Special Currency">
                 <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-5 h-5 drop-shadow" />
-                <span className="text-purple-300 font-bold text-sm drop-shadow-md">0</span> {/* TODO: Connect to User Data */}
+                <span className="text-purple-300 font-bold text-sm drop-shadow-md">{currency?.spec ?? 0}</span>
               </div>
             </div>
           </div>

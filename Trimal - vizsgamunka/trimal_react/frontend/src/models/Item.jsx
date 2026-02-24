@@ -88,8 +88,11 @@ export function resolveItemImagePath(item) {
     if (!item?.iconPath) return null;
 
     const rarity = (item.rarity || "common").toLowerCase();
-    const category = (item.category || "").toLowerCase();
-    const base = "/assets/design/items";
+    // Normalise legacy typo: 'resistence' → 'resistance'
+    const rawCategory = (item.category || "").toLowerCase();
+    const category = rawCategory === "resistence" ? "resistance" : rawCategory;
+    // Vite serves src/ assets via /src/... in dev mode (symlink: src/assets/design -> Graphics)
+    const base = "/src/assets/design/items";
 
     switch (item.type) {
         case "weapon":
@@ -99,7 +102,7 @@ export function resolveItemImagePath(item) {
             return `${base}/armor/${rarity}/${item.iconPath}`;
 
         case "food":
-            // food sub-folder is the buff category (heal, agility, strength, luck, resistence)
+            // food sub-folder is the buff category (heal, agility, strength, luck, resistance)
             return `${base}/food/${category}/${item.iconPath}`;
 
         case "misc":
@@ -170,6 +173,8 @@ export function getItemStats(item) {
 // A single square tile used in the bag grid.
 
 export function ItemSlotTile({ item, onClick }) {
+    const [hovered, setHovered] = React.useState(false);
+
     if (!item) {
         return (
             <div className="w-full aspect-square rounded-lg border border-stone-800/40 bg-stone-950/30 flex items-center justify-center select-none">
@@ -182,94 +187,86 @@ export function ItemSlotTile({ item, onClick }) {
     const imageSrc = resolveItemImagePath(item);
 
     return (
-        <button
-            onClick={onClick}
-            style={{
-                borderColor: RARITY_COLOR[rarity],
-                boxShadow: `0 0 8px ${RARITY_GLOW[rarity]}`,
-            }}
-            className="relative w-full aspect-square rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1 p-1 hover:scale-105 transition-all duration-150"
+        <div
+            className="relative w-full aspect-square"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
         >
-            {imageSrc ? (
-                <img
-                    src={imageSrc}
-                    alt={item.name}
-                    className="w-8 h-8 object-contain"
-                    onError={(e) => { e.target.style.display = "none"; }}
-                />
-            ) : (
-                <span className="text-xl">{getItemIcon(item)}</span>
-            )}
-            <span
-                className="text-[9px] font-bold text-center leading-tight truncate w-full px-0.5"
-                style={{ color: RARITY_COLOR[rarity] }}
+            <button
+                onClick={onClick}
+                style={{
+                    borderColor: RARITY_COLOR[rarity],
+                    boxShadow: `0 0 8px ${RARITY_GLOW[rarity]}`,
+                }}
+                className="relative w-full h-full rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1 p-1 hover:scale-105 transition-all duration-150"
             >
-                {item.name}
-            </span>
-            {item.quantity > 1 && (
-                <span className="absolute bottom-1 right-1 text-[9px] text-amber-400 font-bold bg-stone-900/80 px-1 rounded">
-                    x{item.quantity}
-                </span>
-            )}
-        </button>
-    );
-}
-
-// ─── ItemDetailRow ────────────────────────────────────────────────────────────
-// One row in the "Item Details" list panel.
-
-export function ItemDetailRow({ item, isEquipped, onClick }) {
-    const rarity = (item.rarity || "common").toLowerCase();
-    const stats = getItemStats(item);
-    const imageSrc = resolveItemImagePath(item);
-
-    return (
-        <button
-            onClick={onClick}
-            className="flex items-start gap-3 rounded-lg px-3 py-2 border text-left hover:bg-stone-900/40 transition-colors w-full"
-            style={{
-                borderColor: RARITY_COLOR[rarity] + "44",
-                background: "rgba(18,10,3,0.55)",
-            }}
-        >
-            {/* Icon */}
-            <span className="text-base mt-0.5 shrink-0">
-                {imageSrc
-                    ? <img src={imageSrc} alt={item.name} className="w-5 h-5 object-contain" onError={(e) => { e.target.style.display = "none"; }} />
-                    : getItemIcon(item)
-                }
-            </span>
-
-            {/* Name + description + stats */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold truncate" style={{ color: RARITY_COLOR[rarity] }}>
-                        {item.name}
-                    </span>
-                    {isEquipped && (
-                        <span className="text-[9px] bg-amber-900/40 border border-amber-700/40 text-amber-500 px-1 rounded shrink-0">
-                            ✓ equipped
-                        </span>
-                    )}
-                </div>
-                {item.description && (
-                    <div className="text-[10px] text-stone-500 truncate">{item.description}</div>
+                {imageSrc ? (
+                    <img
+                        src={imageSrc}
+                        alt={item.name}
+                        className="w-23 h-23 object-contain"
+                        onError={(e) => { e.target.style.display = "none"; }}
+                    />
+                ) : (
+                    <span className="text-3xl">{getItemIcon(item)}</span>
                 )}
-                {/* Type-specific stats */}
-                <div className="flex flex-wrap gap-x-3 mt-0.5">
-                    {stats.map(({ label, value }) => (
-                        <span key={label} className="text-[9px] text-stone-600">
-                            <span className="text-stone-500">{label}:</span> {value}
-                        </span>
-                    ))}
-                </div>
-            </div>
+                {item.quantity > 1 && (
+                    <span className="absolute bottom-1 right-1 text-[9px] text-amber-400 font-bold bg-stone-900/80 px-1 rounded">
+                        x{item.quantity}
+                    </span>
+                )}
+            </button>
 
-            {/* Quantity + sell price */}
-            <div className="text-right shrink-0">
-                <div className="text-xs text-amber-400">x{item.quantity}</div>
-                <div className="text-[10px] text-stone-600">💰 {item.sell_price ?? 0}</div>
-            </div>
-        </button>
+            {/* Hover description tooltip */}
+            {hovered && (
+                <div
+                    className="absolute z-50 bottom-[110%] left-1/2 -translate-x-1/2 pointer-events-none"
+                    style={{ minWidth: "150px", maxWidth: "210px" }}
+                >
+                    <div
+                        className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug shadow-2xl border border-stone-700/70"
+                        style={{
+                            background: "rgba(12,7,2,0.97)",
+                            borderColor: RARITY_COLOR[rarity] + "55",
+                        }}
+                    >
+                        {/* Name */}
+                        <div
+                            className="font-bold text-[12px] leading-tight mb-1"
+                            style={{ color: RARITY_COLOR[rarity] }}
+                        >
+                            {item.name}
+                        </div>
+                        {/* Rarity badge */}
+                        <div className="mb-1.5">
+                            <span
+                                className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded"
+                                style={{
+                                    color: RARITY_COLOR[rarity],
+                                    background: RARITY_COLOR[rarity] + "22",
+                                    border: `1px solid ${RARITY_COLOR[rarity]}44`,
+                                }}
+                            >
+                                {rarity}
+                            </span>
+                        </div>
+                        {/* Description */}
+                        {item.description && (
+                            <div className="text-stone-400 text-[10px] leading-snug">
+                                {item.description}
+                            </div>
+                        )}
+                    </div>
+                    {/* Arrow */}
+                    <div
+                        className="mx-auto w-2 h-2 rotate-45 -mt-1"
+                        style={{ background: "rgba(12,7,2,0.97)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
+                    />
+                </div>
+            )}
+        </div>
     );
 }
+
+// ItemDetailRow has been removed.
+// Item descriptions are now shown as hover tooltips on ItemSlotTile.
