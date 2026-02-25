@@ -8,3 +8,11 @@ Symlink letrehozasa:
 
 
 ****Ha esetleg nem indul el az azert van mert nem van abban a mappaban amiben a setup-symlinks.bat van. Ilyenkor azt kell csinalnod, hogy megnyitod a cmd abban a mappaban amiben a setup-symlinks.bat van es onnan elinditani azt -> siman csak beirod, hogy "setup-symlinks.bat" majd Enter-t.
+
+
+
+
+
+
+Php-k betoltese:
+-a test_phps-ben levo fajlokat illeszd be a xampp/htdocs/trimal mappajaba. Ha nincs trimal akkor csinalj egyet

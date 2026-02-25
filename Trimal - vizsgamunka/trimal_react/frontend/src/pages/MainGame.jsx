@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import GameLayout from "../layouts/GameLayout";
+import { useNavigate } from "react-router-dom";
 
 const MainGame = () => {
   const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Felhasználói adatok betöltése localStorage-ból
@@ -49,7 +51,10 @@ const MainGame = () => {
   return (
     <GameLayout>
       {/* Player Image (Bottom Left) - Framed */}
-      <div className="absolute bottom-4 left-4 w-40 h-40 md:w-48 md:h-48 z-20 bg-stone-900/70 rounded-xl border-4 border-amber-900/60 shadow-2xl p-2 backdrop-blur-sm">
+      <div
+        onClick={() => navigate("/inventory")}
+        className="absolute bottom-4 left-4 w-40 h-40 md:w-48 md:h-48 z-20 bg-stone-900/70 rounded-xl border-4 hover:border-amber-600/60 transition-colors border-amber-900/60 shadow-2xl p-2 backdrop-blur-sm cursor-pointer"
+      >
         <div className="relative w-full h-full">
           {getPlayerImage()}
         </div>

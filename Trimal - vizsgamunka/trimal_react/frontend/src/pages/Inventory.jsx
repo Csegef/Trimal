@@ -342,7 +342,7 @@ const Inventory = () => {
           </h1>
           {playerInfo && (
             <span className="text-stone-400 text-sm">
-              {playerInfo.name} · <span className="text-amber-600">{playerInfo.class}</span> · Level {playerInfo.lvl}
+              {playerInfo.name}
             </span>
           )}
           {inventory && (
