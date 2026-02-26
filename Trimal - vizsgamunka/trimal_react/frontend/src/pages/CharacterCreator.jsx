@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import PlayerPortrait from "../components/PlayerPortrait";
 
 const CharacterCreator = () => {
   const { state } = useLocation();
@@ -46,30 +47,11 @@ const CharacterCreator = () => {
         <div className="relative w-70 md:w-100 aspect-square bg-stone-900/50 rounded-xl md:rounded-2xl border-3 md:border-4 border-stone-700 shadow-xl shrink-0 backdrop-blur-sm overflow-hidden">
           {/* Character Layers Container - Centered */}
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* Base Layer */}
-            <img
-              src={`./src/assets/design/character/base_character/${prefix}_base.png`}
-              alt="Base Character"
-              className="absolute z-0 h-full w-auto object-contain"
+            <PlayerPortrait
+              className={selectedClass.name}
+              hairStyle={hairIndex}
+              beardStyle={beardIndex}
             />
-
-            {/* Hair Layer */}
-            {hairIndex > 0 && (
-              <img
-                src={`/assets/character/hair/${prefix}-hair-${hairIndex}.png`}
-                alt="Hair"
-                className="absolute z-10 h-full w-auto object-contain"
-              />
-            )}
-
-            {/* Beard Layer */}
-            {beardIndex > 0 && (
-              <img
-                src={`/assets/character/beard/${prefix}-beard-${beardIndex}.png`}
-                alt="Beard"
-                className="absolute z-20 h-full w-auto object-contain"
-              />
-            )}
           </div>
         </div>
 

@@ -29,10 +29,10 @@ async function loadInventory(pool, specieId) {
     items: [],
     equipped: {
       weapon: null,
-      armor_head: null,
-      armor_chest: null,
-      armor_legs: null,
-      armor_feet: null,
+      armor_cap: null,
+      armor_plate: null,
+      armor_leggings: null,
+      armor_boots: null,
     },
   };
 }
@@ -112,24 +112,48 @@ router.post('/equip', async (req, res) => {
     if (!slot || itemId == null)
       return res.status(400).json({ success: false, message: 'Missing: slot, itemId' });
 
-    const validSlots = ['weapon', 'armor_head', 'armor_chest', 'armor_legs', 'armor_feet'];
+    const validSlots = ['weapon', 'armor_cap', 'armor_plate', 'armor_leggings', 'armor_boots'];
     if (!validSlots.includes(slot))
-      return res.status(400).json({ success: false, message: 'Invalid equipment slot' });
+      return res.status(400).json({ success: false, message: 'Invalid equipment slot: ' + slot });
 
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
-    const item = inv.items.find(i => i.id == itemId);
-    if (!item) return res.status(400).json({ success: false, message: 'Item not found in inventory' });
+    // Find item in inventory
+    const itemIdx = inv.items.findIndex(i => i.id == itemId);
+    if (itemIdx === -1) return res.status(400).json({ success: false, message: 'Item not found in inventory' });
+    const item = inv.items[itemIdx];
 
     if (slot === 'weapon' && item.type !== 'weapon')
       return res.status(400).json({ success: false, message: 'Item is not a weapon' });
     if (slot.startsWith('armor_') && item.type !== 'armor')
       return res.status(400).json({ success: false, message: 'Item is not armor' });
 
-    inv.equipped[slot] = itemId;
+    // If something is already in this slot, push it back to items first
+    const currentlyEquipped = inv.equipped[slot];
+    if (currentlyEquipped && typeof currentlyEquipped === 'object') {
+      const existing = inv.items.find(i => i.id == currentlyEquipped.id && i.type === currentlyEquipped.type);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        inv.items.push(currentlyEquipped);
+      }
+    }
+
+    // Move item from items[] into the equipped slot
+    if (item.quantity > 1) {
+      inv.items[itemIdx].quantity -= 1;
+      const equippedObj = { ...item, quantity: 1 };
+      inv.equipped[slot] = equippedObj;
+    } else {
+      // Remove from items array entirely
+      inv.items.splice(itemIdx, 1);
+      inv.equipped[slot] = { ...item, quantity: 1 };
+    }
+
+    recalcUsed(inv);
     await saveInventory(req.pool, req.user.specieId, inv);
-    res.json({ success: true, message: 'Item equipped' });
+    res.json({ success: true, message: 'Item equipped', inventory: inv });
   } catch (err) {
     console.error('[Inventory] POST /equip error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -146,9 +170,24 @@ router.post('/unequip', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
+    const equippedItem = inv.equipped[slot];
+    if (!equippedItem)
+      return res.status(400).json({ success: false, message: 'Slot is already empty' });
+
+    // Put the item back into the bag
+    if (typeof equippedItem === 'object') {
+      const existing = inv.items.find(i => i.id == equippedItem.id && i.type === equippedItem.type);
+      if (existing) {
+        existing.quantity += 1;
+      } else {
+        inv.items.push(equippedItem);
+      }
+    }
+
     inv.equipped[slot] = null;
+    recalcUsed(inv);
     await saveInventory(req.pool, req.user.specieId, inv);
-    res.json({ success: true, message: 'Item unequipped' });
+    res.json({ success: true, message: 'Item unequipped', inventory: inv });
   } catch (err) {
     console.error('[Inventory] POST /unequip error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -170,7 +209,10 @@ router.post('/sell', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Item not found' });
 
     const item = inv.items[idx];
-    const isEquipped = Object.values(inv.equipped || {}).includes(item.id);
+    // Check if item is equipped (now stored as objects)
+    const isEquipped = Object.values(inv.equipped || {}).some(
+      e => e && typeof e === 'object' && e.id == item.id
+    );
     if (isEquipped)
       return res.status(400).json({ success: false, message: 'Cannot sell an equipped item' });
 

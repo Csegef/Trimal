@@ -13,17 +13,19 @@ import {
   RARITY_GLOW,
   isEquippable,
   resolveEquipSlot,
+  resolveItemImagePath,
   ItemSlotTile,
 } from "../models/Item";
+import PlayerPortrait from "../components/PlayerPortrait";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SLOT_LABELS = {
   weapon: { label: "Weapon" },
-  armor_head: { label: "Helmet" },
-  armor_chest: { label: "Chest" },
-  armor_legs: { label: "Legs" },
-  armor_feet: { label: "Boots" },
+  armor_cap: { label: "Helmet" },
+  armor_plate: { label: "Chest" },
+  armor_leggings: { label: "Legs" },
+  armor_boots: { label: "Boots" },
 };
 
 const STAT_LABELS = {
@@ -45,90 +47,50 @@ function PlayerCharacter({ playerInfo }) {
   }
 
   const cls = char?.className || playerInfo?.class || "Neanderthal";
-  const prefix = cls === "Sapiens" ? "s" : cls === "Floresiensis" ? "f" : "n";
-
-  const parseStyle = (val) => {
-    if (val == null) return 0;
-    if (typeof val === "number") return val;
-    const m = String(val).match(/(\d+)$/);
-    return m ? parseInt(m[1], 10) : 0;
-  };
-
-  const hairStyle = char?.hairStyle != null ? parseStyle(char.hairStyle) : parseStyle(playerInfo?.hairStyle);
-  const beardStyle = char?.beardStyle != null ? parseStyle(char.beardStyle) : parseStyle(playerInfo?.beardStyle);
+  const hairStyle = char?.hairStyle ?? playerInfo?.hairStyle;
+  const beardStyle = char?.beardStyle ?? playerInfo?.beardStyle;
 
   return (
-    <div className="relative w-full h-full">
-      <img
-        src={`/src/assets/design/character/base_character/${prefix}_base.png`}
-        alt="Character"
-        className="absolute z-0 h-full w-auto object-contain bottom-0 left-0"
-      />
-      {hairStyle > 0 && (
-        <img
-          src={`/src/assets/design/character/hair/${prefix}-hair-${hairStyle}.png`}
-          alt="Hair"
-          className="absolute z-10 h-full w-auto object-contain bottom-0 left-0"
-        />
-      )}
-      {beardStyle > 0 && (
-        <img
-          src={`/src/assets/design/character/beard/${prefix}-beard-${beardStyle}.png`}
-          alt="Beard"
-          className="absolute z-20 h-full w-auto object-contain bottom-0 left-0"
-        />
-      )}
-    </div>
+    <PlayerPortrait
+      className={cls}
+      hairStyle={hairStyle}
+      beardStyle={beardStyle}
+    />
   );
 }
 
 // ─── EquipSlot ────────────────────────────────────────────────────────────────
 
 function EquipSlot({ slotKey, equippedItem, onClick }) {
-  const { label } = SLOT_LABELS[slotKey];
-  const rarity = equippedItem?.rarity || "common";
+  const slotData = SLOT_LABELS[slotKey] || { label: slotKey };
+  const { label } = slotData;
+  const rarity = (equippedItem?.rarity || "common").toLowerCase();
   const isEmpty = !equippedItem;
 
   return (
     <button
       onClick={onClick}
+      title={equippedItem ? equippedItem.name : label}
       style={{
         borderColor: isEmpty ? "rgba(120,85,50,0.35)" : RARITY_COLOR[rarity],
-        boxShadow: isEmpty ? "none" : `0 0 10px ${RARITY_GLOW[rarity]}`,
-        background: "rgba(14,7,2,0.85)",
+        boxShadow: isEmpty ? "none" : `0 0 8px ${RARITY_GLOW[rarity]}`,
       }}
-      className="flex flex-col items-center justify-center w-full h-20 rounded-xl border-2 backdrop-blur-sm transition-all duration-200 hover:bg-stone-900/60 gap-1 px-2"
+      className="relative flex items-center justify-center w-full h-20 rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm transition-all duration-150 hover:scale-105 p-1"
     >
-      <span className="text-[9px] text-amber-700/60 uppercase tracking-widest leading-none">
-        {label}
-      </span>
       {equippedItem ? (
-        <>
-          {equippedItem.iconPath ? (
-            <img
-              src={equippedItem.iconPath}
-              alt={equippedItem.name}
-              className="w-8 h-8 object-contain"
-              onError={(e) => { e.target.style.display = "none"; }}
-            />
-          ) : (
-            <span className="text-xl">
-              {equippedItem.type === "weapon" ? "⚔" : "🛡"}
-            </span>
-          )}
-          <span
-            className="text-[9px] font-semibold truncate w-full text-center leading-tight"
-            style={{ color: RARITY_COLOR[rarity] }}
-          >
-            {equippedItem.name}
-          </span>
-        </>
+        <img
+          src={resolveItemImagePath(equippedItem)}
+          alt={equippedItem.name}
+          className="w-14 h-14 object-contain"
+          onError={(e) => { e.target.style.display = "none"; }}
+        />
       ) : (
-        <span className="text-stone-700 text-xs italic">Empty</span>
+        <span className="text-stone-700 text-[10px] italic uppercase tracking-widest">{label}</span>
       )}
     </button>
   );
 }
+
 
 // ─── ActionMenu ───────────────────────────────────────────────────────────────
 
@@ -301,16 +263,27 @@ const Inventory = () => {
   }, [busy, actionMenu, showToast, load]);
 
   const getEquippedItem = (slotKey) => {
-    const eqId = inventory?.equipped?.[slotKey];
-    return eqId ? (inventory.items.find((i) => i.id === eqId) ?? null) : null;
+    const eqItem = inventory?.equipped?.[slotKey];
+    // With the new PHP logic, equipped slots store the full item object instead of an integer ID.
+    // If it's a legacy INT ID, fallback to finding it in items (though our items won't contain it anymore).
+    if (eqItem && typeof eqItem === "object") {
+      return eqItem;
+    }
+    return eqItem ? (inventory.items.find((i) => i.id === eqItem) ?? null) : null;
   };
 
-  const slots = Array.from({ length: INVENTORY_SLOT_COUNT }, (_, i) =>
-    inventory?.items?.[i] ?? null
+  // Build the set of equipped item IDs to exclude from the grid
+  const equippedItemIds = new Set(
+    Object.values(inventory?.equipped || {}).filter(Boolean).map(e => e?.id).filter(Boolean)
   );
+  const slots = Array.from({ length: INVENTORY_SLOT_COUNT }, (_, i) => {
+    // Filter out equipped items so they only appear in their slots
+    const unequippedItems = (inventory?.items || []).filter(item => !equippedItemIds.has(item.id));
+    return unequippedItems[i] ?? null;
+  });
 
-  const leftSlots = ["weapon", "armor_head", "armor_chest"];
-  const rightSlots = ["armor_legs", "armor_feet"];
+  const leftSlots = ["weapon", "armor_cap", "armor_plate"];
+  const rightSlots = ["armor_leggings", "armor_boots"];
 
   return (
     <GameLayout currency={inventory?.currency}>

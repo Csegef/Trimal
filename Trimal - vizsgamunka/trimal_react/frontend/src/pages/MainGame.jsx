@@ -1,16 +1,32 @@
 import React, { useEffect, useState } from "react";
 import GameLayout from "../layouts/GameLayout";
 import { useNavigate } from "react-router-dom";
+import PlayerPortrait from "../components/PlayerPortrait";
 
 const MainGame = () => {
   const [userData, setUserData] = useState(null);
+  const [currency, setCurrency] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Felhasználói adatok betöltése localStorage-ból
     const storedData = localStorage.getItem('userData');
     if (storedData) {
       setUserData(JSON.parse(storedData));
+    }
+
+    // Betöltjük a currency-t az inventory API-ból
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/inventory', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data?.currency) {
+            setCurrency(res.data.currency);
+          }
+        })
+        .catch(() => { });
     }
   }, []);
 
@@ -18,38 +34,17 @@ const MainGame = () => {
     if (!userData || !userData.character) return null;
     const { className, hairStyle, beardStyle } = userData.character;
 
-    // Map className to prefix (e.g., Neanderthal -> n, Sapiens -> s, Floresiensis -> f)
-    let prefix = 'n';
-    if (className === 'Sapiens') prefix = 's';
-    if (className === 'Floresiensis') prefix = 'f';
-
     return (
-      <div className="relative w-full h-full">
-        <img
-          src={`/src/assets/design/character/base_character/${prefix}_base.png`}
-          alt="Base Character"
-          className="absolute z-0 h-full w-auto object-contain bottom-0 left-0"
-        />
-        {hairStyle > 0 && (
-          <img
-            src={`/src/assets/design/character/hair/${prefix}-hair-${hairStyle}.png`}
-            alt="Hair"
-            className="absolute z-10 h-full w-auto object-contain bottom-0 left-0"
-          />
-        )}
-        {beardStyle > 0 && (
-          <img
-            src={`/src/assets/design/character/beard/${prefix}-beard-${beardStyle}.png`}
-            alt="Beard"
-            className="absolute z-20 h-full w-auto object-contain bottom-0 left-0"
-          />
-        )}
-      </div>
-    )
-  }
+      <PlayerPortrait
+        className={className}
+        hairStyle={hairStyle}
+        beardStyle={beardStyle}
+      />
+    );
+  };
 
   return (
-    <GameLayout>
+    <GameLayout currency={currency}>
       {/* Player Image (Bottom Left) - Framed */}
       <div
         onClick={() => navigate("/inventory")}

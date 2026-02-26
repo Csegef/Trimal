@@ -143,11 +143,12 @@ export async function unequipItem(slot) {
 export function resolveEquipSlot(item) {
   if (item.type === 'weapon') return 'weapon';
   if (item.type === 'armor') {
-    const cat = (item.category || '').toLowerCase();
-    if (cat.includes('head') || cat.includes('sisak') || cat.includes('helm'))   return 'armor_head';
-    if (cat.includes('chest') || cat.includes('mellvért') || cat.includes('body')) return 'armor_chest';
-    if (cat.includes('leg') || cat.includes('nadrág') || cat.includes('pants'))  return 'armor_legs';
-    if (cat.includes('feet') || cat.includes('cipő') || cat.includes('boot'))   return 'armor_feet';
+    const icon = (item.iconPath || '').toLowerCase();
+    if (icon.includes('cap') || icon.includes('helmet') || icon.includes('head')) return 'armor_cap';
+    if (icon.includes('plate') || icon.includes('chest') || icon.includes('body')) return 'armor_plate';
+    if (icon.includes('leggings') || icon.includes('leg') || icon.includes('pant')) return 'armor_leggings';
+    if (icon.includes('boots') || icon.includes('boot') || icon.includes('feet') || icon.includes('shoe')) return 'armor_boots';
+    return 'armor_plate'; // fallback
   }
   return null;
 }

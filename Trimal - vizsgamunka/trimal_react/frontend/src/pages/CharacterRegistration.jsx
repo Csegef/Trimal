@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
+import PlayerPortrait from "../components/PlayerPortrait";
 
 const CharacterRegistration = () => {
   const { state } = useLocation();
@@ -172,30 +173,11 @@ const CharacterRegistration = () => {
           {/* Karakter mini preview */}
           <div className="relative w-full aspect-square max-w-70 mx-auto bg-stone-900/50 rounded-xl border-2 border-stone-700 shadow-lg overflow-hidden mb-4">
             <div className="absolute inset-0 flex items-center justify-center">
-              {/* Base Layer */}
-              <img
-                src={`./src/assets/design/character/base_character/${selectedClass.prefix}_base.png`}
-                alt="Base Character"
-                className="absolute z-0 h-full w-auto object-contain"
+              <PlayerPortrait
+                className={selectedClass.name}
+                hairStyle={hairIndex}
+                beardStyle={beardIndex}
               />
-
-              {/* Hair Layer */}
-              {hairIndex > 0 && (
-                <img
-                  src={`/src/assets/design/character/hair/${selectedClass.prefix}-hair-${hairIndex}.png`}
-                  alt="Hair"
-                  className="absolute z-10 h-full w-auto object-contain"
-                />
-              )}
-
-              {/* Beard Layer */}
-              {beardIndex > 0 && (
-                <img
-                  src={`/src/assets/design/character/beard/${selectedClass.prefix}-beard-${beardIndex}.png`}
-                  alt="Beard"
-                  className="absolute z-20 h-full w-auto object-contain"
-                />
-              )}
             </div>
           </div>
 
