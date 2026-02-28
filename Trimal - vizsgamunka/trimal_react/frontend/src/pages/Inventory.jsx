@@ -6,6 +6,8 @@ import {
   equipItem,
   unequipItem,
   sellItem,
+  upgradeStat,
+  useItem,
   AuthError,
 } from "../api/inventoryApi";
 import {
@@ -29,13 +31,13 @@ const SLOT_LABELS = {
 };
 
 const STAT_LABELS = {
+  health: { label: "Health" },
   strength: { label: "Strength" },
   agility: { label: "Agility" },
-  intelligence: { label: "Intelligence" },
-  endurance: { label: "Endurance" },
+  luck: { label: "Luck" },
+  resistance: { label: "Resistance" },
+  armor: { label: "Armor" },
 };
-
-const INVENTORY_SLOT_COUNT = 10;
 
 // ─── PlayerCharacter ──────────────────────────────────────────────────────────
 
@@ -59,35 +61,120 @@ function PlayerCharacter({ playerInfo }) {
   );
 }
 
-// ─── EquipSlot ────────────────────────────────────────────────────────────────
-
-function EquipSlot({ slotKey, equippedItem, onClick }) {
+function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
   const slotData = SLOT_LABELS[slotKey] || { label: slotKey };
   const { label } = slotData;
   const rarity = (equippedItem?.rarity || "common").toLowerCase();
   const isEmpty = !equippedItem;
+  const [hovered, setHovered] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  // Reset image error state when equipped item changes
+  useEffect(() => {
+    setImgError(false);
+  }, [equippedItem]);
 
   return (
-    <button
-      onClick={onClick}
-      title={equippedItem ? equippedItem.name : label}
-      style={{
-        borderColor: isEmpty ? "rgba(120,85,50,0.35)" : RARITY_COLOR[rarity],
-        boxShadow: isEmpty ? "none" : `0 0 8px ${RARITY_GLOW[rarity]}`,
-      }}
-      className="relative flex items-center justify-center w-full h-20 rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm transition-all duration-150 hover:scale-105 p-1"
+    <div
+      className="relative w-full"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
-      {equippedItem ? (
-        <img
-          src={resolveItemImagePath(equippedItem)}
-          alt={equippedItem.name}
-          className="w-14 h-14 object-contain"
-          onError={(e) => { e.target.style.display = "none"; }}
-        />
-      ) : (
-        <span className="text-stone-700 text-[10px] italic uppercase tracking-widest">{label}</span>
+      <button
+        onClick={onClick}
+        title={equippedItem && !hovered ? equippedItem.name : isEmpty ? label : undefined}
+        style={{
+          borderColor: isEmpty ? "rgba(120,85,50,0.35)" : RARITY_COLOR[rarity],
+          boxShadow: isEmpty ? "none" : `0 0 8px ${RARITY_GLOW[rarity]}`,
+        }}
+        className="relative flex items-center justify-center w-full h-20 rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm transition-all duration-150 hover:scale-105 p-1"
+      >
+        {equippedItem ? (
+          !imgError ? (
+            <img
+              src={resolveItemImagePath(equippedItem)}
+              alt={equippedItem.name}
+              className="w-14 h-14 object-contain"
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <span className="text-3xl">{getItemIcon(equippedItem)}</span>
+          )
+        ) : (
+          <span className="text-stone-700 text-[10px] italic uppercase tracking-widest">{label}</span>
+        )}
+      </button>
+
+      {/* Hover description tooltip */}
+      {hovered && equippedItem && (
+        <div
+          className="absolute z-50 bottom-[110%] left-1/2 -translate-x-1/2 pointer-events-none"
+          style={{ minWidth: "150px", maxWidth: "210px" }}
+        >
+          <div
+            className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug shadow-2xl border border-stone-700/70"
+            style={{
+              background: "rgba(12,7,2,0.97)",
+              borderColor: RARITY_COLOR[rarity] + "55",
+            }}
+          >
+            {/* Name */}
+            <div
+              className="font-bold text-[12px] leading-tight mb-1"
+              style={{ color: RARITY_COLOR[rarity] }}
+            >
+              {equippedItem.name}
+            </div>
+            {/* Rarity badge */}
+            <div className="mb-1.5">
+              <span
+                className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded"
+                style={{
+                  color: RARITY_COLOR[rarity],
+                  background: RARITY_COLOR[rarity] + "22",
+                  border: `1px solid ${RARITY_COLOR[rarity]}44`,
+                }}
+              >
+                {rarity}
+              </span>
+            </div>
+            {/* Stats */}
+            {equippedItem.type === "weapon" && equippedItem.base_damage != null && (
+              <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                <span>Damage: {Math.round((equippedItem.weapon_damage || equippedItem.base_damage) * 1.25 * (1 + ((playerInfo?.stats?.strength ?? 10) / 10)))}</span>
+              </div>
+            )}
+            {equippedItem.type === "armor" && equippedItem.armor_point != null && (
+              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-1">
+                <span>Armor Point: {equippedItem.armor_point}</span>
+                {/* LATER: Implement incoming damage calc based on effective armor in combat 
+                        <span className="text-[9px] text-stone-400 font-normal leading-tight">
+                            Damage Taken: <br />
+                            (Incoming - Eff. Armor) × {(1 - ((playerInfo?.stats?.resistance ?? 10) / 100)).toFixed(2)}
+                        </span>
+                        */}
+              </div>
+            )}
+            {equippedItem.type === "food" && equippedItem.category && (
+              <div className="text-[10px] text-green-400 font-bold mb-1.5">
+                Grants a {rarity === "legendary" ? "large" : rarity === "epic" ? "medium" : "small"} bonus to {equippedItem.category}
+              </div>
+            )}
+            {/* Description */}
+            {equippedItem.description && (
+              <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800">
+                {equippedItem.description}
+              </div>
+            )}
+          </div>
+          {/* Arrow */}
+          <div
+            className="mx-auto w-2 h-2 rotate-45 -mt-1"
+            style={{ background: "rgba(12,7,2,0.97)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
+          />
+        </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -98,6 +185,7 @@ const ACTION_DEFS = {
   equip: { label: "Equip", color: "#60a5fa" },
   unequip: { label: "Unequip", color: "#f97316" },
   sell: { label: "Sell", color: "#fbbf24" },
+  use: { label: "Use", color: "#4ade80" },
 };
 
 function ActionMenu({ item, actions, position, onConfirm, onClose }) {
@@ -253,6 +341,9 @@ const Inventory = () => {
       } else if (action === "sell") {
         const res = await sellItem(item.type, item.id, 1);
         showToast(res.message);
+      } else if (action === "use") {
+        const res = await useItem(item.id);
+        showToast(res.message);
       }
       await load();
     } catch (err) {
@@ -261,6 +352,20 @@ const Inventory = () => {
       setBusy(false);
     }
   }, [busy, actionMenu, showToast, load]);
+
+  const handleUpgradeStat = useCallback(async (statKey) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await upgradeStat(statKey);
+      showToast(res.message);
+      await load(); // Reload to get updated stats and currency
+    } catch (err) {
+      showToast(err.message || "An error occurred", "error");
+    } finally {
+      setBusy(false);
+    }
+  }, [busy, showToast, load]);
 
   const getEquippedItem = (slotKey) => {
     const eqItem = inventory?.equipped?.[slotKey];
@@ -276,7 +381,9 @@ const Inventory = () => {
   const equippedItemIds = new Set(
     Object.values(inventory?.equipped || {}).filter(Boolean).map(e => e?.id).filter(Boolean)
   );
-  const slots = Array.from({ length: INVENTORY_SLOT_COUNT }, (_, i) => {
+
+  const displayCap = Math.floor((inventory?.capacity || 200) / 10);
+  const slots = Array.from({ length: displayCap }, (_, i) => {
     // Filter out equipped items so they only appear in their slots
     const unequippedItems = (inventory?.items || []).filter(item => !equippedItemIds.has(item.id));
     return unequippedItems[i] ?? null;
@@ -320,7 +427,7 @@ const Inventory = () => {
           )}
           {inventory && (
             <span className="ml-auto text-xs text-stone-500">
-              📦 {inventory.used}/{inventory.capacity}
+              📦 {Math.floor((inventory.used || 0) / 10)}/{Math.floor((inventory.capacity || 200) / 10)}
             </span>
           )}
         </div>
@@ -355,6 +462,7 @@ const Inventory = () => {
                           key={slotKey}
                           slotKey={slotKey}
                           equippedItem={eqItem}
+                          playerInfo={playerInfo}
                           onClick={eqItem
                             ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
                             : undefined
@@ -384,6 +492,7 @@ const Inventory = () => {
                           key={slotKey}
                           slotKey={slotKey}
                           equippedItem={eqItem}
+                          playerInfo={playerInfo}
                           onClick={eqItem
                             ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
                             : undefined
@@ -421,20 +530,35 @@ const Inventory = () => {
               {/* Statistics */}
               <Panel title="Statistics">
                 <div className="flex flex-col gap-2.5">
-                  {Object.entries(STAT_LABELS).map(([key, { label }]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <span className="text-stone-400 text-sm flex-1">{label}</span>
-                      <span className="text-amber-300 text-sm font-bold w-8 text-right">
-                        {playerInfo?.stats?.[key] ?? 0}
-                      </span>
-                      <button
-                        title="Coming soon"
-                        className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90"
-                      >
-                        +
-                      </button>
-                    </div>
-                  ))}
+                  {Object.entries(STAT_LABELS).map(([key, { label }]) => {
+                    let currentVal = playerInfo?.stats?.[key] ?? 0;
+                    if (key === 'armor') {
+                      const equippedArmor = Object.values(inventory?.equipped || {}).filter(item => item && item.type === 'armor');
+                      currentVal = equippedArmor.reduce((sum, item) => sum + (item.armor_point || 0), 0);
+                    }
+                    const cost = Math.max(10, currentVal * 10);
+                    const canUpgrade = key !== 'armor';
+                    return (
+                      <div key={key} className="flex items-center gap-3">
+                        <span className="text-stone-400 text-sm flex-1">{label}</span>
+                        <span className="text-amber-300 text-sm font-bold w-8 text-right" title={key === 'armor' ? `Effective Armor: ${currentVal + (playerInfo?.lvl || 1) * 3}` : ""}>
+                          {currentVal}
+                        </span>
+                        {canUpgrade ? (
+                          <button
+                            onClick={() => handleUpgradeStat(key)}
+                            title={`Upgrade ${label} for ${cost} gold`}
+                            disabled={busy}
+                            className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            +
+                          </button>
+                        ) : (
+                          <div className="w-6 h-6" />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </Panel>
 
@@ -452,11 +576,13 @@ const Inventory = () => {
                   {slots.map((item, idx) => {
                     const actions = [];
                     if (item && isEquippable(item)) actions.push("equip");
+                    if (item && item.type === "food") actions.push("use");
                     if (item) actions.push("sell");
                     return (
                       <ItemSlotTile
                         key={idx}
                         item={item}
+                        playerInfo={playerInfo}
                         onClick={item ? (e) => openActionMenu(item, actions, null, e) : undefined}
                       />
                     );

@@ -16,7 +16,7 @@ export const parseStyleId = (val) => {
 export const getSpeciesPrefix = (className) => {
     if (className === 'Sapiens') return 'hs'; // Homo Sapiens
     if (className === 'Floresiensis') return 'f';
-    return 'n'; // Neanderthal (default)
+    if (className === 'Neanderthal') return 'n'; // Neanderthal (default)
 };
 
 const PlayerPortrait = ({ className, hairStyle, beardStyle, classNameOverride = "" }) => {

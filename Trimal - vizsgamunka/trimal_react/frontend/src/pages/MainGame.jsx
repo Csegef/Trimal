@@ -31,12 +31,14 @@ const MainGame = () => {
   }, []);
 
   const getPlayerImage = () => {
-    if (!userData || !userData.character) return null;
-    const { className, hairStyle, beardStyle } = userData.character;
+    const char = userData?.character;
+    const cls = char?.specie_name || char?.className || char?.class || "Neanderthal";
+    const hairStyle = char?.hair_style ?? char?.hairStyle;
+    const beardStyle = char?.beard_style ?? char?.beardStyle;
 
     return (
       <PlayerPortrait
-        className={className}
+        className={cls}
         hairStyle={hairStyle}
         beardStyle={beardStyle}
       />
@@ -59,16 +61,11 @@ const MainGame = () => {
       <div className="relative w-full max-w-7xl h-[80vh] bg-stone-900/30 rounded-2xl border-4 border-stone-700/80 shadow-2xl overflow-hidden backdrop-blur-sm">
         {/* Map Background */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repedat"
           style={{
             backgroundImage: "url('/src/assets/design/backgrounds/map/trimal_map.png')",
           }}
         />
-
-        {/* Content Overlay - for future game elements */}
-        <div className="relative z-10 w-full h-full flex items-center justify-center p-4">
-          {/* Future game content will go here */}
-        </div>
       </div>
     </GameLayout>
   );

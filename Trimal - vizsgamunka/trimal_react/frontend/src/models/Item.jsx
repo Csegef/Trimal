@@ -95,7 +95,9 @@ export function resolveItemImagePath(item) {
     // Vite serves src/ assets via /src/... in dev mode (symlink: src/assets/design -> Graphics)
     const base = "/src/assets/design/items";
 
-    switch (item.type) {
+    const type = (item.type || "").toLowerCase();
+
+    switch (type) {
         case "weapon":
             return `${base}/weapon/${rarity}/${item.iconPath}`;
 
@@ -173,7 +175,7 @@ export function getItemStats(item) {
 // ─── ItemSlotTile ─────────────────────────────────────────────────────────────
 // A single square tile used in the bag grid.
 
-export function ItemSlotTile({ item, onClick }) {
+export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }) {
     const [hovered, setHovered] = React.useState(false);
 
     if (!item) {
@@ -184,8 +186,16 @@ export function ItemSlotTile({ item, onClick }) {
         );
     }
 
-    const rarity = (item.rarity || "common").toLowerCase();
+    let rarity = (item.rarity || "common").toLowerCase();
+    if (rarity === "legendray") rarity = "legendary";
+
     const imageSrc = resolveItemImagePath(item);
+    const [imgError, setImgError] = React.useState(false);
+
+    // Reset image error state when item prop changes (e.g., slot re-rendered with new item)
+    React.useEffect(() => {
+        setImgError(false);
+    }, [item]);
 
     return (
         <div
@@ -201,12 +211,12 @@ export function ItemSlotTile({ item, onClick }) {
                 }}
                 className="relative w-full h-full rounded-lg border-2 bg-stone-950/60 backdrop-blur-sm flex flex-col items-center justify-center gap-1 p-1 hover:scale-105 transition-all duration-150"
             >
-                {imageSrc ? (
+                {imageSrc && !imgError ? (
                     <img
                         src={imageSrc}
                         alt={item.name}
                         className="w-23 h-23 object-contain"
-                        onError={(e) => { e.target.style.display = "none"; }}
+                        onError={() => setImgError(true)}
                     />
                 ) : (
                     <span className="text-3xl">{getItemIcon(item)}</span>
@@ -251,9 +261,31 @@ export function ItemSlotTile({ item, onClick }) {
                                 {rarity}
                             </span>
                         </div>
+                        {/* Stats */}
+                        {item.type === "weapon" && item.base_damage != null && (
+                            <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                                <span>Damage: {Math.round((item.weapon_damage || item.base_damage) * 1.25 * (1 + ((playerInfo?.stats?.strength ?? 10) / 10)))}</span>
+                            </div>
+                        )}
+                        {item.type === "armor" && item.armor_point != null && (
+                            <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-1">
+                                <span>Armor Point: {item.armor_point}</span>
+                                {/* LATER: Implement incoming damage calc based on effective armor in combat 
+                                <span className="text-[9px] text-stone-400 font-normal leading-tight">
+                                    Damage Taken: <br />
+                                    (Incoming - Eff. Armor) × {(1 - ((playerInfo?.stats?.resistance ?? 10) / 100)).toFixed(2)}
+                                </span>
+                                */}
+                            </div>
+                        )}
+                        {item.type === "food" && item.category && (
+                            <div className="text-[10px] text-green-400 font-bold mb-1.5">
+                                Grants a {rarity === "legendary" ? "large" : rarity === "epic" ? "medium" : "small"} bonus to {item.category}
+                            </div>
+                        )}
                         {/* Description */}
                         {item.description && (
-                            <div className="text-stone-400 text-[10px] leading-snug">
+                            <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800">
                                 {item.description}
                             </div>
                         )}

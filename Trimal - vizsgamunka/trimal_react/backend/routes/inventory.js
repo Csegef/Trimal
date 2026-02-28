@@ -23,7 +23,7 @@ async function loadInventory(pool, specieId) {
 
   // Default structure
   return {
-    capacity: 100,
+    capacity: 200,
     used: 0,
     currency: { normal: 0, spec: 0 },
     items: [],
@@ -47,7 +47,7 @@ async function saveInventory(pool, specieId, inventory) {
 
 /** Recalculate the `used` field (1 slot per unique stack) */
 function recalcUsed(inventory) {
-  inventory.used = inventory.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  inventory.used = inventory.items.reduce((sum, item) => sum + ((item.quantity || 1) * (item.inventory_size || 10)), 0);
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -71,6 +71,7 @@ router.get('/player', async (req, res) => {
     const [rows] = await req.pool.execute(
       `SELECT s.id, s.specie_name, s.hair_style, s.beard_style,
               s.lvl, s.xp,
+              s.base_health, s.base_strength, s.base_agility, s.base_luck, s.base_resistance, s.base_armor,
               u.nickname
        FROM specie s
        JOIN user u ON u.specie_id = s.id
@@ -96,11 +97,65 @@ router.get('/player', async (req, res) => {
         lvl,
         xp,
         xpForNext,
-        stats: { strength: 5, agility: 5, intelligence: 5, endurance: 5 },
+        stats: {
+          health: row.base_health || 0,
+          strength: row.base_strength || 0,
+          agility: row.base_agility || 0,
+          luck: row.base_luck || 0,
+          resistance: row.base_resistance || 0,
+          armor: row.base_armor || 0
+        },
       },
     });
   } catch (err) {
     console.error('[Inventory] GET /player error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/stats/upgrade ────────────────────────────────────────
+router.post('/stats/upgrade', async (req, res) => {
+  try {
+    const { statKey } = req.body;
+    const validStats = ['strength', 'agility', 'luck', 'resistance', 'health'];
+    if (!validStats.includes(statKey)) {
+      return res.status(400).json({ success: false, message: 'Invalid stat key: ' + statKey });
+    }
+
+    const pool = req.pool;
+
+    // Fetch current stat value
+    const statCol = `base_${statKey}`;
+    const [rows] = await pool.execute(
+      `SELECT ${statCol} FROM specie WHERE id = ?`,
+      [req.user.specieId]
+    );
+
+    if (!rows[0]) return res.status(404).json({ success: false, message: 'Character not found' });
+
+    const currentVal = rows[0][statCol] || 0;
+    const cost = Math.max(10, currentVal * 10); // Example: 10 * 10 = 100 gold
+
+    // Deduct cost
+    const inv = await loadInventory(pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    if ((inv.currency.normal || 0) < cost) {
+      return res.status(400).json({ success: false, message: `Not enough gold! need ${cost}` });
+    }
+
+    inv.currency.normal -= cost;
+    await saveInventory(pool, req.user.specieId, inv);
+
+    // Upgrade stat
+    await pool.execute(
+      `UPDATE specie SET ${statCol} = ${statCol} + 1 WHERE id = ?`,
+      [req.user.specieId]
+    );
+
+    res.json({ success: true, message: `Upgraded ${statKey} to ${currentVal + 1} for ${cost} gold` });
+  } catch (err) {
+    console.error('[Inventory] POST /stats/upgrade error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
@@ -233,6 +288,44 @@ router.post('/sell', async (req, res) => {
   }
 });
 
+// ─── POST /api/inventory/use ──────────────────────────────────────────────────
+router.post('/use', async (req, res) => {
+  try {
+    const { itemId } = req.body;
+    if (itemId == null) return res.status(400).json({ success: false, message: 'Missing: itemId' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    const idx = inv.items.findIndex(i => i.id == itemId && i.type === 'food');
+    if (idx === -1) return res.status(400).json({ success: false, message: 'Food item not found' });
+
+    const item = inv.items[idx];
+    const buffId = item.buff_id;
+
+    // Consume item
+    item.quantity -= 1;
+    if (item.quantity <= 0) inv.items.splice(idx, 1);
+    recalcUsed(inv);
+    await saveInventory(req.pool, req.user.specieId, inv);
+
+    // Apply buff
+    if (buffId) {
+      await req.pool.execute(
+        `INSERT INTO active_effect (specie_id, buff_id, start_date) 
+         VALUES (?, ?, CURRENT_TIMESTAMP) 
+         ON DUPLICATE KEY UPDATE start_date = CURRENT_TIMESTAMP`,
+        [req.user.specieId, buffId]
+      );
+    }
+
+    res.json({ success: true, message: `Used ${item.name}` });
+  } catch (err) {
+    console.error('[Inventory] POST /use error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── POST /api/inventory/addItem ─────────────────────────────────────────────
 router.post('/addItem', async (req, res) => {
   try {
@@ -243,10 +336,21 @@ router.post('/addItem', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
+    // Get Specie Level for weapon damage calculation
+    const [lvlRows] = await req.pool.execute('SELECT lvl FROM specie WHERE id = ?', [req.user.specieId]);
+    const sLvl = lvlRows[0]?.lvl || 1;
+
     const existing = inv.items.find(i => i.id == itemId && i.type === itemType);
     if (existing) {
       existing.quantity += quantity;
     } else {
+      let weapon_damage = 0;
+      if (itemType === 'weapon') {
+        const bDmg = itemData?.base_damage || 10;
+        // weapon_damage = base_damage + random(-1, 1) + (specie.lvl * 2)
+        weapon_damage = itemData?.weapon_damage || (bDmg + (Math.floor(Math.random() * 3) - 1) + (sLvl * 2));
+      }
+
       inv.items.push({
         id: itemId,
         type: itemType,
@@ -256,7 +360,8 @@ router.post('/addItem', async (req, res) => {
         description: itemData?.description || '',
         sell_price: itemData?.sell_price || 0,
         iconPath: itemData?.iconPath || null,
-        ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0 }),
+        inventory_size: itemData?.inventory_size || 10,
+        ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0, weapon_damage }),
         ...(itemType === 'armor' && { armor_point: itemData?.armor_point || 0, category: itemData?.category || 'Armor' }),
         ...(itemType === 'food' && { category: itemData?.category || '', buff_id: itemData?.buff_id || null }),
       });
@@ -264,7 +369,7 @@ router.post('/addItem', async (req, res) => {
 
     recalcUsed(inv);
     if (inv.used > inv.capacity)
-      return res.status(400).json({ success: false, message: 'Inventory full' });
+      return res.status(400).json({ success: false, message: 'Not enough space in inventory' });
 
     await saveInventory(req.pool, req.user.specieId, inv);
     res.json({ success: true, message: 'Item added successfully' });

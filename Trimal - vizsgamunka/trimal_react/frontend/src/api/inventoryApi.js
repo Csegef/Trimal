@@ -112,6 +112,15 @@ export async function sellItem(itemType, itemId, quantity = 1) {
   return res;
 }
 
+/**
+ * Tárgy használata (Pl. Étel buffhoz)
+ */
+export async function useItem(itemId) {
+  const res = await request('/use', 'POST', { itemId });
+  if (!res.success) throw new Error(res.message);
+  return res;
+}
+
 // ─── Felszerelés ─────────────────────────────────────────────────────────────
 
 /**
@@ -163,6 +172,14 @@ export async function addCurrency(normal = 0, spec = 0) {
 
 export async function removeCurrency(normal = 0, spec = 0) {
   const res = await request('/currency/remove', 'POST', { normal, spec });
+  if (!res.success) throw new Error(res.message);
+  return res;
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+
+export async function upgradeStat(statKey) {
+  const res = await request('/stats/upgrade', 'POST', { statKey });
   if (!res.success) throw new Error(res.message);
   return res;
 }

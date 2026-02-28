@@ -59,7 +59,7 @@ router.post('/register', async (req, res) => {
 
     // DEFAULT INVENTORY
     const defaultInventory = {
-      capacity: 100,
+      capacity: 200,
       used: 0,
       currency: {
         normal: 0,

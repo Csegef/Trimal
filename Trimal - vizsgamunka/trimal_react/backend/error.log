@@ -110,3 +110,38 @@
 2026-02-26T10:53:46.045Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-02-27T06:48:41.309Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-02-27T07:24:53.591Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T19:25:34.859Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T19:34:52.795Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T19:42:46.790Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T19:45:21.766Z - Attempting registration for: csege0306@gmail.com, csegef111
+2026-02-28T19:45:21.767Z - Checking existing user
+2026-02-28T19:45:21.784Z - User exists
+2026-02-28T19:45:43.801Z - Attempting registration for: csege0306@gmail.com, csegef111
+2026-02-28T19:45:43.802Z - Checking existing user
+2026-02-28T19:45:43.808Z - Creating user...
+2026-02-28T19:45:43.955Z - User created with ID: 11
+2026-02-28T19:45:43.956Z - Creating character...
+2026-02-28T19:45:44.044Z - Character created
+2026-02-28T19:45:44.119Z - User linked to character
+2026-02-28T19:45:44.120Z - Sending email...
+2026-02-28T19:45:45.530Z - MAILER: Verification email sent: 250 2.0.0 OK  1772307945 ffacd0b85a97d-4399c70ff6esm25911131f8f.12 - gsmtp
+2026-02-28T19:51:03.053Z - Attempting registration for: csege0306@gmail.com, csegef222
+2026-02-28T19:51:03.054Z - Checking existing user
+2026-02-28T19:51:03.065Z - Creating user...
+2026-02-28T19:51:03.166Z - User created with ID: 12
+2026-02-28T19:51:03.166Z - Creating character...
+2026-02-28T19:51:03.265Z - Character created
+2026-02-28T19:51:03.314Z - User linked to character
+2026-02-28T19:51:03.315Z - Sending email...
+2026-02-28T19:51:04.437Z - MAILER: Verification email sent: 250 2.0.0 OK  1772308264 ffacd0b85a97d-439b03db76bsm1024743f8f.18 - gsmtp
+2026-02-28T20:34:07.617Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T20:36:24.478Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T20:37:08.907Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T20:37:41.065Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T20:39:55.332Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T21:11:32.049Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T22:05:14.459Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T22:06:45.348Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T22:08:15.463Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T22:58:48.565Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-02-28T22:58:56.256Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
