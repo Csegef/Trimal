@@ -88,6 +88,11 @@ router.post('/register', async (req, res) => {
     });
     logError('Character created');
 
+    logError('Generating initial shop items...');
+    const { generateShopItemsForDay } = require('../controllers/shopController');
+    await generateShopItemsForDay(pool, newChar.id);
+    logError('Initial shop items generated');
+
     // 2.5 Update User with Specie ID
     await userModel.setSpecieId(newUser.id, newChar.id);
     logError('User linked to character');

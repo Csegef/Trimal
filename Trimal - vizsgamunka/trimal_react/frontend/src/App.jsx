@@ -9,8 +9,8 @@ import MainGame from './pages/MainGame'
 import About from './pages/About';
 import CharacterSignIn from './pages/CharacterSignIn';
 import EmailVerification from './pages/EmailVerification';
-import Inventory from './pages/Inventory'
-
+import Inventory from './pages/Inventory';
+import Shop from './pages/Shop';
 function App() {
   return (
     <Router>
@@ -21,6 +21,7 @@ function App() {
         <Route path="/registration" element={<CharacterRegistration />} />
         <Route path="/maingame" element={<MainGame />} />
         <Route path="/inventory" element={<Inventory />} />
+        <Route path="/shop/:shopType" element={<Shop />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />

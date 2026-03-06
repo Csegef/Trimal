@@ -1,19 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const authenticateToken = require('../middleware/authMiddleware');
+const { getShopItems, buyShopItem } = require('../controllers/shopController');
 
-// GET shop items egy karakterhez
-router.get('/:specieId', async (req, res) => {
-  const pool = req.pool;
-  try {
-    const [rows] = await pool.execute(
-      `SELECT * FROM shop WHERE specie_id = ?`,
-      [req.params.specieId]
-    );
-    res.json({ success: true, shop: rows });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a shop lekérdezésekor' });
-  }
-});
+router.use(authenticateToken);
+
+// GET /api/shop/tinkerer vagy /api/shop/herbalist
+router.get('/:shopType', getShopItems);
+
+// POST /api/shop/buy
+router.post('/buy', buyShopItem);
 
 module.exports = router;

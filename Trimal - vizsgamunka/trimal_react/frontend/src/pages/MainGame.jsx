@@ -63,7 +63,7 @@ const MainGame = () => {
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repedat"
           style={{
-            backgroundImage: "url('/src/assets/design/backgrounds/map/trimal_map.png')",
+            backgroundImage: "url('/src/assets/design/backgrounds/map/map-gif.gif')",
           }}
         />
       </div>

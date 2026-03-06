@@ -86,8 +86,8 @@ const GameLayout = ({ children, currency }) => {
           <nav className="hidden md:flex items-center gap-6">
             {[
               { name: 'Inventory', path: '/inventory' },
-              { name: 'Tinkerer', path: '/tinkerer' },
-              { name: 'Herbalists', path: '/herbalists' },
+              { name: 'Tinkerer', path: '/shop/tinkerer' },
+              { name: 'Herbalists', path: '/shop/herbalist' },
               { name: "Shaman's hut", path: '/shamans-hut' },
               { name: 'Mysterious cave', path: '/mysterious-cave' }
             ].map((station) => (
