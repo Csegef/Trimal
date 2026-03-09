@@ -168,3 +168,22 @@
 2026-03-09T10:01:34.307Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-03-09T10:05:18.503Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-03-09T10:06:49.248Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-09T10:34:55.889Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-09T12:11:50.072Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-09T12:11:51.205Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-09T12:11:53.306Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-09T13:15:54.603Z - Attempting registration for: veresgaborzalan-40248@taszi.hu, Intro
+2026-03-09T13:15:54.608Z - Checking existing user
+2026-03-09T13:15:54.613Z - User exists
+2026-03-09T13:17:16.650Z - Attempting registration for: vgabo2k3@gmail.com, Intro
+2026-03-09T13:17:16.651Z - Checking existing user
+2026-03-09T13:17:16.656Z - Creating user...
+2026-03-09T13:17:16.752Z - User created with ID: 14
+2026-03-09T13:17:16.753Z - Creating character...
+2026-03-09T13:17:16.764Z - Character created
+2026-03-09T13:17:16.765Z - Generating initial shop items...
+2026-03-09T13:17:16.797Z - Initial shop items generated
+2026-03-09T13:17:16.800Z - User linked to character
+2026-03-09T13:17:16.802Z - Sending email...
+2026-03-09T13:17:18.930Z - MAILER: Verification email sent: 250 2.0.0 OK  1773062253 ffacd0b85a97d-439dae483desm25047479f8f.34 - gsmtp
+2026-03-09T13:24:19.353Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19

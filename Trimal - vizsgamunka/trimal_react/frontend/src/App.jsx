@@ -11,6 +11,8 @@ import CharacterSignIn from './pages/CharacterSignIn';
 import EmailVerification from './pages/EmailVerification';
 import Inventory from './pages/Inventory';
 import Shop from './pages/Shop';
+import CaveStation from './pages/CaveStation';
+
 function App() {
   return (
     <Router>
@@ -22,6 +24,7 @@ function App() {
         <Route path="/maingame" element={<MainGame />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/shop/:shopType" element={<Shop />} />
+        <Route path="/mysterious-cave" element={<CaveStation />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />

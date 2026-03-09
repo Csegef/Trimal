@@ -87,7 +87,7 @@ const GameLayout = ({ children, currency }) => {
             {[
               { name: 'Inventory', path: '/inventory' },
               { name: 'Tinkerer', path: '/shop/tinkerer' },
-              { name: 'Herbalists', path: '/shop/herbalist' },
+              { name: 'Herbalist', path: '/shop/herbalist' },
               { name: "Shaman's hut", path: '/shamans-hut' },
               { name: 'Mysterious cave', path: '/mysterious-cave' }
             ].map((station) => (

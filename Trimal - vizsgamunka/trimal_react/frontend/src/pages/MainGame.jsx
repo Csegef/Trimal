@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import GameLayout from "../layouts/GameLayout";
 import { useNavigate } from "react-router-dom";
 import PlayerPortrait from "../components/PlayerPortrait";
+import IntroOverlay from "../components/IntroOverlay";
 
 const MainGame = () => {
   const [userData, setUserData] = useState(null);
   const [currency, setCurrency] = useState(null);
+  const [showIntro, setShowIntro] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,9 +16,35 @@ const MainGame = () => {
       setUserData(JSON.parse(storedData));
     }
 
-    // Betöltjük a currency-t az inventory API-ból
+    // Betöltjük a currency-t és player adatokat
     const token = localStorage.getItem('token');
     if (token) {
+      // Get detailed player info including createdAt
+      fetch('/api/inventory/player', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+        .then(r => r.json())
+        .then(res => {
+          if (res.success && res.data) {
+            setCurrency(res.data.stats ? { normal: res.data.currency?.normal || 0, spec: res.data.currency?.spec || 0 } : null);
+            
+            // Logic for intro: show if created within last 2 minutes
+            if (res.data.createdAt) {
+              const createdDate = new Date(res.data.createdAt);
+              const now = new Date();
+              const diffMinutes = (now - createdDate) / (1000 * 60);
+              
+              // If account was created less than 2 minutes ago AND we haven't shown intro this session
+              const introShown = sessionStorage.getItem('introShown');
+              if (diffMinutes < 2 && !introShown) {
+                setShowIntro(true);
+                sessionStorage.setItem('introShown', 'true');
+              }
+            }
+          }
+        })
+        .catch(() => { });
+
       fetch('/api/inventory', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
@@ -46,7 +74,9 @@ const MainGame = () => {
   };
 
   return (
-    <GameLayout currency={currency}>
+    <>
+      {showIntro && <IntroOverlay onComplete={() => setShowIntro(false)} />}
+      <GameLayout currency={currency}>
       {/* Player Image (Bottom Left) - Framed */}
       <div
         onClick={() => navigate("/inventory")}
@@ -68,6 +98,7 @@ const MainGame = () => {
         />
       </div>
     </GameLayout>
+    </>
   );
 };
 

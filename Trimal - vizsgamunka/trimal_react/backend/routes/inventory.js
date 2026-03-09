@@ -72,6 +72,7 @@ router.get('/player', async (req, res) => {
       `SELECT s.id, s.specie_name, s.hair_style, s.beard_style,
               s.lvl, s.xp,
               s.base_health, s.base_strength, s.base_agility, s.base_luck, s.base_resistance, s.base_armor,
+              s.created_at,
               u.nickname
        FROM specie s
        JOIN user u ON u.specie_id = s.id
@@ -105,6 +106,7 @@ router.get('/player', async (req, res) => {
           resistance: row.base_resistance || 0,
           armor: row.base_armor || 0
         },
+        createdAt: row.created_at
       },
     });
   } catch (err) {

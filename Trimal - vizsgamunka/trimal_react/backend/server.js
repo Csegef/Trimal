@@ -37,6 +37,7 @@ app.use('/api/inventory', require('./routes/inventory'));
 app.use('/api/shop', require('./routes/shop'));
 app.use('/api/quest', require('./routes/quest'));
 app.use('/api/effects', require('./routes/effects'));
+app.use('/api/entities', require('./routes/entities'));
 
 
 app.get('/', (req, res) => {

@@ -326,9 +326,13 @@ const Shop = () => {
   return (
     <GameLayout currency={inventory?.currency}>
       <div
-        className="absolute inset-0 z-0"
-        style={{ background: "rgba(8,5,2,0.58)", backdropFilter: "blur(7px)" }}
-      />
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url('/backgrounds/trimal_${shopType}_station_background.png')`,
+        }}
+      >
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
+      </div>
       <Toast toast={toast} />
 
       {actionMenu && (
