@@ -1,5 +1,6 @@
 // src/pages/Inventory.jsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import GameLayout from "../layouts/GameLayout";
 import {
   loadInventoryPage,
@@ -271,6 +272,7 @@ function Panel({ title, children }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const Inventory = () => {
+  const navigate = useNavigate();
   const [inventory, setInventory] = useState(null);
   const [playerInfo, setPlayerInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -292,12 +294,13 @@ const Inventory = () => {
     } catch (err) {
       if (err instanceof AuthError) {
         showToast("Not logged in!", "error");
+        navigate("/");
       } else {
         showToast("Load error: " + err.message, "error");
       }
     }
     setLoading(false);
-  }, [showToast]);
+  }, [showToast, navigate]);
 
   useEffect(() => {
     const stored = localStorage.getItem("userData");

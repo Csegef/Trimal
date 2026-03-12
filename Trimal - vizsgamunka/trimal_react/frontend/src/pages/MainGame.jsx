@@ -11,13 +11,18 @@ const MainGame = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/');
+      return;
+    }
+
     const storedData = localStorage.getItem('userData');
     if (storedData) {
       setUserData(JSON.parse(storedData));
     }
 
     // Betöltjük a currency-t és player adatokat
-    const token = localStorage.getItem('token');
     if (token) {
       // Get detailed player info including createdAt
       fetch('/api/inventory/player', {

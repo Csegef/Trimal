@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import GameLayout from "../layouts/GameLayout";
-import PlayerPortrait from "../components/PlayerPortrait";
 import { RARITY_COLOR, RARITY_GLOW, resolveItemImagePath } from "../models/Item";
 
 const loadShopPage = async (shopType) => {
@@ -73,14 +72,10 @@ function Toast({ toast }) {
   );
 }
 
-
-
-// Re-implemented Tile for Shop specific needs (showing price and "Buy" action)
 function ShopItemTile({ item, onClick, playerInfo }) {
   const [hovered, setHovered] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  // item in this context is from the shop API which includes item.item details
   const shopItem = item?.item;
   const rarity = (shopItem?.rarity || "common").toLowerCase();
   const isPurchased = item?.purchased;
@@ -122,7 +117,6 @@ function ShopItemTile({ item, onClick, playerInfo }) {
           <span className="text-3xl text-stone-500">?</span>
         )}
 
-        {/* Price Tag Overlay */}
         {!isPurchased && (
           <div className="absolute bottom-1 right-1 bg-stone-900/90 rounded px-1.5 py-0.5 text-[10px] font-bold border border-stone-700/50 flex flex-col items-end gap-0.5">
             {shopItem.buy_price_normal > 0 && (
@@ -144,7 +138,6 @@ function ShopItemTile({ item, onClick, playerInfo }) {
         )}
       </button>
 
-      {/* Tooltip */}
       {hovered && !isPurchased && (
         <div
           className="absolute z-50 bottom-[105%] left-1/2 -translate-x-1/2 pointer-events-none"
@@ -157,10 +150,7 @@ function ShopItemTile({ item, onClick, playerInfo }) {
               borderColor: RARITY_COLOR[rarity] + "66",
             }}
           >
-            <div
-              className="font-bold text-[13px] leading-tight mb-1"
-              style={{ color: RARITY_COLOR[rarity] }}
-            >
+            <div className="font-bold text-[13px] leading-tight mb-1" style={{ color: RARITY_COLOR[rarity] }}>
               {shopItem.name}
             </div>
             <div className="mb-1.5">
@@ -175,15 +165,12 @@ function ShopItemTile({ item, onClick, playerInfo }) {
                 {rarity}
               </span>
             </div>
-
             <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800 mb-2">
               {shopItem.description}
             </div>
-
             {shopItem.type === "weapon" && shopItem.base_damage != null && (
               <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
                 <span>Base Damage: {shopItem.base_damage}</span>
-                <span className="text-stone-500 font-normal italic">Final damage determined on purchase</span>
               </div>
             )}
             {shopItem.type === "armor" && shopItem.armor_point != null && (
@@ -191,12 +178,6 @@ function ShopItemTile({ item, onClick, playerInfo }) {
                 <span>Armor Point: {shopItem.armor_point}</span>
               </div>
             )}
-            {shopItem.type === "food" && shopItem.category && (
-              <div className="text-[10px] text-green-400 font-bold mb-1.5">
-                Grants a {rarity === "legendary" ? "large" : rarity === "epic" ? "medium" : "small"} bonus to {shopItem.category}
-              </div>
-            )}
-
             <div className="mt-2 pt-2 border-t border-stone-800 flex flex-col gap-1">
               <div className="text-stone-500 font-semibold text-[9px] tracking-widest uppercase">Price</div>
               {shopItem.buy_price_normal > 0 && (
@@ -210,7 +191,6 @@ function ShopItemTile({ item, onClick, playerInfo }) {
                 </span>
               )}
             </div>
-
           </div>
           <div
             className="mx-auto w-2 h-2 rotate-45 -mt-1"
@@ -263,7 +243,7 @@ function ActionMenu({ shopItemInfo, position, onConfirm, onClose }) {
 }
 
 const Shop = () => {
-  const { shopType } = useParams(); // 'tinkerer' or 'herbalist'
+  const { shopType } = useParams();
   const navigate = useNavigate();
 
   const [shopItems, setShopItems] = useState([]);
@@ -284,6 +264,11 @@ const Shop = () => {
 
   const load = useCallback(async () => {
     setLoading(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/");
+      return;
+    }
     try {
       const data = await loadShopPage(shopType);
       setShopItems(data.shopItems);
@@ -293,7 +278,7 @@ const Shop = () => {
       showToast("Load error: " + err.message, "error");
     }
     setLoading(false);
-  }, [shopType, showToast]);
+  }, [shopType, showToast, navigate]);
 
   useEffect(() => {
     load();
@@ -310,11 +295,10 @@ const Shop = () => {
     const { shopItemInfo } = actionMenu;
     setActionMenu(null);
     setBusy(true);
-
     try {
       const res = await buyItem(shopItemInfo.shop_id);
       showToast(res.message);
-      await load(); // Reload to update shop and currency
+      await load();
     } catch (err) {
       showToast(err.message || "An error occurred", "error");
     } finally {
@@ -322,17 +306,8 @@ const Shop = () => {
     }
   }, [busy, actionMenu, showToast, load]);
 
-
   return (
     <GameLayout currency={inventory?.currency}>
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: `url('/backgrounds/trimal_${shopType}_station_background.png')`,
-        }}
-      >
-        <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px]" />
-      </div>
       <Toast toast={toast} />
 
       {actionMenu && (
@@ -344,23 +319,15 @@ const Shop = () => {
         />
       )}
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-6 py-6 flex flex-col gap-6">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
 
-        {/* Header Section */}
-        <div className="flex items-center justify-between border-b border-stone-800 pb-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-widest text-[#d5a05a] uppercase drop-shadow-md">
-              {shopTitle}
-            </h1>
-            <p className="text-stone-400 text-sm mt-1">{shopDesc}</p>
-          </div>
-
-          <button
-            onClick={() => navigate('/maingame')}
-            className="px-4 py-2 border-2 border-stone-700 bg-stone-900 text-stone-300 rounded hover:border-amber-600 hover:text-amber-400 transition-colors uppercase tracking-widest text-sm font-bold shadow-lg"
-          >
-            Leave Shop
-          </button>
+        {/* Header */}
+        <div className="border-b border-stone-800/70 pb-3">
+          <h1 className="text-3xl font-bold tracking-widest text-[#FBBF24] uppercase drop-shadow-md">
+            {shopTitle}
+          </h1>
+          {/* text-2xl font-bold tracking-widest text-amber-400 uppercase */}
+          <p className="text-stone-400 text-sm mt-1">{shopDesc}</p>
         </div>
 
         {loading ? (
@@ -368,57 +335,49 @@ const Shop = () => {
             <div className="text-amber-600/70 animate-pulse tracking-widest text-xl">Entering shop...</div>
           </div>
         ) : (
-          <div className="grid grid-cols-[1fr_2fr] gap-6 items-start">
-
-            {/* Left Panel: Merchant / Player Context */}
-            <div className="flex flex-col gap-4">
-              <div className="rounded-2xl border border-stone-800 p-5" style={{ background: "rgba(14,7,2,0.85)", backdropFilter: "blur(10px)" }}>
-
-                <div className="w-24 h-24 rounded-full border-2 border-stone-700 overflow-hidden shadow-lg opacity-80 mx-auto mt-4">
-                  <PlayerPortrait
-                    className={playerInfo?.class}
-                    hairStyle={playerInfo?.hairStyle}
-                    beardStyle={playerInfo?.beardStyle}
-                  />
-                </div>
-                <div className="text-stone-400 text-xs text-center mt-3">
-                  {playerInfo?.name} • Lvl {playerInfo?.lvl}
-                </div>
-                <div className="text-stone-500 text-[10px] text-center italic px-4 mt-2">
-                  Prices and items are scaled to your current experience and prowess. New goods arrive at dawn.
-                </div>
-              </div>
-            </div>
-
-            {/* Right Panel: Wares */}
-            <div className="rounded-2xl border border-stone-800 p-6 shadow-2xl" style={{ background: "rgba(14,7,2,0.85)", backdropFilter: "blur(10px)" }}>
-              <div className="flex justify-between items-center mb-6">
-                <div className="text-amber-700/60 text-sm font-semibold tracking-widest uppercase">
-                  Today's Wares
-                </div>
-                <div className="text-[10px] text-stone-500 bg-stone-900 px-2 py-1 rounded border border-stone-800">
-                  Stock refreshes daily
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-5">
-                {shopItems.length > 0 ? (
-                  shopItems.map((shopItemInfo, idx) => (
-                    <ShopItemTile
-                      key={shopItemInfo.shop_id || idx}
-                      item={shopItemInfo}
-                      playerInfo={playerInfo}
-                      onClick={(e) => openBuyMenu(shopItemInfo, e)}
-                    />
-                  ))
-                ) : (
-                  <div className="col-span-3 py-10 text-center text-stone-500 italic">
-                    The merchant has nothing to offer you today.
+          /* Map-like outer container: station background fills this frame, like the map in MainGame */
+          <div
+            className="relative w-full h-[75vh] rounded-2xl border-4 border-stone-700/80 shadow-2xl overflow-hidden"
+            style={{
+              backgroundImage: `url('/backgrounds/trimal_${shopType}_station_background.png')`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            {/* Wares panel — semi-transparent, overlaid on the right side of station bg */}
+            <div className="absolute inset-0 flex items-stretch justify-end p-6">
+              <div
+                className="w-[58%] rounded-2xl border border-stone-600/40 p-6 shadow-2xl overflow-y-auto"
+                style={{ background: "rgba(8,4,1,0.70)", backdropFilter: "blur(6px)" }}
+              >
+                <div className="flex justify-between items-center mb-5">
+                  <div className="text-amber-600/90 text-sm font-semibold tracking-widest uppercase">
+                    Today's Wares
                   </div>
-                )}
+                  <div className="text-[10px] text-stone-500 bg-stone-900/60 px-2 py-1 rounded border border-stone-700/40">
+                    Stock refreshes daily
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  {shopItems.length > 0 ? (
+                    shopItems.map((shopItemInfo, idx) => (
+                      <ShopItemTile
+                        key={shopItemInfo.shop_id || idx}
+                        item={shopItemInfo}
+                        playerInfo={playerInfo}
+                        onClick={(e) => openBuyMenu(shopItemInfo, e)}
+                      />
+                    ))
+                  ) : (
+                    <div className="col-span-3 py-10 text-center text-stone-500 italic">
+                      The merchant has nothing to offer you today.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-
           </div>
         )}
 

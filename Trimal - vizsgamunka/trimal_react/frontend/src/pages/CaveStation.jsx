@@ -6,42 +6,40 @@ import { RARITY_COLOR } from "../models/Item";
 
 const CaveStation = () => {
   const [entities, setEntities] = useState({ enemies: [], weapons: [], armors: [], foods: [] });
+  const [currency, setCurrency] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [category, setCategory] = useState("enemy"); // enemy, weapon, armor, food
+  const [category, setCategory] = useState("enemy");
   const [index, setIndex] = useState(0);
   const navigate = useNavigate();
 
   const loadData = useCallback(async () => {
     const token = localStorage.getItem("token");
+    if (!token) { navigate("/"); return; }
     try {
-      const res = await fetch("/api/entities", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        setEntities(data.data);
-      }
+      const [entRes, invRes] = await Promise.all([
+        fetch("/api/entities", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch("/api/inventory", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+      ]);
+      if (entRes.success) setEntities(entRes.data);
+      if (invRes.success && invRes.data?.currency) setCurrency(invRes.data.currency);
     } catch (err) {
       console.error("Load error:", err);
     }
     setLoading(false);
-  }, []);
+  }, [navigate]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const getCurrentList = () => {
     let list = [];
     if (category === "enemy") list = entities.enemies;
     else if (category === "weapon") list = entities.weapons;
     else if (category === "armor") list = entities.armors;
-    else if (category === "food") list = entities.foods;
+    else if (category === "other stuff") list = entities.foods.filter(f => f.rarity?.toLowerCase() !== 'common');
 
-    // Sorting
     if (category === "enemy") {
       const order = { Light: 0, Medium: 1, Heavy: 2 };
-      return [...list].sort((a, b) => order[a.category] - order[b.category]);
+      return [...list].sort((a, b) => (order[a.category] || 0) - (order[b.category] || 0));
     } else {
       const order = { Common: 0, Rare: 1, Epic: 2, Legendary: 3, common: 0, rare: 1, epic: 2, legendary: 3 };
       return [...list].sort((a, b) => (order[a.rarity] || 0) - (order[b.rarity] || 0));
@@ -56,134 +54,140 @@ const CaveStation = () => {
 
   const resolvePath = (item) => {
     if (!item) return "";
-    const type = category === "enemy" ? "covers" : item.category?.toLowerCase() === "armor" ? "armor" : item.type || (category === "weapon" ? "weapon" : category === "food" ? "food" : "misc");
-    // This is a simplified path resolver, matching how other components do it
     if (category === "enemy") return `/src/assets/design/covers/enemy_covers/final_imgs/${item.iconPath}`;
     if (category === "weapon") return `/src/assets/design/items/weapon/${item.rarity}/${item.iconPath}`;
     if (category === "armor") return `/src/assets/design/items/armor/${item.rarity}/${item.iconPath}`;
-    if (category === "food") return `/src/assets/design/items/food/${item.category}/${item.iconPath}`;
+    if (category === "other stuff") return `/src/assets/design/items/food/${item.category}/${item.iconPath}`;
     return "";
   };
 
+  const CATEGORIES = ["enemy", "weapon", "armor", "other stuff"];
+
   return (
-    <GameLayout>
-      {/* Background Book */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/backgrounds/trimal_cave_station_background.png')" }}
-      >
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
-      </div>
+    <GameLayout currency={currency}>
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
 
-      <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col items-center">
-        {/* Navigation Tabs (Labels above the book) */}
-        <div className="flex gap-4 mb-2">
-          {["enemy", "weapon", "armor", "food"].map((cat) => (
-            <button
-              key={cat}
-              onClick={() => {
-                setCategory(cat);
-                setIndex(0);
-              }}
-              className={`px-6 py-2 rounded-t-xl font-bold uppercase tracking-widest text-sm transition-all shadow-lg border-2 border-b-0 ${category === cat
-                ? "bg-amber-800 border-amber-600 text-amber-100 scale-110"
-                : "bg-stone-900/80 border-stone-700 text-stone-500 hover:text-stone-300"
-                }`}
-            >
-              {cat}
-            </button>
-          ))}
+        {/* Header */}
+        <div className="border-b border-stone-800/70 pb-3">
+          <h1 className="text-3xl font-bold tracking-widest text-[#FBBF24] uppercase drop-shadow-md">
+            Mysterious Cave
+          </h1>
+          <p className="text-stone-400 text-sm mt-1">Ancient records of beasts and artifacts.</p>
         </div>
 
-        {/* The Book Content Container */}
-        <div className="relative w-full aspect-[16/9] md:aspect-[21/9] flex items-center justify-center p-12">
-          {loading ? (
-            <div className="text-amber-600 animate-pulse tracking-widest text-2xl font-serif italic">Browsing the ancient records...</div>
-          ) : currentEntity ? (
-            <div className="flex w-full h-full gap-8">
-              {/* Left Page: Illustration */}
-              <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white/5 rounded-3xl border border-black/10 shadow-inner">
-                <div className="relative group">
-                  <img
-                    src={resolvePath(currentEntity)}
-                    alt={currentEntity.name}
-                    className="w-64 h-64 object-contain filter sepia(0.6) contrast(1.2) drop-shadow-[0_0_15px_rgba(0,0,0,0.4)]"
-                    style={{ mixBlendMode: 'multiply' }}
-                  />
-                  {/* Hand-drawn effect overlay */}
-                  <div className="absolute inset-0 border-2 border-black/5 rounded-lg pointer-events-none" />
-                </div>
-                <h3 className="mt-8 text-3xl font-serif font-black text-stone-800/80 tracking-tight uppercase border-b-2 border-stone-800/20 px-4">
-                  {currentEntity.name}
-                </h3>
-              </div>
+        {/* Main layout: tabs left | map-like cave frame right */}
+        <div className="flex gap-4 items-stretch" style={{ height: "75vh" }}>
 
-              {/* Right Page: Description and Stats */}
-              <div className="flex-1 flex flex-col p-8 bg-black/5 rounded-3xl border border-black/5 font-serif text-stone-900/80">
-                <div className="flex-grow">
-                  <div className="flex justify-between items-baseline mb-4">
-                    <span className="text-xl font-bold italic text-stone-700">
-                      {category === "enemy" ? currentEntity.category : currentEntity.rarity}
-                    </span>
+          {/* Left: Category Tabs */}
+          <div
+            className="flex flex-col gap-2 p-3 rounded-2xl border border-stone-700/60 shadow-2xl flex-none"
+            style={{ background: "rgba(8,4,1,0.80)", backdropFilter: "blur(8px)" }}
+          >
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => { setCategory(cat); setIndex(0); }}
+                className={`w-36 px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all border-2 ${category === cat
+                    ? "bg-amber-800 border-amber-600 text-amber-100"
+                    : "bg-stone-900/50 border-stone-700/60 text-stone-500 hover:text-stone-300 hover:border-stone-600"
+                  }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Right: Map-like cave frame — cave bg fills this, content overlaid */}
+          <div
+            className="relative flex-1 rounded-2xl border-4 border-stone-700/80 shadow-2xl overflow-hidden"
+            style={{
+              backgroundImage: "url('/backgrounds/trimal_cave_station_background.png')",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          >
+            {loading ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className="px-8 py-4 rounded-2xl text-amber-600/90 animate-pulse tracking-widest text-xl font-bold"
+                  style={{ background: "rgba(8,4,1,0.75)", backdropFilter: "blur(6px)" }}
+                >
+                  Browsing the ancient records...
+                </div>
+              </div>
+            ) : currentEntity ? (
+              /* Entity content — semi-transparent panel overlaid on the cave bg */
+              <div className="absolute inset-0 flex items-center justify-center p-8">
+                <div
+                  className="w-full max-w-3xl rounded-2xl border border-stone-600/40 shadow-2xl overflow-hidden flex"
+                  style={{ background: "rgba(8,4,1,0.72)", backdropFilter: "blur(6px)", minHeight: "320px" }}
+                >
+                  {/* Left: Image + pagination */}
+                  <div className="flex-none w-64 flex flex-col items-center justify-center p-6 border-r border-stone-700/40">
+                    <img
+                      src={resolvePath(currentEntity)}
+                      alt={currentEntity.name}
+                      className="w-48 h-48 object-contain"
+                      style={{ filter: "drop-shadow(0 0 16px rgba(180,120,40,0.3))" }}
+                      onError={(e) => { e.target.style.opacity = "0"; }}
+                    />
+                    <div className="flex items-center gap-4 mt-5">
+                      <button onClick={handlePrev} className="p-2 rounded-full hover:bg-stone-700/40 transition-colors text-xl text-amber-600 hover:text-amber-400">❮</button>
+                      <span className="text-stone-400 text-sm font-bold tabular-nums">{index + 1} / {currentList.length}</span>
+                      <button onClick={handleNext} className="p-2 rounded-full hover:bg-stone-700/40 transition-colors text-xl text-amber-600 hover:text-amber-400">❯</button>
+                    </div>
                   </div>
 
-                  <p className="text-lg leading-relaxed italic mb-8 first-letter:text-4xl first-letter:font-bold first-letter:mr-1 first-letter:float-left">
-                    {currentEntity.description || (category === "enemy" ? `An ancient creature of the ${currentEntity.category} category. It is a ${currentEntity.type} type predator.` : "A rare item found in the depths of the prehistoric world.")}
-                  </p>
+                  {/* Right: Name + Rarity/Category + Description */}
+                  <div className="flex-1 flex flex-col p-8 gap-4">
+                    <h2 className="text-2xl font-black tracking-widest text-amber-300 uppercase border-b border-stone-700/40 pb-3">
+                      {currentEntity.name}
+                    </h2>
 
-                  {/* Stats List */}
-                  <div className="grid grid-cols-2 gap-4 border-t border-stone-800/10 pt-6">
                     {category === "enemy" ? (
-                      <>
-                        <StatRow label="Health" value={currentEntity.base_health} />
-                        <StatRow label="Strength" value={currentEntity.base_strength} />
-                        <StatRow label="Agility" value={currentEntity.base_agility} />
-                        <StatRow label="Luck" value={currentEntity.base_luck} />
-                      </>
+                      <span className="self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-stone-800/60 text-stone-300 border border-stone-700/60">
+                        {currentEntity.category} — {currentEntity.type}
+                      </span>
                     ) : (
-                      <>
-                        {currentEntity.base_damage && <StatRow label="Base Damage" value={currentEntity.base_damage} />}
-                        {currentEntity.armor_point && <StatRow label="Armor Point" value={currentEntity.armor_point} />}
-                        {currentEntity.inventory_size && <StatRow label="Weight" value={currentEntity.inventory_size} />}
-                      </>
+                      <span
+                        className="self-start px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border"
+                        style={{
+                          color: RARITY_COLOR[(currentEntity.rarity || "common").toLowerCase()] || "#a8a29e",
+                          borderColor: (RARITY_COLOR[(currentEntity.rarity || "common").toLowerCase()] || "#a8a29e") + "55",
+                          background: (RARITY_COLOR[(currentEntity.rarity || "common").toLowerCase()] || "#a8a29e") + "18",
+                        }}
+                      >
+                        {currentEntity.rarity}
+                      </span>
                     )}
+
+                    <p className="text-stone-300 text-sm leading-relaxed">
+                      {currentEntity.description || (
+                        category === "enemy"
+                          ? `An ancient ${currentEntity.category?.toLowerCase()} creature of the prehistoric world.`
+                          : "A rare artifact found in the depths of the ancient world."
+                      )}
+                    </p>
                   </div>
                 </div>
-
-                {/* Pagination Controls */}
-                <div className="flex justify-between mt-8">
-                  <button onClick={handlePrev} className="p-2 hover:bg-stone-800/10 rounded-full transition-colors text-2xl">❮</button>
-                  <span className="text-sm font-bold opacity-40 self-center">{index + 1} / {currentList.length}</span>
-                  <button onClick={handleNext} className="p-2 hover:bg-stone-800/10 rounded-full transition-colors text-2xl">❯</button>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div
+                  className="px-8 py-4 rounded-2xl text-stone-500 text-lg italic"
+                  style={{ background: "rgba(8,4,1,0.72)", backdropFilter: "blur(6px)" }}
+                >
+                  No records found.
                 </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-stone-800/40 text-xl font-serif">No records found.</div>
-          )}
+            )}
+          </div>
+
         </div>
-
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/maingame")}
-          className="mt-8 px-10 py-3 bg-stone-900/90 border-2 border-amber-900/60 text-amber-500 font-bold rounded-xl hover:bg-stone-800 transition-all uppercase tracking-widest text-sm shadow-2xl"
-        >
-          Leave Cave
-        </button>
       </div>
-
-      <style>{`
-        .mix-blend-multiply { mix-blend-mode: multiply; }
-      `}</style>
     </GameLayout>
   );
 };
-
-const StatRow = ({ label, value }) => (
-  <div className="flex justify-between border-b border-black/5 pb-1">
-    <span className="font-bold text-xs uppercase opacity-60 tracking-widest">{label}</span>
-    <span className="font-black text-stone-800">{value}</span>
-  </div>
-);
 
 export default CaveStation;
