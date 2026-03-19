@@ -1,12 +1,28 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from "react-router-dom";
 
 // TODO: BACKEND - This layout is specific for authenticated users.
 const GameLayout = ({ children, currency }) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [activeQuest, setActiveQuest] = React.useState(null);
 
-
+  React.useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      fetch("/api/inventory", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          if (res.success && res.data) {
+            setStamina(res.data.stamina);
+            setActiveQuest(res.data.active_quest);
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
   const handleLogout = async () => {
     try {
       // Get token from localStorage
@@ -43,7 +59,7 @@ const GameLayout = ({ children, currency }) => {
 
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden font-sans text-stone-100">
+    <div className="relative min-h-screen h-screen w-full overflow-hidden font-sans text-stone-100">
       {/* Main Background - Site Background */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
@@ -55,7 +71,7 @@ const GameLayout = ({ children, currency }) => {
       </div>
 
       {/* Content Wrapper */}
-      <div className="relative z-10 flex flex-col min-h-screen">
+      <div className="relative z-10 flex flex-col h-full">
 
         {/* Navbar */}
         <header className="flex justify-between items-center p-2 bg-black/60 backdrop-blur-md border-b-2 border-amber-900/50 shadow-lg">
@@ -80,6 +96,7 @@ const GameLayout = ({ children, currency }) => {
                 <span className="text-purple-300 font-bold text-sm drop-shadow-md">{currency?.spec ?? 0}</span>
               </div>
             </div>
+
           </div>
 
           {/* Center: Navigation Links (Stations) */}
@@ -112,8 +129,19 @@ const GameLayout = ({ children, currency }) => {
         </header>
 
         {/* Main Game Content */}
-        <main className="grow flex relative items-center justify-center p-4">
+        <main className="grow flex relative items-center justify-center p-4 min-h-0 overflow-hidden">
           {children}
+          
+          {/* Active Quest Interaction Blocker */}
+          {activeQuest && location.pathname !== '/active-quest' && (
+            <div className="absolute inset-0 z-50 bg-black/10 backdrop-blur-[1px] flex flex-col items-center justify-start pt-10" style={{ pointerEvents: 'auto' }} onClickCapture={(e) => { e.stopPropagation(); navigate('/active-quest'); }}>
+               {/* Click capture stops all interaction inside main, forces active-quest redirect on click */}
+               <div className="bg-red-900/90 border-2 border-red-500 text-red-100 px-6 py-3 rounded-xl shadow-2xl animate-pulse cursor-pointer flex flex-col items-center">
+                  <span className="font-bold tracking-widest uppercase text-sm">Active Quest in Progress</span>
+                  <span className="text-xs text-red-300 mt-1">Click here to view</span>
+               </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

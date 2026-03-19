@@ -19,12 +19,7 @@ class InventoryManager {
         $stmt->execute([$this->playerId]);
         $row = $stmt->fetch();
         
-        if ($row && !empty($row['inventory_json'])) {
-            return json_decode($row['inventory_json'], true);
-        }
-        
-        // Alap inventory struktúra
-        return [
+        $inventory = [
             'capacity' => 100,
             'used' => 0,
             'currency' => [
@@ -38,8 +33,38 @@ class InventoryManager {
                 'armor_chest' => null,
                 'armor_legs' => null,
                 'armor_feet' => null
-            ]
+            ],
+            'stamina' => [
+                'current' => 100,
+                'max' => 100,
+                'last_reset' => time()
+            ],
+            'active_quest' => null
         ];
+
+        if ($row && !empty($row['inventory_json'])) {
+            $dbInv = json_decode($row['inventory_json'], true);
+            // Merge defaults with DB
+            $inventory = array_merge($inventory, $dbInv);
+            if (!isset($inventory['stamina'])) {
+                $inventory['stamina'] = ['current' => 100, 'max' => 100, 'last_reset' => time()];
+            }
+            if (!isset($inventory['active_quest'])) {
+                $inventory['active_quest'] = null;
+            }
+        }
+        
+        // Always refresh stamina on get (24h = 86400 seconds reset)
+        $now = time();
+        if ($now - $inventory['stamina']['last_reset'] >= 86400) {
+            $inventory['stamina']['current'] = $inventory['stamina']['max'];
+            $inventory['stamina']['last_reset'] = $now;
+            // A mentés itt is megtörténhetne, de a get során elég ha frissen adjuk vissza,
+            // és a következő saveInventory bementi. Vagy menthetjük azonnal.
+            $this->saveInventory($inventory);
+        }
+
+        return $inventory;
     }
     
     /**
@@ -308,6 +333,103 @@ class InventoryManager {
         
         $stmt = $this->pdo->prepare("UPDATE specie SET xp = ?, lvl = ? WHERE id = ?");
         return $stmt->execute([$newXP, $newLevel, $this->playerId]);
+    }
+    
+    /**
+     * Start an active quest
+     */
+    public function startActiveQuest($questName, $difficulty, $staminaCost, $durationStr, $rewardNormal, $rewardSpec) {
+        $inventory = $this->getInventory();
+        
+        if ($inventory['active_quest'] !== null) {
+            return ['success' => false, 'message' => 'A quest is already active'];
+        }
+        
+        if ($inventory['stamina']['current'] < $staminaCost) {
+            return ['success' => false, 'message' => 'Not enough stamina'];
+        }
+        
+        // Parse "XXm YYs" format into seconds
+        $durationSeconds = 60; // Default fallback
+        if (preg_match('/(?:(\d+)m)?\s*(?:(\d+)s)?/', $durationStr, $matches)) {
+            $m = isset($matches[1]) && $matches[1] !== '' ? (int)$matches[1] : 0;
+            $s = isset($matches[2]) && $matches[2] !== '' ? (int)$matches[2] : 0;
+            if ($m > 0 || $s > 0) {
+                $durationSeconds = ($m * 60) + $s;
+            }
+        }
+        
+        $inventory['stamina']['current'] -= $staminaCost;
+        
+        $inventory['active_quest'] = [
+            'name' => $questName,
+            'difficulty' => $difficulty,
+            'start_time' => time(),
+            'duration' => $durationSeconds,
+            'reward_normal' => $rewardNormal,
+            'reward_spec' => $rewardSpec
+        ];
+        
+        if ($this->saveInventory($inventory)) {
+            return ['success' => true, 'data' => $inventory['active_quest']];
+        }
+        
+        return ['success' => false, 'message' => 'Failed to start quest'];
+    }
+    
+    /**
+     * Claim completed quest rewards
+     */
+    public function claimActiveQuest() {
+        $inventory = $this->getInventory();
+        $quest = $inventory['active_quest'];
+        
+        if (!$quest) {
+            return ['success' => false, 'message' => 'No active quest to claim'];
+        }
+        
+        // Check if finished
+        $now = time();
+        $endTime = $quest['start_time'] + $quest['duration'];
+        
+        if ($now < $endTime) {
+            return ['success' => false, 'message' => 'Quest is not finished yet'];
+        }
+        
+        $inventory['currency']['normal'] += $quest['reward_normal'];
+        $inventory['currency']['spec'] += $quest['reward_spec'];
+        $inventory['active_quest'] = null;
+        
+        if ($this->saveInventory($inventory)) {
+            return [
+                'success' => true, 
+                'message' => 'Quest claimed', 
+                'rewards' => [
+                    'normal' => $quest['reward_normal'],
+                    'spec' => $quest['reward_spec']
+                ]
+            ];
+        }
+        
+        return ['success' => false, 'message' => 'Failed to claim quest'];
+    }
+    
+    /**
+     * Developer skip active quest
+     */
+    public function skipActiveQuest() {
+        $inventory = $this->getInventory();
+        if (!$inventory['active_quest']) {
+            return ['success' => false, 'message' => 'No active quest to skip'];
+        }
+        
+        // Adjust start_time to make it finished
+        $inventory['active_quest']['start_time'] = time() - $inventory['active_quest']['duration'] - 10;
+        
+        if ($this->saveInventory($inventory)) {
+            return ['success' => true, 'message' => 'Quest skipped'];
+        }
+        return ['success' => false, 'message' => 'Failed to skip quest'];
     }
 }
 ?>

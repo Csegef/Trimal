@@ -103,6 +103,22 @@ switch ($method) {
             case 'completeQuest':
                 echo json_encode($inventoryManager->completeQuest($input['questId'] ?? null));
                 break;
+            case 'startActiveQuest':
+                echo json_encode($inventoryManager->startActiveQuest(
+                    $input['questName'] ?? '',
+                    $input['difficulty'] ?? '',
+                    $input['staminaCost'] ?? 0,
+                    $input['duration'] ?? '',
+                    $input['rewardNormal'] ?? 0,
+                    $input['rewardSpec'] ?? 0
+                ));
+                break;
+            case 'claimActiveQuest':
+                echo json_encode($inventoryManager->claimActiveQuest());
+                break;
+            case 'skipActiveQuest':
+                echo json_encode($inventoryManager->skipActiveQuest());
+                break;
             default:
                 http_response_code(400);
                 echo json_encode(['success' => false, 'message' => 'Unknown POST action: ' . $action]);

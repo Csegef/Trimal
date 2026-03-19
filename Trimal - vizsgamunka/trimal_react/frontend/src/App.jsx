@@ -12,6 +12,9 @@ import EmailVerification from './pages/EmailVerification';
 import Inventory from './pages/Inventory';
 import Shop from './pages/Shop';
 import CaveStation from './pages/CaveStation';
+import ShamanStation from './pages/ShamanStation';
+import ActiveQuestWaitView from './pages/ActiveQuestWaitView';
+import FightPlaceholder from './pages/FightPlaceholder';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/shop/:shopType" element={<Shop />} />
         <Route path="/mysterious-cave" element={<CaveStation />} />
+        <Route path="/shamans-hut" element={<ShamanStation />} />
+        <Route path="/active-quest" element={<ActiveQuestWaitView />} />
+        <Route path="/fight" element={<FightPlaceholder />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />

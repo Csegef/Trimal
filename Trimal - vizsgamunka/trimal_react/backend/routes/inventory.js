@@ -11,18 +11,13 @@ const authMiddleware = require('../middleware/authMiddleware');
 /** Load inventory JSON for a given specie (character) id */
 async function loadInventory(pool, specieId) {
   const [rows] = await pool.execute(
-    'SELECT inventory_json FROM specie WHERE id = ?',
+    'SELECT inventory_json, stamina FROM specie WHERE id = ?',
     [specieId]
   );
   if (!rows[0]) return null;
 
-  const raw = rows[0].inventory_json;
-  if (raw) {
-    try { return JSON.parse(raw); } catch { }
-  }
-
   // Default structure
-  return {
+  let inv = {
     capacity: 200,
     used: 0,
     currency: { normal: 0, spec: 0 },
@@ -34,14 +29,53 @@ async function loadInventory(pool, specieId) {
       armor_leggings: null,
       armor_boots: null,
     },
+    stamina: {
+      current: 100,
+      max: 100,
+      last_reset: Math.floor(Date.now() / 1000)
+    },
+    active_quest: null
   };
+
+  const raw = rows[0].inventory_json;
+  if (raw) {
+    try { 
+      const parsed = JSON.parse(raw); 
+      const parsedStamina = parsed.stamina || {};
+      
+      inv = { ...inv, ...parsed };
+      
+      // Deep merge stamina so we don't drop fields. Prioritize the DB specie.stamina column if it exists.
+      inv.stamina = { 
+        current: rows[0].stamina !== null && rows[0].stamina !== undefined ? Number(rows[0].stamina) : 
+                 (parsedStamina.current !== undefined ? Number(parsedStamina.current) : 100), 
+        max: parsedStamina.max !== undefined ? Number(parsedStamina.max) : 100, 
+        last_reset: parsedStamina.last_reset ? Number(parsedStamina.last_reset) : Math.floor(Date.now() / 1000) 
+      };
+      
+      if (inv.active_quest === undefined) inv.active_quest = null;
+    } catch { }
+  }
+
+  // Handle stamina refresh
+  const nowStr = Math.floor(Date.now() / 1000);
+  if (nowStr - inv.stamina.last_reset >= 86400) {
+    inv.stamina.current = inv.stamina.max;
+    inv.stamina.last_reset = nowStr;
+    await saveInventory(pool, specieId, inv);
+  }
+
+  return inv;
 }
 
 /** Persist inventory JSON back to the database */
 async function saveInventory(pool, specieId, inventory) {
+  // Sync stamina column
+  const staminaVal = inventory.stamina && inventory.stamina.current !== undefined ? inventory.stamina.current : 100;
+  
   await pool.execute(
-    'UPDATE specie SET inventory_json = ? WHERE id = ?',
-    [JSON.stringify(inventory), specieId]
+    'UPDATE specie SET inventory_json = ?, stamina = ? WHERE id = ?',
+    [JSON.stringify(inventory), staminaVal, specieId]
   );
 }
 
@@ -490,6 +524,92 @@ router.post('/quest/complete', async (req, res) => {
     res.json({ success: true, message: 'Quest completed!' });
   } catch (err) {
     console.error('[Inventory] POST /quest/complete error:', err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/quest/start ─────────────────────────────────────────
+router.post('/quest/start', async (req, res) => {
+  try {
+    const { questName, difficulty, staminaCost, duration, rewardNormal, rewardSpec } = req.body;
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    if (inv.active_quest !== null) return res.status(400).json({ success: false, message: 'A quest is already active' });
+    if (inv.stamina.current < staminaCost) return res.status(400).json({ success: false, message: 'Not enough stamina' });
+
+    let durationSeconds = 60;
+    const match = duration.match(/(?:(\d+)m)?\s*(?:(\d+)s)?/);
+    if (match) {
+      const m = match[1] ? parseInt(match[1]) : 0;
+      const s = match[2] ? parseInt(match[2]) : 0;
+      if (m > 0 || s > 0) durationSeconds = (m * 60) + s;
+    }
+
+    inv.stamina.current -= (Number(staminaCost) || 0);
+    inv.active_quest = {
+      name: questName,
+      difficulty,
+      start_time: Math.floor(Date.now() / 1000),
+      duration: durationSeconds,
+      reward_normal: rewardNormal,
+      reward_spec: rewardSpec
+    };
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, data: inv.active_quest });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/quest/claim ─────────────────────────────────────────
+router.post('/quest/claim', async (req, res) => {
+  try {
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
+
+    const q = inv.active_quest;
+    const now = Math.floor(Date.now() / 1000);
+    if (now < q.start_time + q.duration) return res.status(400).json({ success: false, message: 'Quest not finished yet' });
+
+    inv.currency.normal = (inv.currency.normal || 0) + q.reward_normal;
+    inv.currency.spec = (inv.currency.spec || 0) + q.reward_spec;
+    inv.active_quest = null;
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, rewards: { normal: q.reward_normal, spec: q.reward_spec } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/quest/skip ─────────────────────────────────────────
+router.post('/quest/skip', async (req, res) => {
+  try {
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
+
+    inv.active_quest.start_time = Math.floor(Date.now() / 1000) - inv.active_quest.duration - 10;
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Skipped' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/quest/restore-stamina ────────────────────────────
+router.post('/quest/restore-stamina', async (req, res) => {
+  try {
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    inv.stamina.current = inv.stamina.max || 100;
+    inv.stamina.last_reset = Math.floor(Date.now() / 1000);
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, stamina: inv.stamina });
+  } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 });
