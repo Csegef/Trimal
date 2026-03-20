@@ -14,7 +14,7 @@ const CharacterSignIn = () => {
     React.useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
-            navigate('/maingame');
+            navigate('/maingame', { replace: true });
         }
 
         const lastLogin = localStorage.getItem('lastLogin');

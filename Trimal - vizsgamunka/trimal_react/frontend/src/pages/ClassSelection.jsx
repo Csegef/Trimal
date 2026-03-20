@@ -10,7 +10,11 @@ const classes = [
     prefix: "n",
     gif: "/assets/character/cast_gifs/neanderthal_cast.gif",
     description:
-      "Strong and resilient. The Neanderthals utilize brute force and endurance to survive the harsh environments.",
+      "Strong and resilient. The Neanderthals utilize brute force and endurance to survive harsh environments.",
+    specialAbility: {
+      name: "Rage",
+      description: "Has a small chance to strike the opponent 2–3 times in a row.",
+    },
   },
   {
     id: "floresiensis",
@@ -19,6 +23,10 @@ const classes = [
     gif: "/assets/character/cast_gifs/flroesiensis_cast.gif",
     description:
       "Small and agile. The Floresiensis creates tools and moves with speed that baffles larger prey.",
+    specialAbility: {
+      name: "Reflex",
+      description: "Sometimes dodges the opponent's attacks.",
+    },
   },
   {
     id: "sapiens",
@@ -27,6 +35,10 @@ const classes = [
     gif: "/assets/character/cast_gifs/homosapiens_cast.gif",
     description:
       "Intelligent and adaptable. The Sapiens use superior tactics and social structures to dominate.",
+    specialAbility: {
+      name: "First Strike",
+      description: "Always attacks first in combat.",
+    },
   },
 ];
 
@@ -134,8 +146,27 @@ const ClassSelection = () => {
               <p className="text-stone-300 text-xs md:text-sm text-center leading-relaxed">
                 {classes[currentIndex].description}
               </p>
+              {/* Special ability */}
+              {classes[currentIndex].specialAbility && (
+                <div className="mt-3 pt-3 border-t border-stone-700/60">
+                  <div className="text-[10px] uppercase tracking-widest text-amber-600/80 font-semibold mb-1.5 text-center">
+                    Special Ability
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-amber-400 font-bold text-sm">
+                        {classes[currentIndex].specialAbility.name}
+                      </span>
+                    </div>
+                    <p className="text-stone-400 text-xs text-center leading-relaxed">
+                      {classes[currentIndex].specialAbility.description}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+
 
           {/* Gomb - kisebb */}
           <div className="flex justify-center">

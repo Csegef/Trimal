@@ -381,14 +381,26 @@ const Inventory = () => {
   };
 
   // Build the set of equipped item IDs to exclude from the grid
+  // Note: Backend already reduces quantity or removes equipped items, so we don't need to filter by ID heavily,
+  // but it's safe to keep.
   const equippedItemIds = new Set(
     Object.values(inventory?.equipped || {}).filter(Boolean).map(e => e?.id).filter(Boolean)
   );
 
   const displayCap = Math.floor((inventory?.capacity || 200) / 10);
+
+  const unequippedItems = [];
+  (inventory?.items || []).forEach(item => {
+    if ((item.type === 'weapon' || item.type === 'armor') && item.quantity > 1) {
+      for (let i = 0; i < item.quantity; i++) {
+        unequippedItems.push({ ...item, quantity: 1, _virtualId: `${item.id}-${i}` });
+      }
+    } else {
+      unequippedItems.push({ ...item, _virtualId: item.id.toString() });
+    }
+  });
+
   const slots = Array.from({ length: displayCap }, (_, i) => {
-    // Filter out equipped items so they only appear in their slots
-    const unequippedItems = (inventory?.items || []).filter(item => !equippedItemIds.has(item.id));
     return unequippedItems[i] ?? null;
   });
 
@@ -430,7 +442,7 @@ const Inventory = () => {
           )}
           {inventory && (
             <span className="ml-auto text-xs text-stone-500">
-              📦 {Math.floor((inventory.used || 0) / 10)}/{Math.floor((inventory.capacity || 200) / 10)}
+              📦 {inventory.used || 0}/{inventory.capacity || 200}
             </span>
           )}
         </div>
@@ -550,7 +562,7 @@ const Inventory = () => {
                         {canUpgrade ? (
                           <button
                             onClick={() => handleUpgradeStat(key)}
-                            title={`Upgrade ${label} for ${cost} gold`}
+                            title={`Upgrade ${label} for ${cost} river pebble(s)`}
                             disabled={busy}
                             className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
                           >

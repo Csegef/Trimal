@@ -337,21 +337,22 @@ const Shop = () => {
         ) : (
           /* Map-like outer container: station background fills this frame, like the map in MainGame */
           <div
-            className="relative w-full h-[75vh] rounded-2xl border-4 border-stone-700/80 shadow-2xl overflow-hidden"
+            className="relative w-full rounded-2xl border-4 border-stone-700/80 shadow-2xl"
             style={{
               backgroundImage: `url('/backgrounds/trimal_${shopType}_station_background.png')`,
               backgroundSize: "cover",
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
+              minHeight: "60vh",
             }}
           >
             {/* Wares panel — semi-transparent, overlaid on the right side of station bg */}
             <div className="absolute inset-0 flex items-stretch justify-end p-6">
               <div
-                className="w-[58%] rounded-2xl border border-stone-600/40 p-6 shadow-2xl overflow-y-auto"
+                className="w-[58%] rounded-2xl border border-stone-600/40 p-4 shadow-2xl overflow-visible"
                 style={{ background: "rgba(8,4,1,0.70)", backdropFilter: "blur(6px)" }}
               >
-                <div className="flex justify-between items-center mb-5">
+                <div className="flex justify-between items-center mb-3">
                   <div className="text-amber-600/90 text-sm font-semibold tracking-widest uppercase">
                     Today's Wares
                   </div>
@@ -360,7 +361,7 @@ const Shop = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-3 gap-3">
                   {shopItems.length > 0 ? (
                     shopItems.map((shopItemInfo, idx) => (
                       <ShopItemTile
@@ -379,6 +380,7 @@ const Shop = () => {
               </div>
             </div>
           </div>
+
         )}
 
       </div>

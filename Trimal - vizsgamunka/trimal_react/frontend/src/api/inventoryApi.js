@@ -153,10 +153,15 @@ export function resolveEquipSlot(item) {
   if (item.type === 'weapon') return 'weapon';
   if (item.type === 'armor') {
     const icon = (item.iconPath || '').toLowerCase();
-    if (icon.includes('cap') || icon.includes('helmet') || icon.includes('head')) return 'armor_cap';
-    if (icon.includes('plate') || icon.includes('chest') || icon.includes('body')) return 'armor_plate';
-    if (icon.includes('leggings') || icon.includes('leg') || icon.includes('pant')) return 'armor_leggings';
-    if (icon.includes('boots') || icon.includes('boot') || icon.includes('feet') || icon.includes('shoe')) return 'armor_boots';
+    const cat  = (item.category || '').toLowerCase();
+    if (icon.includes('cap') || icon.includes('helmet') || icon.includes('head') ||
+        cat.includes('cap')  || cat.includes('helmet')  || cat.includes('head')) return 'armor_cap';
+    if (icon.includes('plate') || icon.includes('chest') || icon.includes('body') ||
+        cat.includes('plate') || cat.includes('chest')   || cat.includes('body')) return 'armor_plate';
+    if (icon.includes('leggings') || icon.includes('leg') || icon.includes('pant') ||
+        cat.includes('leggings')  || cat.includes('leg')  || cat.includes('pant')) return 'armor_leggings';
+    if (icon.includes('boots') || icon.includes('boot') || icon.includes('feet') || icon.includes('shoe') ||
+        cat.includes('boots') || cat.includes('boot')    || cat.includes('feet') || cat.includes('shoe')) return 'armor_boots';
     return 'armor_plate'; // fallback
   }
   return null;

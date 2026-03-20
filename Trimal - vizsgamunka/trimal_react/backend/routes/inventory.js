@@ -39,20 +39,20 @@ async function loadInventory(pool, specieId) {
 
   const raw = rows[0].inventory_json;
   if (raw) {
-    try { 
-      const parsed = JSON.parse(raw); 
+    try {
+      const parsed = JSON.parse(raw);
       const parsedStamina = parsed.stamina || {};
-      
+
       inv = { ...inv, ...parsed };
-      
+
       // Deep merge stamina so we don't drop fields. Prioritize the DB specie.stamina column if it exists.
-      inv.stamina = { 
-        current: rows[0].stamina !== null && rows[0].stamina !== undefined ? Number(rows[0].stamina) : 
-                 (parsedStamina.current !== undefined ? Number(parsedStamina.current) : 100), 
-        max: parsedStamina.max !== undefined ? Number(parsedStamina.max) : 100, 
-        last_reset: parsedStamina.last_reset ? Number(parsedStamina.last_reset) : Math.floor(Date.now() / 1000) 
+      inv.stamina = {
+        current: rows[0].stamina !== null && rows[0].stamina !== undefined ? Number(rows[0].stamina) :
+          (parsedStamina.current !== undefined ? Number(parsedStamina.current) : 100),
+        max: parsedStamina.max !== undefined ? Number(parsedStamina.max) : 100,
+        last_reset: parsedStamina.last_reset ? Number(parsedStamina.last_reset) : Math.floor(Date.now() / 1000)
       };
-      
+
       if (inv.active_quest === undefined) inv.active_quest = null;
     } catch { }
   }
@@ -72,7 +72,7 @@ async function loadInventory(pool, specieId) {
 async function saveInventory(pool, specieId, inventory) {
   // Sync stamina column
   const staminaVal = inventory.stamina && inventory.stamina.current !== undefined ? inventory.stamina.current : 100;
-  
+
   await pool.execute(
     'UPDATE specie SET inventory_json = ?, stamina = ? WHERE id = ?',
     [JSON.stringify(inventory), staminaVal, specieId]
@@ -177,7 +177,7 @@ router.post('/stats/upgrade', async (req, res) => {
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
     if ((inv.currency.normal || 0) < cost) {
-      return res.status(400).json({ success: false, message: `Not enough gold! need ${cost}` });
+      return res.status(400).json({ success: false, message: `Not enough river pebbles! need ${cost}` });
     }
 
     inv.currency.normal -= cost;
@@ -189,7 +189,7 @@ router.post('/stats/upgrade', async (req, res) => {
       [req.user.specieId]
     );
 
-    res.json({ success: true, message: `Upgraded ${statKey} to ${currentVal + 1} for ${cost} gold` });
+    res.json({ success: true, message: `Upgraded ${statKey} to ${currentVal + 1} for ${cost} river pebble(s)` });
   } catch (err) {
     console.error('[Inventory] POST /stats/upgrade error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -200,25 +200,45 @@ router.post('/stats/upgrade', async (req, res) => {
 router.post('/equip', async (req, res) => {
   try {
     const { slot, itemId } = req.body;
-    if (!slot || itemId == null)
+    const fs = require('fs');
+    if (!slot || itemId == null) {
+      fs.appendFileSync('equip_debug.log', `[400] Missing slot or itemId -> slot: ${slot}, itemId: ${itemId}\n`);
       return res.status(400).json({ success: false, message: 'Missing: slot, itemId' });
+    }
 
     const validSlots = ['weapon', 'armor_cap', 'armor_plate', 'armor_leggings', 'armor_boots'];
-    if (!validSlots.includes(slot))
+    if (!validSlots.includes(slot)) {
+      fs.appendFileSync('equip_debug.log', `[400] Invalid slot -> slot: ${slot}\n`);
       return res.status(400).json({ success: false, message: 'Invalid equipment slot: ' + slot });
+    }
 
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
-    // Find item in inventory
-    const itemIdx = inv.items.findIndex(i => i.id == itemId);
-    if (itemIdx === -1) return res.status(400).json({ success: false, message: 'Item not found in inventory' });
+    const expectedType = slot === 'weapon' ? 'weapon' : (slot.startsWith('armor_') ? 'armor' : null);
+
+    let itemIdx = inv.items.findIndex(i => i.id == itemId && (expectedType ? i.type === expectedType : true));
+
+    // Fallback if not found by type natively, just in case (e.g. capitalized legacy types)
+    if (itemIdx === -1) {
+      itemIdx = inv.items.findIndex(i => i.id == itemId && (expectedType ? (i.type || '').toLowerCase() === expectedType : true));
+    }
+
+    if (itemIdx === -1) {
+      fs.appendFileSync('equip_debug.log', `[400] Item not found -> itemId: ${itemId}, items: ${JSON.stringify(inv.items.map(i => ({ id: i.id, type: i.type, name: i.name })))}\n`);
+      return res.status(400).json({ success: false, message: 'Item not found in inventory' });
+    }
     const item = inv.items[itemIdx];
 
-    if (slot === 'weapon' && item.type !== 'weapon')
+    const normalizedType = (item.type || '').toLowerCase();
+    if (slot === 'weapon' && normalizedType !== 'weapon') {
+      fs.appendFileSync('equip_debug.log', `[400] Not a weapon -> itemId: ${itemId}, type: ${item.type}\n`);
       return res.status(400).json({ success: false, message: 'Item is not a weapon' });
-    if (slot.startsWith('armor_') && item.type !== 'armor')
+    }
+    if (slot.startsWith('armor_') && normalizedType !== 'armor') {
+      fs.appendFileSync('equip_debug.log', `[400] Not an armor -> itemId: ${itemId}, type: ${item.type}\n`);
       return res.status(400).json({ success: false, message: 'Item is not armor' });
+    }
 
     // If something is already in this slot, push it back to items first
     const currentlyEquipped = inv.equipped[slot];
@@ -295,20 +315,64 @@ router.post('/sell', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
-    const idx = inv.items.findIndex(i => i.id == itemId && i.type === itemType);
+    const normalizedReqType = (itemType || '').toLowerCase();
+    const idx = inv.items.findIndex(i => i.id == itemId && (i.type || '').toLowerCase() === normalizedReqType);
     if (idx === -1)
       return res.status(400).json({ success: false, message: 'Item not found' });
 
     const item = inv.items[idx];
-    // Check if item is equipped (now stored as objects)
+    // Check if item is equipped (now stored as objects), taking type into account to prevent legacy ID collisions
     const isEquipped = Object.values(inv.equipped || {}).some(
-      e => e && typeof e === 'object' && e.id == item.id
+      e => e && typeof e === 'object' && e.id == item.id && (e.type || '').toLowerCase() === (item.type || '').toLowerCase()
     );
     if (isEquipped)
       return res.status(400).json({ success: false, message: 'Cannot sell an equipped item' });
 
     const sellQty = Math.min(quantity, item.quantity);
-    const sellPrice = (item.sell_price || 0) * sellQty;
+
+    // Look up costs from the DB for dynamic pricing
+    let sellPrice = 0;
+    const lookupId = item.item_id != null ? item.item_id : item.id;
+    const normalizedType = (item.type || '').toLowerCase();
+
+    if (lookupId != null) {
+      const tableMap = { weapon: 'item_weapon', armor: 'item_armor', food: 'item_food', misc: 'item_misc' };
+      const table = tableMap[normalizedType];
+      if (table) {
+        // None of the tables have 'sell_price'. Everything uses 'normal_currency_cost'.
+        const [dbRows] = await req.pool.execute(
+          `SELECT normal_currency_cost FROM ${table} WHERE item_id = ?`,
+          [lookupId]
+        );
+
+        if (dbRows.length > 0) {
+          const row = dbRows[0];
+          const [specRows] = await req.pool.execute('SELECT lvl FROM specie WHERE id = ?', [req.user.specieId]);
+          const playerLevel = specRows[0]?.lvl || 1;
+          const baseCost = row.normal_currency_cost || 0;
+
+          if (normalizedType === 'misc') {
+            // Misc items scale directly from the DB base cost
+            sellPrice = Math.round(baseCost * (1 + playerLevel * 0.1));
+          } else {
+            // Equipment and food resell for 40% of their generated shop price
+            const dynamicBuyPrice = Math.round((baseCost * (1 + playerLevel * 0.1)) * (1 + playerLevel / 10));
+            sellPrice = Math.round(dynamicBuyPrice * 0.40);
+          }
+        }
+      }
+    }
+
+    // Fallback if DB lookup failed or calculated 0
+    if (sellPrice === 0) {
+      sellPrice = item.sell_price || 0;
+    }
+    // Hard fallback so players don't get 0 for selling
+    if (sellPrice === 0) {
+      sellPrice = 1;
+    }
+
+    sellPrice = sellPrice * sellQty;
 
     item.quantity -= sellQty;
     if (item.quantity <= 0) inv.items.splice(idx, 1);
@@ -317,12 +381,13 @@ router.post('/sell', async (req, res) => {
     recalcUsed(inv);
 
     await saveInventory(req.pool, req.user.specieId, inv);
-    res.json({ success: true, message: `Sold for ${sellPrice} gold` });
+    res.json({ success: true, message: `Sold for ${sellPrice} river pebble${sellPrice > 1 ? 's' : ''}` });
   } catch (err) {
     console.error('[Inventory] POST /sell error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 
 // ─── POST /api/inventory/use ──────────────────────────────────────────────────
 router.post('/use', async (req, res) => {

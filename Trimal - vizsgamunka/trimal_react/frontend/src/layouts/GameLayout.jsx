@@ -16,11 +16,10 @@ const GameLayout = ({ children, currency }) => {
         .then((r) => r.json())
         .then((res) => {
           if (res.success && res.data) {
-            setStamina(res.data.stamina);
             setActiveQuest(res.data.active_quest);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, []);
   const handleLogout = async () => {
@@ -52,7 +51,7 @@ const GameLayout = ({ children, currency }) => {
       localStorage.removeItem("lastLogin");
 
       // Redirect to login page
-      navigate("/");
+      navigate("/", { replace: true });
     }
   };
 
@@ -129,17 +128,17 @@ const GameLayout = ({ children, currency }) => {
         </header>
 
         {/* Main Game Content */}
-        <main className="grow flex relative items-center justify-center p-4 min-h-0 overflow-hidden">
+        <main className="grow flex relative items-center justify-center p-4 min-h-0 overflow-visible">
           {children}
-          
+
           {/* Active Quest Interaction Blocker */}
           {activeQuest && location.pathname !== '/active-quest' && (
             <div className="absolute inset-0 z-50 bg-black/10 backdrop-blur-[1px] flex flex-col items-center justify-start pt-10" style={{ pointerEvents: 'auto' }} onClickCapture={(e) => { e.stopPropagation(); navigate('/active-quest'); }}>
-               {/* Click capture stops all interaction inside main, forces active-quest redirect on click */}
-               <div className="bg-red-900/90 border-2 border-red-500 text-red-100 px-6 py-3 rounded-xl shadow-2xl animate-pulse cursor-pointer flex flex-col items-center">
-                  <span className="font-bold tracking-widest uppercase text-sm">Active Quest in Progress</span>
-                  <span className="text-xs text-red-300 mt-1">Click here to view</span>
-               </div>
+              {/* Click capture stops all interaction inside main, forces active-quest redirect on click */}
+              <div className="bg-red-900/90 border-2 border-red-500 text-red-100 px-6 py-3 rounded-xl shadow-2xl animate-pulse cursor-pointer flex flex-col items-center">
+                <span className="font-bold tracking-widest uppercase text-sm">Active Quest in Progress</span>
+                <span className="text-xs text-red-300 mt-1">Click here to view</span>
+              </div>
             </div>
           )}
         </main>

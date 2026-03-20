@@ -35,7 +35,7 @@ const CaveStation = () => {
     if (category === "enemy") list = entities.enemies;
     else if (category === "weapon") list = entities.weapons;
     else if (category === "armor") list = entities.armors;
-    else if (category === "other stuff") list = entities.foods.filter(f => f.rarity?.toLowerCase() !== 'common');
+    else if (category === "other stuff") list = entities.foods;
 
     if (category === "enemy") {
       const order = { Light: 0, Medium: 1, Heavy: 2 };
@@ -88,8 +88,8 @@ const CaveStation = () => {
                 key={cat}
                 onClick={() => { setCategory(cat); setIndex(0); }}
                 className={`w-36 px-4 py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all border-2 ${category === cat
-                    ? "bg-amber-800 border-amber-600 text-amber-100"
-                    : "bg-stone-900/50 border-stone-700/60 text-stone-500 hover:text-stone-300 hover:border-stone-600"
+                  ? "bg-amber-800 border-amber-600 text-amber-100"
+                  : "bg-stone-900/50 border-stone-700/60 text-stone-500 hover:text-stone-300 hover:border-stone-600"
                   }`}
               >
                 {cat}
