@@ -8,6 +8,52 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Handle level-up logic: increase stats and XP threshold */
+async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
+  let lvl = currentLvl;
+  let xp = currentXp + xpToAdd;
+  
+  let levelsGained = 0;
+  while (xp >= lvl * 100) {
+    xp -= (lvl * 100);
+    lvl++;
+    levelsGained++;
+  }
+
+  if (levelsGained > 0) {
+    // Stat increase: +1 to all, every 5 levels the increase increases by 1
+    // 1-5: +1, 6-10: +2, 11-15: +3, etc.
+    const statIncrease = 1 + Math.floor((lvl - 1 - levelsGained) / 5); 
+    // Wait, the requirement says "1-5ig +1, majd 6-10-ig +2". 
+    // This means at level 6 transition (from 5 to 6), the increase should be +2? 
+    // Or does it mean while being level 6-10?
+    // Let's use: for each level gained, calculate its specific increase.
+    
+    let totalStatInc = 0;
+    let tempLvl = currentLvl;
+    for (let i = 0; i < levelsGained; i++) {
+        totalStatInc += (1 + Math.floor((tempLvl - 1) / 5));
+        tempLvl++;
+    }
+
+    await pool.execute(
+      `UPDATE specie SET 
+        lvl = ?, xp = ?, 
+        base_health = base_health + ?, 
+        base_strength = base_strength + ?, 
+        base_agility = base_agility + ?, 
+        base_luck = base_luck + ?, 
+        base_resistance = base_resistance + ?
+       WHERE id = ?`,
+      [lvl, xp, totalStatInc, totalStatInc, totalStatInc, totalStatInc, totalStatInc, specieId]
+    );
+    return { lvl, xp, leveledUp: true, increase: totalStatInc };
+  } else {
+    await pool.execute('UPDATE specie SET xp = ? WHERE id = ?', [xp, specieId]);
+    return { lvl, xp, leveledUp: false };
+  }
+}
+
 /** Load inventory JSON for a given specie (character) id */
 async function loadInventory(pool, specieId) {
   const [rows] = await pool.execute(
@@ -81,7 +127,8 @@ async function saveInventory(pool, specieId, inventory) {
 
 /** Recalculate the `used` field (1 slot per unique stack) */
 function recalcUsed(inventory) {
-  inventory.used = inventory.items.reduce((sum, item) => sum + ((item.quantity || 1) * (item.inventory_size || 10)), 0);
+  // Each stack takes exactly its inventory_size, regardless of quantity within the stack
+  inventory.used = inventory.items.reduce((sum, item) => sum + (item.inventory_size || 10), 0);
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -169,8 +216,12 @@ router.post('/stats/upgrade', async (req, res) => {
 
     if (!rows[0]) return res.status(404).json({ success: false, message: 'Character not found' });
 
+    const [lvlRows] = await pool.execute(`SELECT lvl FROM specie WHERE id = ?`, [req.user.specieId]);
+    const playerLevel = lvlRows[0]?.lvl || 1;
+
     const currentVal = rows[0][statCol] || 0;
-    const cost = Math.max(10, currentVal * 10); // Example: 10 * 10 = 100 gold
+    // Scaled cost: base 10 + (stat * 10) + (level * 20)
+    const cost = Math.max(10, (currentVal * 10) + (playerLevel * 20)); 
 
     // Deduct cost
     const inv = await loadInventory(pool, req.user.specieId);
@@ -353,10 +404,10 @@ router.post('/sell', async (req, res) => {
 
           if (normalizedType === 'misc') {
             // Misc items scale directly from the DB base cost
-            sellPrice = Math.round(baseCost * (1 + playerLevel * 0.1));
+            sellPrice = Math.round(baseCost * (1 + playerLevel * 0.2));
           } else {
             // Equipment and food resell for 40% of their generated shop price
-            const dynamicBuyPrice = Math.round((baseCost * (1 + playerLevel * 0.1)) * (1 + playerLevel / 10));
+            const dynamicBuyPrice = Math.round((baseCost * (1 + playerLevel * 0.2)) * (1 + playerLevel / 5));
             sellPrice = Math.round(dynamicBuyPrice * 0.40);
           }
         }
@@ -568,7 +619,7 @@ router.post('/quest/complete', async (req, res) => {
       await saveInventory(pool, req.user.specieId, inv);
     }
 
-    // Add XP directly to specie row
+    // Add XP and handle level up
     const xpToAdd = quest.xp || 0;
     if (xpToAdd > 0) {
       const [specRows] = await pool.execute(
@@ -576,13 +627,7 @@ router.post('/quest/complete', async (req, res) => {
         [req.user.specieId]
       );
       if (specRows[0]) {
-        let { lvl, xp } = specRows[0];
-        xp += xpToAdd;
-        while (xp >= lvl * 100) { xp -= lvl * 100; lvl++; }
-        await pool.execute(
-          'UPDATE specie SET xp = ?, lvl = ? WHERE id = ?',
-          [xp, lvl, req.user.specieId]
-        );
+        await handleLevelUp(pool, req.user.specieId, specRows[0].lvl, specRows[0].xp, xpToAdd);
       }
     }
 
@@ -596,7 +641,7 @@ router.post('/quest/complete', async (req, res) => {
 // ─── POST /api/inventory/quest/start ─────────────────────────────────────────
 router.post('/quest/start', async (req, res) => {
   try {
-    const { questName, difficulty, staminaCost, duration, rewardNormal, rewardSpec } = req.body;
+    const { questName, difficulty, staminaCost, duration, rewardNormal, rewardSpec, rewardXP, background } = req.body;
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
@@ -618,7 +663,9 @@ router.post('/quest/start', async (req, res) => {
       start_time: Math.floor(Date.now() / 1000),
       duration: durationSeconds,
       reward_normal: rewardNormal,
-      reward_spec: rewardSpec
+      reward_spec: rewardSpec,
+      reward_xp: Number(rewardXP) || 0,
+      background: background || null
     };
 
     await saveInventory(req.pool, req.user.specieId, inv);
@@ -640,10 +687,25 @@ router.post('/quest/claim', async (req, res) => {
 
     inv.currency.normal = (inv.currency.normal || 0) + q.reward_normal;
     inv.currency.spec = (inv.currency.spec || 0) + q.reward_spec;
+    const questXP = q.reward_xp || 0;
     inv.active_quest = null;
 
+    // Award XP and handle level up
+    const [specRows] = await req.pool.execute('SELECT lvl, xp FROM specie WHERE id = ?', [req.user.specieId]);
+    let levelMsg = "";
+    if (specRows[0]) {
+      const result = await handleLevelUp(req.pool, req.user.specieId, specRows[0].lvl, specRows[0].xp, questXP);
+      if (result.leveledUp) {
+          levelMsg = ` Level up! Reached level ${result.lvl}. All stats +${result.increase}!`;
+      }
+    }
+
     await saveInventory(req.pool, req.user.specieId, inv);
-    res.json({ success: true, rewards: { normal: q.reward_normal, spec: q.reward_spec } });
+    res.json({ 
+        success: true, 
+        message: `Quest claimed! +${q.reward_normal} pebbles, +${questXP} XP.${levelMsg}`,
+        rewards: { normal: q.reward_normal, spec: q.reward_spec, xp: questXP } 
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

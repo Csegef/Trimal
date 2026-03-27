@@ -103,7 +103,7 @@ const ActiveQuestWaitView = () => {
             <div className="relative rounded-3xl overflow-hidden border-2 border-stone-700/60 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex-1 min-h-0">
               <div
                 className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url('${background}')` }}
+                style={{ backgroundImage: `url('${activeQuest.background || '/src/assets/design/backgrounds/quest_background/forest_backgroundFULLHD.jpg'}')` }}
               />
               <div className="absolute inset-0 bg-black/25" />
 

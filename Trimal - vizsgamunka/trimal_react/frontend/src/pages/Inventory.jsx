@@ -551,7 +551,7 @@ const Inventory = () => {
                       const equippedArmor = Object.values(inventory?.equipped || {}).filter(item => item && item.type === 'armor');
                       currentVal = equippedArmor.reduce((sum, item) => sum + (item.armor_point || 0), 0);
                     }
-                    const cost = Math.max(10, currentVal * 10);
+                    const cost = Math.max(10, (currentVal * 10) + (playerInfo?.lvl || 1) * 20);
                     const canUpgrade = key !== 'armor';
                     return (
                       <div key={key} className="flex items-center gap-3">

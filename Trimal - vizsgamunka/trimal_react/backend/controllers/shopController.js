@@ -95,8 +95,8 @@ const getShopItems = async (req, res) => {
           // buy_price = price * (1 + player_level / 10)
           const calculatePrice = (baseCost) => {
             if (!baseCost) return 0;
-            const price = baseCost * (1 + playerLevel * 0.1);
-            return Math.round(price * (1 + playerLevel / 10));
+            const price = baseCost * (1 + playerLevel * 0.2); // Base increase
+            return Math.round(price * (1 + playerLevel / 5)); // Level multiplier
           };
 
           const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
@@ -174,8 +174,8 @@ const buyShopItem = async (req, res) => {
     // Árszámítás
     const calculatePrice = (baseCost) => {
       if (!baseCost) return 0;
-      const price = baseCost * (1 + playerLevel * 0.1);
-      return Math.round(price * (1 + playerLevel / 10));
+      const price = baseCost * (1 + playerLevel * 0.2);
+      return Math.round(price * (1 + playerLevel / 5));
     };
 
     const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);

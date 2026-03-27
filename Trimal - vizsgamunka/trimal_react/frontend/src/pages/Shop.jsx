@@ -104,7 +104,7 @@ function ShopItemTile({ item, onClick, playerInfo }) {
           opacity: isPurchased ? 0.4 : 1,
           filter: isPurchased ? "grayscale(100%)" : "none"
         }}
-        className={`relative flex items-center justify-center w-full h-full rounded-xl border-2 bg-stone-950/80 transition-all duration-150 ${isPurchased ? "cursor-not-allowed" : "hover:scale-[1.03]"}`}
+        className={`relative flex items-center justify-center w-full h-full rounded-xl border-2 bg-stone-950/80 transition-all duration-150 ${isPurchased ? "cursor-not-allowed" : "hover:scale-[1.02] hover:brightness-110"}`}
       >
         {!imgError ? (
           <img
@@ -230,7 +230,6 @@ function ActionMenu({ shopItemInfo, position, onConfirm, onClose }) {
         className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-green-900/30 text-green-400 transition-colors font-medium flex justify-between items-center"
       >
         <span>Buy Item</span>
-        <span>🛒</span>
       </button>
       <button
         onClick={onClose}
@@ -319,70 +318,77 @@ const Shop = () => {
         />
       )}
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 flex flex-col gap-4">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-4 md:py-8 flex flex-col items-center justify-start h-full md:h-[90vh]">
 
-        {/* Header */}
-        <div className="border-b border-stone-800/70 pb-3">
-          <h1 className="text-3xl font-bold tracking-widest text-[#FBBF24] uppercase drop-shadow-md">
-            {shopTitle}
-          </h1>
-          {/* text-2xl font-bold tracking-widest text-amber-400 uppercase */}
-          <p className="text-stone-400 text-sm mt-1">{shopDesc}</p>
-        </div>
+        {/* Main Shop Container */}
+        <div className="w-full h-full flex flex-col rounded-3xl border-4 border-stone-800 shadow-2xl overflow-y-auto overflow-x-hidden bg-stone-950 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900/50 relative">
 
-        {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="text-amber-600/70 animate-pulse tracking-widest text-xl">Entering shop...</div>
-          </div>
-        ) : (
-          /* Map-like outer container: station background fills this frame, like the map in MainGame */
+          {/* Full-width Station Background */}
           <div
-            className="relative w-full rounded-2xl border-4 border-stone-700/80 shadow-2xl"
-            style={{
-              backgroundImage: `url('/backgrounds/trimal_${shopType}_station_background.png')`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              minHeight: "60vh",
-            }}
+            className="absolute inset-0 bg-cover bg-center z-0 pointer-events-none"
+            style={{ backgroundImage: `url('/src/assets/design/backgrounds/station_background/trimal_${shopType}_station_background.png')` }}
           >
-            {/* Wares panel — semi-transparent, overlaid on the right side of station bg */}
-            <div className="absolute inset-0 flex items-stretch justify-end p-6">
-              <div
-                className="w-[58%] rounded-2xl border border-stone-600/40 p-4 shadow-2xl overflow-visible"
-                style={{ background: "rgba(8,4,1,0.70)", backdropFilter: "blur(6px)" }}
-              >
-                <div className="flex justify-between items-center mb-3">
-                  <div className="text-amber-600/90 text-sm font-semibold tracking-widest uppercase">
-                    Today's Wares
-                  </div>
-                  <div className="text-[10px] text-stone-500 bg-stone-900/60 px-2 py-1 rounded border border-stone-700/40">
-                    Stock refreshes daily
+            {/* Subtle gradient so white text remains readable on top */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-transparent pointer-events-none" />
+          </div>
+
+          {/* Content Wrapper */}
+          <div className="relative z-10 flex-1 flex flex-col justify-between p-4 md:p-8 pointer-events-none">
+
+            {/* Header */}
+            <div className="pointer-events-auto mt-4 px-4">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+                {shopType === 'tinkerer' ? "Tinkerer's Workshop" : "Herbalist's Garden"}
+              </h1>
+              <p className="text-stone-300 mt-2 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] max-w-2xl">
+                {shopType === 'tinkerer'
+                  ? "A place of grease, and finely crafted weapons. Upgrade your gear or browse the latest masterworks."
+                  : "The air here is thick with the scent of wild herbs and potent elixirs. Find something to heal your wounds or boost your spirits."}
+              </p>
+            </div>
+
+            {/* Bottom Wares Panel */}
+            <div className="pointer-events-auto mt-auto pt-32 shrink-0">
+              <div className="bg-stone-900/90 backdrop-blur-xl border-2 border-amber-900/30 rounded-3xl p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
+                <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
+                  <h2 className="text-xl md:text-2xl font-black text-stone-200 tracking-widest uppercase">
+                    Available Wares
+                  </h2>
+                  <div className="hidden md:flex gap-2 text-stone-500 font-bold uppercase tracking-widest text-xs">
+                    Next Refill: <span className="text-amber-600">Daily at Midnight</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {shopItems.length > 0 ? (
-                    shopItems.map((shopItemInfo, idx) => (
-                      <ShopItemTile
-                        key={shopItemInfo.shop_id || idx}
-                        item={shopItemInfo}
-                        playerInfo={playerInfo}
-                        onClick={(e) => openBuyMenu(shopItemInfo, e)}
-                      />
-                    ))
-                  ) : (
-                    <div className="col-span-3 py-10 text-center text-stone-500 italic">
-                      The merchant has nothing to offer you today.
-                    </div>
-                  )}
-                </div>
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-10 gap-4">
+                    <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-stone-400 font-bold animate-pulse text-sm">Browsing stock...</span>
+                  </div>
+                ) : (
+                  <div className="flex overflow-x-auto gap-6 pb-4 pt-2 px-2 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900/50">
+                    {shopItems.length > 0 ? (
+                      shopItems.map((shopItemInfo, idx) => (
+                        <div key={shopItemInfo.shop_id || idx} className="min-w-[200px] w-[200px] shrink-0">
+                          <ShopItemTile
+                            item={shopItemInfo}
+                            playerInfo={playerInfo}
+                            onClick={(e) => openBuyMenu(shopItemInfo, e)}
+                          />
+                        </div>
+                      ))
+                    ) : (
+                      <div className="w-full py-16 text-center bg-stone-950/30 rounded-2xl border-2 border-dashed border-stone-800">
+                        <p className="text-stone-500 font-bold italic tracking-wider uppercase text-sm">
+                          The merchant has nothing to offer you today.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-        )}
-
+        </div>
       </div>
     </GameLayout>
   );
