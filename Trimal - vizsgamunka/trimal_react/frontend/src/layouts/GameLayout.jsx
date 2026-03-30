@@ -132,7 +132,7 @@ const GameLayout = ({ children, currency }) => {
           {children}
 
           {/* Active Quest Interaction Blocker */}
-          {activeQuest && location.pathname !== '/active-quest' && (
+          {activeQuest && location.pathname !== '/active-quest' && location.pathname !== '/fight' && (
             <div className="absolute inset-0 z-50 bg-black/10 backdrop-blur-[1px] flex flex-col items-center justify-start pt-10" style={{ pointerEvents: 'auto' }} onClickCapture={(e) => { e.stopPropagation(); navigate('/active-quest'); }}>
               {/* Click capture stops all interaction inside main, forces active-quest redirect on click */}
               <div className="bg-red-900/90 border-2 border-red-500 text-red-100 px-6 py-3 rounded-xl shadow-2xl animate-pulse cursor-pointer flex flex-col items-center">

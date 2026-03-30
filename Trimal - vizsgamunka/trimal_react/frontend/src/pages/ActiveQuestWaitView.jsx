@@ -65,13 +65,7 @@ const ActiveQuestWaitView = () => {
   };
 
   const handleClaimAndFight = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('/api/inventory/quest/claim', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
-      if (data.success) navigate('/fight');
-      else alert(data.message);
-    } catch (e) { console.error(e); }
+    navigate('/fight');
   };
 
   if (loading) return <GameLayout><div className="text-white">Loading...</div></GameLayout>;
@@ -110,7 +104,7 @@ const ActiveQuestWaitView = () => {
               {timeLeft === 0 && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/40">
                   <span className="text-green-400 font-black text-xl tracking-widest uppercase animate-pulse drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
-                    Quest Completed!
+                    You've arrived!
                   </span>
                 </div>
               )}
@@ -128,8 +122,8 @@ const ActiveQuestWaitView = () => {
               <div className="w-full h-4 bg-stone-900 rounded-full border border-stone-800 overflow-hidden shadow-inner">
                 <div
                   className={`h-full transition-all duration-1000 ease-linear ${timeLeft === 0
-                      ? 'bg-gradient-to-r from-green-700 to-green-400'
-                      : 'bg-gradient-to-r from-amber-700 to-amber-400'
+                    ? 'bg-gradient-to-r from-green-700 to-green-400'
+                    : 'bg-gradient-to-r from-amber-700 to-amber-400'
                     }`}
                   style={{ width: `${progressPct}%` }}
                 />

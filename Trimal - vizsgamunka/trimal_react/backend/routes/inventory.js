@@ -725,6 +725,20 @@ router.post('/quest/skip', async (req, res) => {
   }
 });
 
+// ─── POST /api/inventory/quest/fail ─────────────────────────────────────────
+router.post('/quest/fail', async (req, res) => {
+  try {
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
+
+    inv.active_quest = null;
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: 'Quest failed' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ─── POST /api/inventory/quest/restore-stamina ────────────────────────────
 router.post('/quest/restore-stamina', async (req, res) => {
   try {
