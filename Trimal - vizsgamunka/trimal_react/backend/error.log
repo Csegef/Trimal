@@ -218,3 +218,16 @@
 2026-03-30T06:54:09.354Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-03-30T08:04:05.084Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-03-30T08:09:21.487Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-31T06:59:15.844Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-31T07:46:02.902Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-03-31T08:12:03.981Z - Attempting registration for: tester@example.com, tester
+2026-03-31T08:12:03.982Z - Checking existing user
+2026-03-31T08:12:03.991Z - Creating user...
+2026-03-31T08:12:04.087Z - User created with ID: 14
+2026-03-31T08:12:04.087Z - Creating character...
+2026-03-31T08:12:04.104Z - Character created
+2026-03-31T08:12:04.104Z - Generating initial shop items...
+2026-03-31T08:12:04.134Z - Initial shop items generated
+2026-03-31T08:12:04.137Z - User linked to character
+2026-03-31T08:12:04.137Z - Sending email...
+2026-03-31T08:12:05.777Z - MAILER: Verification email sent: 250 2.0.0 OK  1774944729 5b1f17b1804b1-4887e832585sm37523495e9.6 - gsmtp

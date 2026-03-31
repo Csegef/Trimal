@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
 // TODO: BACKEND - This layout is specific for authenticated users.
-const GameLayout = ({ children, currency }) => {
+const GameLayout = ({ children, currency, customBg, bgOpacity }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeQuest, setActiveQuest] = React.useState(null);
@@ -63,10 +63,10 @@ const GameLayout = ({ children, currency }) => {
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
-          backgroundImage: "url('/assets/backgrounds/site_background.png')",
+          backgroundImage: customBg ? `url('${customBg}')` : "url('/assets/backgrounds/site_background.png')",
         }}
       >
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 transition-all duration-500" style={{ backgroundColor: `rgba(0,0,0,${(bgOpacity ?? (customBg ? 20 : 40)) / 100})` }} />
       </div>
 
       {/* Content Wrapper */}
