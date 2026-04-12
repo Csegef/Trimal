@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
 // TODO: BACKEND - This layout is specific for authenticated users.
-const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'center' }) => {
+const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'center', fullBleed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeQuest, setActiveQuest] = React.useState(null);
@@ -140,7 +140,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
         </header>
 
         {/* Main Game Content */}
-        <main className={`grow flex relative justify-center p-4 min-h-0 overflow-y-auto scrollbar-hide ${contentAlign === 'start' ? 'items-start' : 'items-center'}`}
+        <main className={`grow flex relative min-h-0 overflow-y-auto scrollbar-hide ${fullBleed ? 'w-full p-0' : `justify-center p-4 ${contentAlign === 'start' ? 'items-start' : 'items-center'}`}`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {children}

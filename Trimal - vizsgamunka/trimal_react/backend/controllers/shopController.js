@@ -91,12 +91,13 @@ const getShopItems = async (req, res) => {
           const itemDetails = items[0];
 
           // Árszámítás logikája (enyhébb szorzókkal, hogy olcsóbbak legyenek a tárgyak)
-          // price = base_price * (1 + lvl * 0.1)
-          // buy_price = price * (1 + player_level / 10)
+          // Dinamikus árkalkulátor: szintfüggő infláció (csökkentett mértékű drágulás)
           const calculatePrice = (baseCost) => {
             if (!baseCost) return 0;
-            const price = baseCost * (1 + playerLevel * 0.1); // Base increase (was 0.2)
-            return Math.round(price * (1 + playerLevel / 10)); // Level multiplier (was / 5)
+            // Picit kevesebb mint az eredeti: szintenként 8%-kal drágul a baseline
+            const price = baseCost * (1 + playerLevel * 0.08);
+            // Erősítjük a tompítást (12-vel osztjuk a szintet) - ez lelassítja a túlzott áremelkedést
+            return Math.round(price * (1 + playerLevel / 12));
           };
 
           const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
@@ -187,8 +188,8 @@ const buyShopItem = async (req, res) => {
     // Árszámítás
     const calculatePrice = (baseCost) => {
       if (!baseCost) return 0;
-      const price = baseCost * (1 + playerLevel * 0.2);
-      return Math.round(price * (1 + playerLevel / 5));
+      const price = baseCost * (1 + playerLevel * 0.08);
+      return Math.round(price * (1 + playerLevel / 12));
     };
 
     const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);

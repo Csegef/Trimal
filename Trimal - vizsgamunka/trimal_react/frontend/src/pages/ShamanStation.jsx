@@ -204,62 +204,61 @@ const ShamanStation = () => {
   const currentQuest = quests[currentQuestIndex];
 
   return (
-    <GameLayout currency={currency}>
-      <div className="relative z-10 w-full max-w-7xl mx-auto flex flex-col items-center justify-start pt-4 pb-8 h-[90vh] md:h-full lg:h-[90vh]">
+    <GameLayout 
+      currency={currency}
+      customBg="/src/assets/design/backgrounds/station_background/trimal_shaman_station_background.png"
+      contentAlign="start"
+      fullBleed={true}
+    >
+      <div className="relative z-10 w-full h-full flex items-stretch justify-end overflow-hidden">
+        <div className="absolute inset-0 bg-white/[0.04] pointer-events-none z-[5] mix-blend-screen" />
 
-        {/* Main Split Container */}
-        <div className="w-full h-full flex flex-col md:flex-row rounded-3xl border-4 border-stone-800 shadow-2xl overflow-hidden bg-black relative">
+        {/* Title - Top Left Corner (Absolute) */}
+        <div className="absolute top-4 left-6 pointer-events-auto max-w-sm md:max-w-xl z-20">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+            Shaman's Hut
+          </h1>
+          <p className="text-stone-300 mt-2 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] hidden md:block">
+            Seek the wisdom of the spirits and undertake dangerous quests for great rewards.
+          </p>
+        </div>
 
-          {/* Full-width Shaman Background to avoid heavy horizontal cropping */}
-          <div className="absolute inset-0 bg-cover bg-center z-0" style={{ backgroundImage: "url('/src/assets/design/backgrounds/station_background/trimal_shaman_station_background.png')" }}>
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Left Side: Title and Stamina Overlay */}
-          <div className="relative z-10 flex-1 flex flex-col p-6 md:p-10 justify-between min-h-[250px] md:min-h-0 pointer-events-none">
-            <div className="pointer-events-auto">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-                Shaman's Hut
-              </h1>
-              <p className="text-stone-300 mt-2 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] max-w-md hidden md:block">
-                Seek the wisdom of the spirits and undertake dangerous quests for great rewards.
-              </p>
+        {/* Stamina Display specifically for Shaman - Wide Bottom Left (Absolute) */}
+        {stamina && (
+          <div className="absolute bottom-6 left-6 pointer-events-auto z-20 w-[calc(100%-480px)] max-w-4xl pr-8">
+            <div className="flex justify-between items-center mb-2 drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
+              <span className="text-stone-300 text-[11px] font-bold uppercase tracking-widest">Stamina</span>
+              <span className="text-stone-400 text-[11px] font-bold tabular-nums">{stamina.current} / {stamina.max}</span>
             </div>
 
-            {/* Stamina Display specifically for Shaman */}
-            {stamina && (
-              <div className="w-full max-w-sm pointer-events-auto">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-green-400 text-[11px] font-bold uppercase tracking-widest">Stamina</span>
-                  <span className="text-stone-500 text-[11px] font-bold tabular-nums">{stamina.current} / {stamina.max}</span>
-                </div>
-
-                <div className="relative h-2 bg-black/60 rounded-sm overflow-hidden">
-                  <div
-                    className="h-full rounded-sm transition-all duration-300"
-                    style={{
-                      width: `${(stamina.current / stamina.max) * 100}%`,
-                      background: stamina.current / stamina.max > 0.5 ? '#16a34a'
-                        : stamina.current / stamina.max > 0.25 ? '#ca8a04'
-                          : '#dc2626'
-                    }}
-                  />
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div key={i} className="absolute top-0 bottom-0 w-px bg-black/45" style={{ left: `${(i + 1) * 10}%` }} />
-                  ))}
-                </div>
-                <button
-                  onClick={handleRestoreStamina}
-                  className="mt-3 px-4 py-2 bg-purple-900/40 border border-purple-500/50 hover:bg-purple-900/80 transition-all text-purple-300 rounded-lg text-xs font-bold tracking-widest uppercase shadow-md"
-                >
-                  [DEV] Restore Stamina
-                </button>
-              </div>
-            )}
+            <div className="relative h-4 bg-stone-950/80 rounded-lg overflow-hidden mb-3 border-[2px] border-stone-800 shadow-2xl">
+              <div
+                className="h-full rounded-sm transition-all duration-300 shadow-[0_0_10px_currentColor]"
+                style={{
+                  width: `${(stamina.current / stamina.max) * 100}%`,
+                  background: stamina.current / stamina.max > 0.5 ? '#16a34a'
+                    : stamina.current / stamina.max > 0.25 ? '#ca8a04'
+                      : '#dc2626',
+                  color: stamina.current / stamina.max > 0.5 ? '#16a34a'
+                    : stamina.current / stamina.max > 0.25 ? '#ca8a04'
+                      : '#dc2626'
+                }}
+              />
+              {Array.from({ length: 9 }).map((_, i) => (
+                <div key={i} className="absolute top-0 bottom-0 w-px bg-stone-900/60" style={{ left: `${(i + 1) * 10}%` }} />
+              ))}
+            </div>
+            <button
+              onClick={handleRestoreStamina}
+              className="w-full py-4 bg-stone-900/80 border-[2px] border-amber-900/30 hover:bg-stone-800 transition-all text-stone-400 hover:text-amber-500 rounded-xl text-sm font-black tracking-widest uppercase shadow-2xl"
+            >
+              [DEV] Restore Stamina
+            </button>
           </div>
+        )}
 
           {/* Right Side: Quest Carousel Panel */}
-          <div className="relative z-10 w-full md:w-[400px] lg:w-[450px] bg-stone-950/80 backdrop-blur-xl border-l-[3px] border-amber-900/30 p-6 md:p-8 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-amber-900/50">
+          <div className="relative z-10 w-full md:w-[400px] lg:w-[450px] xl:w-[500px] bg-stone-950/80 backdrop-blur-xl border-l-[3px] border-amber-900/30 p-6 md:p-8 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-amber-900/50 ml-auto">
             <h2 className="text-2xl font-black text-stone-200 tracking-widest uppercase mb-8 text-center border-b-[2px] border-stone-800 pb-4 shrink-0">
               Available Quests
             </h2>
@@ -339,7 +338,6 @@ const ShamanStation = () => {
           </div>
 
         </div>
-      </div>
     </GameLayout >
   );
 };
