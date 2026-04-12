@@ -61,24 +61,24 @@ export function resolveEquipSlot(item) {
     if (item.type === "weapon") return "weapon";
     if (item.type === "armor") {
         const icon = (item.iconPath || "").toLowerCase();
-        const cat  = (item.category || "").toLowerCase();
-        
+        const cat = (item.category || "").toLowerCase();
+
         // Helmet / Cap
         if (icon.includes("cap") || icon.includes("helmet") || icon.includes("head") ||
-            cat.includes("cap")  || cat.includes("helmet")  || cat.includes("head")) return "armor_cap";
-        
+            cat.includes("cap") || cat.includes("helmet") || cat.includes("head")) return "armor_cap";
+
         // Boots / Feet
         if (icon.includes("boots") || icon.includes("boot") || icon.includes("feet") || icon.includes("shoe") ||
-            cat.includes("boots") || cat.includes("boot")    || cat.includes("feet") || cat.includes("shoe")) return "armor_boots";
+            cat.includes("boots") || cat.includes("boot") || cat.includes("feet") || cat.includes("shoe")) return "armor_boots";
 
         // Leggings / Pants - check for 'leggings' and 'pant' specifically, and 'leg' only if not part of 'legendary'
         if (icon.includes("leggings") || icon.includes("pant") || (icon.includes("leg") && !icon.includes("legendary")) ||
-            cat.includes("leggings")  || cat.includes("pant") || (cat.includes("leg") && !cat.includes("legendary"))) return "armor_leggings";
+            cat.includes("leggings") || cat.includes("pant") || (cat.includes("leg") && !cat.includes("legendary"))) return "armor_leggings";
 
         // Chest / Plate / Fallback
         if (icon.includes("plate") || icon.includes("chest") || icon.includes("body") ||
-            cat.includes("plate") || cat.includes("chest")   || cat.includes("body")) return "armor_plate";
-        
+            cat.includes("plate") || cat.includes("chest") || cat.includes("body")) return "armor_plate";
+
         return "armor_plate"; // fallback
     }
     return null;
@@ -212,7 +212,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
 
     return (
         <div
-            className="relative w-full aspect-square"
+            className="relative w-full aspect-square overflow-visible"
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
         >
@@ -241,16 +241,27 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                 )}
             </button>
 
-            {/* Hover description tooltip */}
+            {/* Hover description tooltip - fixed positioned to avoid z-index/overflow clipping */}
             {hovered && (
                 <div
-                    className="absolute z-50 bottom-[110%] left-1/2 -translate-x-1/2 pointer-events-none"
-                    style={{ minWidth: "150px", maxWidth: "210px" }}
+                    className="fixed z-[9999] pointer-events-none"
+                    style={{
+                        bottom: 'auto',
+                        // Tooltip is positioned via onMouseEnter but since we can't use mouse coords here easily,
+                        // we use an overlay approach: absolutely relative but with overflow-visible parent
+                    }}
+                >
+                </div>
+            )}
+            {hovered && (
+                <div
+                    className="absolute z-[9999] bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 pointer-events-none"
+                    style={{ minWidth: "160px", maxWidth: "220px", filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8))' }}
                 >
                     <div
-                        className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug shadow-2xl border border-stone-700/70"
+                        className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug border"
                         style={{
-                            background: "rgba(12,7,2,0.97)",
+                            background: "rgba(12,7,2,0.98)",
                             borderColor: RARITY_COLOR[rarity] + "55",
                         }}
                     >
@@ -275,25 +286,22 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                             </span>
                         </div>
                         {/* Stats */}
-                        {item.type === "weapon" && item.base_damage != null && (
+                        {item.type === "weapon" && (item.base_damage != null || item.weapon_damage != null) && (
                             <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
-                                <span>Damage: {Math.round((item.weapon_damage || item.base_damage) * 1.25 * (1 + ((playerInfo?.stats?.strength ?? 10) / 10)))}</span>
+                                <span>Item Damage: {item.weapon_damage || item.base_damage}</span>
+                                <span className="text-stone-400 font-medium">Combat Damage: {Math.round((item.weapon_damage || item.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
                             </div>
                         )}
                         {item.type === "armor" && item.armor_point != null && (
-                            <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-1">
-                                <span>Armor Point: {item.armor_point}</span>
-                                {/* LATER: Implement incoming damage calc based on effective armor in combat 
-                                <span className="text-[9px] text-stone-400 font-normal leading-tight">
-                                    Damage Taken: <br />
-                                    (Incoming - Eff. Armor) × {(1 - ((playerInfo?.stats?.resistance ?? 10) / 100)).toFixed(2)}
-                                </span>
-                                */}
+                            <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                                <span>Item Armor: {item.armor_point}</span>
+                                <span className="text-stone-400 font-medium">Combat Defense: {item.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
                             </div>
                         )}
                         {item.type === "food" && item.category && (
-                            <div className="text-[10px] text-green-400 font-bold mb-1.5">
-                                Grants a {rarity === "legendary" ? "large" : rarity === "epic" ? "medium" : "small"} bonus to {item.category}
+                            <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                                <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {item.category}</span>
+                                <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
                             </div>
                         )}
                         {/* Description */}
@@ -306,7 +314,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                     {/* Arrow */}
                     <div
                         className="mx-auto w-2 h-2 rotate-45 -mt-1"
-                        style={{ background: "rgba(12,7,2,0.97)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
+                        style={{ background: "rgba(12,7,2,0.98)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
                     />
                 </div>
             )}

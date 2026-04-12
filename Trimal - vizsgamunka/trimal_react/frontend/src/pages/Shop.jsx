@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import GameLayout from "../layouts/GameLayout";
 import { RARITY_COLOR, RARITY_GLOW, resolveItemImagePath } from "../models/Item";
@@ -73,7 +74,7 @@ function Toast({ toast }) {
 }
 
 function ShopItemTile({ item, onClick, playerInfo }) {
-  const [hovered, setHovered] = useState(false);
+  const [hoverRect, setHoverRect] = useState(null);
   const [imgError, setImgError] = useState(false);
 
   const shopItem = item?.item;
@@ -91,13 +92,13 @@ function ShopItemTile({ item, onClick, playerInfo }) {
   return (
     <div
       className="relative w-full aspect-square"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => setHoverRect(e.currentTarget.getBoundingClientRect())}
+      onMouseLeave={() => setHoverRect(null)}
     >
       <button
         onClick={onClick}
         disabled={isPurchased}
-        title={!hovered ? shopItem.name : undefined}
+        title={!hoverRect ? shopItem.name : undefined}
         style={{
           borderColor: RARITY_COLOR[rarity],
           boxShadow: isPurchased ? "none" : `inset 0 0 12px ${RARITY_GLOW[rarity]}`,
@@ -119,29 +120,34 @@ function ShopItemTile({ item, onClick, playerInfo }) {
 
         {!isPurchased && (
           <div className="absolute bottom-1 right-1 bg-stone-900/90 rounded px-1.5 py-0.5 text-[10px] font-bold border border-stone-700/50 flex flex-col items-end gap-0.5">
-            {shopItem.buy_price_normal > 0 && (
+            {shopItem.buy_price_normal > 0 ? (
               <span className="text-amber-400 flex items-center gap-1">
                 {shopItem.buy_price_normal} {<img src="/src/assets/design/currency/currency-normal.png" alt="Stone" className="w-5 h-5 drop-shadow" />}
               </span>
-            )}
-            {shopItem.buy_price_spec > 0 && (
+            ) : null}
+            {shopItem.buy_price_spec > 0 ? (
               <span className="text-blue-400 flex items-center gap-1">
                 {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Shell" className="w-5 h-5 drop-shadow" />}
               </span>
-            )}
+            ) : null}
           </div>
         )}
-        {isPurchased && (
-          <div className="absolute inset-0 flex items-center justify-center bg-stone-950/60 font-bold text-red-500 tracking-widest -rotate-12 border-y border-red-900/50">
+        {isPurchased ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-stone-950/60 font-bold text-red-500 tracking-widest">
             SOLD
           </div>
-        )}
+        ) : null}
       </button>
 
-      {hovered && !isPurchased && (
+      {hoverRect && !isPurchased ? createPortal(
         <div
-          className="absolute z-50 bottom-[105%] left-1/2 -translate-x-1/2 pointer-events-none"
-          style={{ minWidth: "160px", maxWidth: "220px" }}
+          className="fixed z-[9999] pointer-events-none"
+          style={{ 
+            minWidth: "160px", maxWidth: "220px",
+            left: hoverRect.left + (hoverRect.width / 2),
+            top: hoverRect.top - 10,
+            transform: "translate(-50%, -100%)"
+          }}
         >
           <div
             className="rounded-lg px-3 py-2 text-[11px] text-stone-300 leading-snug shadow-2xl border border-stone-700/70"
@@ -165,39 +171,48 @@ function ShopItemTile({ item, onClick, playerInfo }) {
                 {rarity}
               </span>
             </div>
-            <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800 mb-2">
-              {shopItem.description}
-            </div>
-            {shopItem.type === "weapon" && shopItem.base_damage != null && (
+            {shopItem.type === "weapon" && (shopItem.base_damage != null || shopItem.weapon_damage != null) && (
               <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
-                <span>Base Damage: {shopItem.base_damage}</span>
+                  <span>Item Damage: {shopItem.weapon_damage || shopItem.base_damage}</span>
+                  <span className="text-stone-400 font-medium">Combat Damage: {Math.round((shopItem.weapon_damage || shopItem.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
               </div>
             )}
             {shopItem.type === "armor" && shopItem.armor_point != null && (
-              <div className="text-[10px] text-blue-400 font-bold mb-1.5">
-                <span>Armor Point: {shopItem.armor_point}</span>
+              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                  <span>Item Armor: {shopItem.armor_point}</span>
+                  <span className="text-stone-400 font-medium">Combat Defense: {shopItem.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
               </div>
             )}
+            {shopItem.type === "food" && shopItem.category && (
+                <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                    <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {shopItem.category}</span>
+                    <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
+                </div>
+            )}
+            <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800 mb-2 mt-2">
+              {shopItem.description}
+            </div>
             <div className="mt-2 pt-2 border-t border-stone-800 flex flex-col gap-1">
               <div className="text-stone-500 font-semibold text-[9px] tracking-widest uppercase">Price</div>
-              {shopItem.buy_price_normal > 0 && (
+              {shopItem.buy_price_normal > 0 ? (
                 <span className="text-amber-400 flex items-center gap-1">
                   {shopItem.buy_price_normal} {<img src="/src/assets/design/currency/currency-normal.png" alt="Stone" className="w-5 h-5 drop-shadow" />}
                 </span>
-              )}
-              {shopItem.buy_price_spec > 0 && (
+              ) : null}
+              {shopItem.buy_price_spec > 0 ? (
                 <span className="text-blue-400 flex items-center gap-1">
                   {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Shell" className="w-5 h-5 drop-shadow" />}
                 </span>
-              )}
+              ) : null}
             </div>
           </div>
           <div
-            className="mx-auto w-2 h-2 rotate-45 -mt-1"
+            className="mx-auto w-2 h-2 rotate-45 -mt-1 relative z-50"
             style={{ background: "rgba(12,7,2,0.95)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
           />
-        </div>
-      )}
+        </div>,
+        document.body
+      ) : null}
     </div>
   );
 }

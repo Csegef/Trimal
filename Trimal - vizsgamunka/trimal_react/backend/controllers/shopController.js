@@ -90,25 +90,38 @@ const getShopItems = async (req, res) => {
         if (items.length > 0) {
           const itemDetails = items[0];
 
-          // Árszámítás logikája (ár szorzó és vételi ár)
+          // Árszámítás logikája (enyhébb szorzókkal, hogy olcsóbbak legyenek a tárgyak)
           // price = base_price * (1 + lvl * 0.1)
           // buy_price = price * (1 + player_level / 10)
           const calculatePrice = (baseCost) => {
             if (!baseCost) return 0;
-            const price = baseCost * (1 + playerLevel * 0.2); // Base increase
-            return Math.round(price * (1 + playerLevel / 5)); // Level multiplier
+            const price = baseCost * (1 + playerLevel * 0.1); // Base increase (was 0.2)
+            return Math.round(price * (1 + playerLevel / 10)); // Level multiplier (was / 5)
           };
 
           const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
           const buyPriceSpec = calculatePrice(itemDetails.spec_currency_cost || 0);
+
+          let itemWeaponDmg = itemDetails.base_damage;
+          let itemArmorPt = itemDetails.armor_point;
+
+          if (row.item_type === 'weapon') {
+             const offset = Math.floor((Math.sin(row.id) * 0.5 + 0.5) * 9) - 3;
+             itemWeaponDmg = itemDetails.base_damage + offset + (playerLevel * 2);
+          } else if (row.item_type === 'armor') {
+             const offset = Math.floor((Math.sin(row.id) * 0.5 + 0.5) * 7) - 2;
+             itemArmorPt = itemDetails.armor_point + offset;
+          }
 
           shopList.push({
             shop_id: row.id,
             purchased: row.purchased,
             item: {
               ...itemDetails,
-              id: itemDetails.item_id, // Egységesítjük az ID-t a frontend-hez
+              id: itemDetails.item_id, 
               type: row.item_type,
+              weapon_damage: itemWeaponDmg,
+              armor_point: itemArmorPt,
               buy_price_normal: buyPriceNormal,
               buy_price_spec: buyPriceSpec
             }
@@ -213,10 +226,12 @@ const buyShopItem = async (req, res) => {
     };
     
     // Fegyver specifikus sebzés inicializálása
-    // weapon_damage = base_damage + random(-1, 1) + (specie.lvl * 2)
     if (shopItem.item_type === 'weapon') {
-      const randOffset = Math.floor(Math.random() * 3) - 1; // -1, 0 vagy 1
-      newItem.weapon_damage = itemDetails.base_damage + randOffset + (playerLevel * 2);
+      const offset = Math.floor((Math.sin(shopItem.id) * 0.5 + 0.5) * 9) - 3; // Deterministic random between -3 and +5
+      newItem.weapon_damage = itemDetails.base_damage + offset + (playerLevel * 2);
+    } else if (shopItem.item_type === 'armor') {
+      const offset = Math.floor((Math.sin(shopItem.id) * 0.5 + 0.5) * 7) - 2; // -2 to +4
+      newItem.armor_point = itemDetails.armor_point + offset;
     }
     
     // Food bónusz info hozzáadása az inventoryhoz ha van buff_id

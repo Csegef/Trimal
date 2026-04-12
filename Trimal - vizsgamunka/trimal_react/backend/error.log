@@ -231,3 +231,15 @@
 2026-03-31T08:12:04.137Z - User linked to character
 2026-03-31T08:12:04.137Z - Sending email...
 2026-03-31T08:12:05.777Z - MAILER: Verification email sent: 250 2.0.0 OK  1774944729 5b1f17b1804b1-4887e832585sm37523495e9.6 - gsmtp
+2026-04-11T22:46:47.567Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-11T23:00:34.477Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-11T23:46:24.993Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-11T23:46:44.763Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T00:14:17.992Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T00:15:02.767Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T00:15:16.651Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T01:15:01.419Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T01:27:14.610Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T01:31:18.306Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T01:32:42.052Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-12T04:42:57.743Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19

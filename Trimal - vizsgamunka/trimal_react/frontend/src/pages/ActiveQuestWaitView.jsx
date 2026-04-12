@@ -110,6 +110,20 @@ const ActiveQuestWaitView = () => {
               )}
             </div>
 
+            {/* Description és Időcsökkentés (Agility) */}
+            <div className="shrink-0 flex flex-col items-center justify-center text-center px-4 my-1">
+               {activeQuest.description && (
+                  <p className="text-stone-300 text-xs italic opacity-90 mx-auto max-w-3xl leading-snug">
+                    "{activeQuest.description}"
+                  </p>
+               )}
+               {activeQuest.original_duration && activeQuest.duration < activeQuest.original_duration && (
+                  <div className="mt-1 flex items-center text-[10px] text-green-400 font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-green-900/30 border border-green-500/30">
+                    You found a shorter path, reducing your travel time.
+                  </div>
+               )}
+            </div>
+
             {/* Progress sáv */}
             <div className="shrink-0 flex flex-col gap-0.5">
               <div className="flex justify-between items-center px-0.5">

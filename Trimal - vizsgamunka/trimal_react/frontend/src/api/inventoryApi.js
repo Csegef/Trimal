@@ -115,9 +115,9 @@ export async function sellItem(itemType, itemId, quantity = 1) {
 /**
  * Tárgy használata (Pl. Étel buffhoz)
  */
-export async function useItem(itemId) {
-  const res = await request('/use', 'POST', { itemId });
-  if (!res.success) throw new Error(res.message);
+export async function useItem(itemId, confirmOverwrite = false) {
+  const res = await request('/use', 'POST', { itemId, confirmOverwrite });
+  if (!res.success && !res.requireConfirmation) throw new Error(res.message);
   return res;
 }
 

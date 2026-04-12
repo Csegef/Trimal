@@ -151,6 +151,7 @@ const ShamanStation = () => {
           difficulty: quest.difficulty,
           staminaCost: quest.staminaCost,
           duration: quest.durationStr,
+          description: quest.description,
           rewardNormal: quest.rewardNormal,
           rewardSpec: quest.rewardSpec,
           rewardXP: quest.rewardXP,

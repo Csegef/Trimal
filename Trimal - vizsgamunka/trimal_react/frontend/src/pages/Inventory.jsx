@@ -62,6 +62,41 @@ function PlayerCharacter({ playerInfo }) {
   );
 }
 
+function ActiveBuffRow({ buff }) {
+  const [timeLeft, setTimeLeft] = useState(Math.max(0, buff.expires_at - Math.floor(Date.now() / 1000)));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const remaining = Math.max(0, buff.expires_at - Math.floor(Date.now() / 1000));
+      setTimeLeft(remaining);
+      if (remaining === 0) clearInterval(timer);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [buff.expires_at]);
+
+  const m = Math.floor(timeLeft / 60);
+  const s = timeLeft % 60;
+  const h = Math.floor(m / 60);
+  const mins = m % 60;
+  const timeStr = h > 0 ? `${h}h ${mins}m` : `${m}:${s.toString().padStart(2, '0')}`;
+
+  const catColor = buff.category === 'health' ? 'text-red-400' : 'text-green-400';
+
+  return (
+    <div className="flex items-center gap-3 bg-stone-900/50 p-2 rounded-lg border border-stone-800">
+      {buff.iconPath ? (
+        <img src={`/src/assets/design/items/food/${buff.category}/${buff.iconPath}`} className="w-8 h-8 object-contain drop-shadow-md" />
+      ) : (
+        <span className="text-2xl">🍖</span>
+      )}
+      <div className="flex flex-col flex-1">
+        <span className={`text-[10px] font-bold uppercase tracking-widest ${catColor}`}>{buff.category} +{buff.percent}%</span>
+        <span className="text-[10px] text-stone-500 font-mono">{timeLeft > 0 ? `${timeStr} remaining` : 'Expired'}</span>
+      </div>
+    </div>
+  );
+}
+
 function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
   const slotData = SLOT_LABELS[slotKey] || { label: slotKey };
   const { label } = slotData;
@@ -140,25 +175,22 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
               </span>
             </div>
             {/* Stats */}
-            {equippedItem.type === "weapon" && equippedItem.base_damage != null && (
+            {equippedItem.type === "weapon" && (equippedItem.base_damage != null || equippedItem.weapon_damage != null) && (
               <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
-                <span>Damage: {Math.round((equippedItem.weapon_damage || equippedItem.base_damage) * 1.25 * (1 + ((playerInfo?.stats?.strength ?? 10) / 10)))}</span>
+                <span>Item Damage: {equippedItem.weapon_damage || equippedItem.base_damage}</span>
+                <span className="text-stone-400 font-medium">Combat Damage: {Math.round((equippedItem.weapon_damage || equippedItem.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
               </div>
             )}
             {equippedItem.type === "armor" && equippedItem.armor_point != null && (
-              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-1">
-                <span>Armor Point: {equippedItem.armor_point}</span>
-                {/* LATER: Implement incoming damage calc based on effective armor in combat 
-                        <span className="text-[9px] text-stone-400 font-normal leading-tight">
-                            Damage Taken: <br />
-                            (Incoming - Eff. Armor) × {(1 - ((playerInfo?.stats?.resistance ?? 10) / 100)).toFixed(2)}
-                        </span>
-                        */}
+              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                <span>Item Armor: {equippedItem.armor_point}</span>
+                <span className="text-stone-400 font-medium">Combat Defense: {equippedItem.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
               </div>
             )}
             {equippedItem.type === "food" && equippedItem.category && (
-              <div className="text-[10px] text-green-400 font-bold mb-1.5">
-                Grants a {rarity === "legendary" ? "large" : rarity === "epic" ? "medium" : "small"} bonus to {equippedItem.category}
+              <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {equippedItem.category}</span>
+                <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
               </div>
             )}
             {/* Description */}
@@ -346,7 +378,16 @@ const Inventory = () => {
         showToast(res.message);
       } else if (action === "use") {
         const res = await useItem(item.id);
-        showToast(res.message);
+        if (res.requireConfirmation) {
+          if (window.confirm(res.message)) {
+            const res2 = await useItem(item.id, true);
+            showToast(res2.message);
+          } else {
+            return; // cancelled
+          }
+        } else {
+          showToast(res.message);
+        }
       }
       await load();
     } catch (err) {
@@ -408,214 +449,219 @@ const Inventory = () => {
   const rightSlots = ["armor_leggings", "armor_boots"];
 
   return (
-    <GameLayout currency={inventory?.currency}>
-      {/* Background blur */}
-      <div
-        className="absolute inset-0 z-0"
-        style={{ background: "rgba(8,5,2,0.58)", backdropFilter: "blur(7px)" }}
-      />
+    <GameLayout currency={inventory?.currency} contentAlign="start">
+      <div className="h-fit min-h-full w-full relative flex flex-col items-center">
 
-      <Toast toast={toast} />
+        <Toast toast={toast} />
 
-      {actionMenu && (
-        <ActionMenu
-          item={actionMenu.item}
-          actions={actionMenu.actions}
-          position={actionMenu.position}
-          onConfirm={confirmAction}
-          onClose={() => setActionMenu(null)}
-        />
-      )}
+        {actionMenu && (
+          <ActionMenu
+            item={actionMenu.item}
+            actions={actionMenu.actions}
+            position={actionMenu.position}
+            onConfirm={confirmAction}
+            onClose={() => setActionMenu(null)}
+          />
+        )}
 
-      {/* Full-width container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 py-6 flex flex-col gap-5">
+        {/* Full-width container */}
+        <div className="relative z-10 w-full max-w-7xl px-6 py-6 flex flex-col gap-5">
 
-        {/* Header */}
-        <div className="flex items-baseline gap-4 flex-wrap">
-          <h1 className="text-2xl font-bold tracking-widest text-amber-400 uppercase">
-            Equipment &amp; Bag
-          </h1>
-          {playerInfo && (
-            <span className="text-stone-400 text-sm">
-              {playerInfo.name}
-            </span>
-          )}
-          {inventory && (
-            <span className="ml-auto text-xs text-stone-500">
-              📦 {inventory.used || 0}/{inventory.capacity || 200}
-            </span>
+          {/* Header */}
+          <div className="flex items-center gap-4 flex-wrap pb-4">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+              Equipment &amp; Bag
+            </h1>
+            {playerInfo && (
+              <span className="text-stone-300 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] mt-1">
+                {playerInfo.name}
+              </span>
+            )}
+            {inventory && (
+              <span className="ml-auto text-xs text-stone-500">
+                📦 {inventory.used || 0}/{inventory.capacity || 200}
+              </span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center h-72">
+              <div className="text-amber-600/70 animate-pulse text-lg tracking-widest">
+                Loading...
+              </div>
+            </div>
+          ) : (
+            /* Two-column layout: character panel (left) + bag panel (right) */
+            <div className="grid grid-cols-[1fr_1fr] gap-5">
+
+              {/* ══ LEFT: Character + equipment + stats ══════════════════════ */}
+              <div className="flex flex-col gap-4">
+
+                {/* Portrait panel */}
+                <div
+                  className="rounded-2xl border border-stone-800/50 p-4"
+                  style={{ background: "rgba(14,7,2,0.88)", backdropFilter: "blur(8px)" }}
+                >
+                  {/* 3-col: left slots | portrait | right slots */}
+                  <div className="grid grid-cols-[1fr_2fr_1fr] gap-3 items-stretch">
+
+                    {/* Left slots */}
+                    <div className="flex flex-col gap-2 justify-around">
+                      {leftSlots.map((slotKey) => {
+                        const eqItem = getEquippedItem(slotKey);
+                        return (
+                          <EquipSlot
+                            key={slotKey}
+                            slotKey={slotKey}
+                            equippedItem={eqItem}
+                            playerInfo={playerInfo}
+                            onClick={eqItem
+                              ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
+                              : undefined
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+
+                    {/* Portrait */}
+                    <div
+                      className="relative rounded-xl border-4 border-amber-900/60 overflow-hidden shadow-2xl backdrop-blur-sm"
+                      style={{
+                        height: "275px",
+                        background: "rgba(28, 25, 23, 0.7)",
+                      }}
+                    >
+                      <PlayerCharacter playerInfo={playerInfo} />
+                    </div>
+
+                    {/* Right slots */}
+                    <div className="flex flex-col gap-2 justify-around">
+                      {rightSlots.map((slotKey) => {
+                        const eqItem = getEquippedItem(slotKey);
+                        return (
+                          <EquipSlot
+                            key={slotKey}
+                            slotKey={slotKey}
+                            equippedItem={eqItem}
+                            playerInfo={playerInfo}
+                            onClick={eqItem
+                              ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
+                              : undefined
+                            }
+                          />
+                        );
+                      })}
+                    </div>
+
+                  </div>
+
+                  {/* Level + XP bar */}
+                  {playerInfo && (
+                    <div className="mt-4 flex flex-col items-center gap-1.5">
+                      <span className="text-amber-400 text-sm font-bold">
+                        Level {playerInfo.lvl}
+                      </span>
+                      <div className="w-full h-2 rounded-full bg-stone-900/80 border border-stone-700/40 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min(100, (playerInfo.xp / (playerInfo.xpForNext || 1)) * 100)}%`,
+                            background: "linear-gradient(90deg, #b45309, #f59e0b)",
+                            boxShadow: "0 0 6px rgba(251,191,36,0.5)",
+                          }}
+                        />
+                      </div>
+                      <span className="text-stone-500 text-[10px]">
+                        {playerInfo.xp} / {playerInfo.xpForNext} XP
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Statistics */}
+                <Panel title="Statistics">
+                  <div className="flex flex-col gap-2.5">
+                    {Object.entries(STAT_LABELS).map(([key, { label }]) => {
+                      let currentVal = playerInfo?.stats?.[key] ?? 0;
+                      if (key === 'armor') {
+                        const equippedArmor = Object.values(inventory?.equipped || {}).filter(item => item && item.type === 'armor');
+                        currentVal = equippedArmor.reduce((sum, item) => sum + (item.armor_point || 0), 0);
+                      }
+                      const cost = Math.max(10, (currentVal * 10) + (playerInfo?.lvl || 1) * 20);
+                      const canUpgrade = key !== 'armor';
+                      return (
+                        <div key={key} className="flex items-center gap-3">
+                          <span className="text-stone-400 text-sm flex-1">{label}</span>
+                          <span className="text-amber-300 text-sm font-bold w-8 text-right" title={key === 'armor' ? `Effective Armor: ${currentVal + (playerInfo?.lvl || 1) * 3}` : ""}>
+                            {currentVal}
+                          </span>
+                          {canUpgrade ? (
+                            <button
+                              onClick={() => handleUpgradeStat(key)}
+                              title={`Upgrade ${label} for ${cost} river pebble(s)`}
+                              disabled={busy}
+                              className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                              +
+                            </button>
+                          ) : (
+                            <div className="w-6 h-6" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Panel>
+
+                {/* Active Effects */}
+                <Panel title="Active Effects">
+                  {(!inventory?.active_buffs || inventory.active_buffs.length === 0) ? (
+                    <div className="text-stone-600 text-sm italic">No active effects</div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {inventory.active_buffs.map((buff, i) => (
+                        <ActiveBuffRow key={i} buff={buff} />
+                      ))}
+                    </div>
+                  )}
+                </Panel>
+
+              </div>
+
+              {/* ══ RIGHT: Bag ═══════════════════════════════════════════════ */}
+              <div className="flex flex-col gap-4">
+                <Panel title="Bag">
+                  <div className="grid grid-cols-5 gap-3">
+                    {slots.map((item, idx) => {
+                      const actions = [];
+                      if (item && isEquippable(item)) actions.push("equip");
+                      if (item && item.type === "food") actions.push("use");
+                      if (item) actions.push("sell");
+                      return (
+                        <ItemSlotTile
+                          key={idx}
+                          item={item}
+                          playerInfo={playerInfo}
+                          onClick={item ? (e) => openActionMenu(item, actions, null, e) : undefined}
+                        />
+                      );
+                    })}
+                  </div>
+                </Panel>
+              </div>
+
+            </div>
           )}
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center h-72">
-            <div className="text-amber-600/70 animate-pulse text-lg tracking-widest">
-              Loading...
-            </div>
-          </div>
-        ) : (
-          /* Two-column layout: character panel (left) + bag panel (right) */
-          <div className="grid grid-cols-[1fr_1fr] gap-5">
-
-            {/* ══ LEFT: Character + equipment + stats ══════════════════════ */}
-            <div className="flex flex-col gap-4">
-
-              {/* Portrait panel */}
-              <div
-                className="rounded-2xl border border-stone-800/50 p-4"
-                style={{ background: "rgba(14,7,2,0.88)", backdropFilter: "blur(8px)" }}
-              >
-                {/* 3-col: left slots | portrait | right slots */}
-                <div className="grid grid-cols-[1fr_2fr_1fr] gap-3 items-stretch">
-
-                  {/* Left slots */}
-                  <div className="flex flex-col gap-2 justify-around">
-                    {leftSlots.map((slotKey) => {
-                      const eqItem = getEquippedItem(slotKey);
-                      return (
-                        <EquipSlot
-                          key={slotKey}
-                          slotKey={slotKey}
-                          equippedItem={eqItem}
-                          playerInfo={playerInfo}
-                          onClick={eqItem
-                            ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
-                            : undefined
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Portrait */}
-                  <div
-                    className="relative rounded-xl border-4 border-amber-900/60 overflow-hidden shadow-2xl backdrop-blur-sm"
-                    style={{
-                      height: "275px",
-                      background: "rgba(28, 25, 23, 0.7)",
-                    }}
-                  >
-                    <PlayerCharacter playerInfo={playerInfo} />
-                  </div>
-
-                  {/* Right slots */}
-                  <div className="flex flex-col gap-2 justify-around">
-                    {rightSlots.map((slotKey) => {
-                      const eqItem = getEquippedItem(slotKey);
-                      return (
-                        <EquipSlot
-                          key={slotKey}
-                          slotKey={slotKey}
-                          equippedItem={eqItem}
-                          playerInfo={playerInfo}
-                          onClick={eqItem
-                            ? (e) => openActionMenu(eqItem, ["unequip"], slotKey, e)
-                            : undefined
-                          }
-                        />
-                      );
-                    })}
-                  </div>
-
-                </div>
-
-                {/* Level + XP bar */}
-                {playerInfo && (
-                  <div className="mt-4 flex flex-col items-center gap-1.5">
-                    <span className="text-amber-400 text-sm font-bold">
-                      Level {playerInfo.lvl}
-                    </span>
-                    <div className="w-full h-2 rounded-full bg-stone-900/80 border border-stone-700/40 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{
-                          width: `${Math.min(100, (playerInfo.xp / (playerInfo.xpForNext || 1)) * 100)}%`,
-                          background: "linear-gradient(90deg, #b45309, #f59e0b)",
-                          boxShadow: "0 0 6px rgba(251,191,36,0.5)",
-                        }}
-                      />
-                    </div>
-                    <span className="text-stone-500 text-[10px]">
-                      {playerInfo.xp} / {playerInfo.xpForNext} XP
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Statistics */}
-              <Panel title="Statistics">
-                <div className="flex flex-col gap-2.5">
-                  {Object.entries(STAT_LABELS).map(([key, { label }]) => {
-                    let currentVal = playerInfo?.stats?.[key] ?? 0;
-                    if (key === 'armor') {
-                      const equippedArmor = Object.values(inventory?.equipped || {}).filter(item => item && item.type === 'armor');
-                      currentVal = equippedArmor.reduce((sum, item) => sum + (item.armor_point || 0), 0);
-                    }
-                    const cost = Math.max(10, (currentVal * 10) + (playerInfo?.lvl || 1) * 20);
-                    const canUpgrade = key !== 'armor';
-                    return (
-                      <div key={key} className="flex items-center gap-3">
-                        <span className="text-stone-400 text-sm flex-1">{label}</span>
-                        <span className="text-amber-300 text-sm font-bold w-8 text-right" title={key === 'armor' ? `Effective Armor: ${currentVal + (playerInfo?.lvl || 1) * 3}` : ""}>
-                          {currentVal}
-                        </span>
-                        {canUpgrade ? (
-                          <button
-                            onClick={() => handleUpgradeStat(key)}
-                            title={`Upgrade ${label} for ${cost} river pebble(s)`}
-                            disabled={busy}
-                            className="w-6 h-6 rounded border border-amber-900/40 bg-stone-900 text-amber-700 text-sm flex items-center justify-center hover:border-amber-600 hover:text-amber-400 transition-colors opacity-50 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed"
-                          >
-                            +
-                          </button>
-                        ) : (
-                          <div className="w-6 h-6" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </Panel>
-
-              {/* Active Effects */}
-              <Panel title="Active Effects">
-                <div className="text-stone-600 text-sm italic">No active effects</div>
-              </Panel>
-
-            </div>
-
-            {/* ══ RIGHT: Bag ═══════════════════════════════════════════════ */}
-            <div className="flex flex-col gap-4">
-              <Panel title="Bag">
-                <div className="grid grid-cols-5 gap-3">
-                  {slots.map((item, idx) => {
-                    const actions = [];
-                    if (item && isEquippable(item)) actions.push("equip");
-                    if (item && item.type === "food") actions.push("use");
-                    if (item) actions.push("sell");
-                    return (
-                      <ItemSlotTile
-                        key={idx}
-                        item={item}
-                        playerInfo={playerInfo}
-                        onClick={item ? (e) => openActionMenu(item, actions, null, e) : undefined}
-                      />
-                    );
-                  })}
-                </div>
-              </Panel>
-            </div>
-
-          </div>
-        )}
-      </div>
-
-      <style>{`
+        <style>{`
         .scrollbar-thin::-webkit-scrollbar { width: 4px; }
         .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
         .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(180,120,40,0.25); border-radius: 2px; }
         .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: rgba(180,120,40,0.5); }
       `}</style>
+      </div>
     </GameLayout>
   );
 };

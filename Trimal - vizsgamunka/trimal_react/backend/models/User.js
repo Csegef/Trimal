@@ -22,8 +22,8 @@ class User {
     return { id: result.insertId, nickname, email };
   }
 
-  async findByEmail(email) {
-    const [rows] = await this.pool.execute(`SELECT * FROM user WHERE email = ?`, [email]);
+  async findByEmail(identifier) {
+    const [rows] = await this.pool.execute(`SELECT * FROM user WHERE email = ? OR nickname = ?`, [identifier, identifier]);
     return rows[0];
   }
 

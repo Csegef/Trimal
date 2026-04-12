@@ -80,7 +80,8 @@ async function loadInventory(pool, specieId) {
       max: 100,
       last_reset: Math.floor(Date.now() / 1000)
     },
-    active_quest: null
+    active_quest: null,
+    active_buffs: []
   };
 
   const raw = rows[0].inventory_json;
@@ -100,14 +101,26 @@ async function loadInventory(pool, specieId) {
       };
 
       if (inv.active_quest === undefined) inv.active_quest = null;
+      if (!Array.isArray(inv.active_buffs)) inv.active_buffs = [];
     } catch { }
   }
 
-  // Handle stamina refresh
+  // Handle stamina refresh and trim expired buffs
   const nowStr = Math.floor(Date.now() / 1000);
+  let changed = false;
   if (nowStr - inv.stamina.last_reset >= 86400) {
     inv.stamina.current = inv.stamina.max;
     inv.stamina.last_reset = nowStr;
+    changed = true;
+  }
+  
+  const validBuffs = inv.active_buffs.filter(b => b.expires_at > nowStr);
+  if (validBuffs.length !== inv.active_buffs.length) {
+    inv.active_buffs = validBuffs;
+    changed = true;
+  }
+
+  if (changed) {
     await saveInventory(pool, specieId, inv);
   }
 
@@ -443,7 +456,7 @@ router.post('/sell', async (req, res) => {
 // ─── POST /api/inventory/use ──────────────────────────────────────────────────
 router.post('/use', async (req, res) => {
   try {
-    const { itemId } = req.body;
+    const { itemId, confirmOverwrite } = req.body;
     if (itemId == null) return res.status(400).json({ success: false, message: 'Missing: itemId' });
 
     const inv = await loadInventory(req.pool, req.user.specieId);
@@ -453,7 +466,45 @@ router.post('/use', async (req, res) => {
     if (idx === -1) return res.status(400).json({ success: false, message: 'Food item not found' });
 
     const item = inv.items[idx];
-    const buffId = item.buff_id;
+    const category = item.category || 'health';
+    const rarity = (item.rarity || 'common').toLowerCase();
+    
+    // Check buffs stack count limit (max 2)
+    if (inv.active_buffs.length >= 2 && !inv.active_buffs.find(b => b.category === category)) {
+      return res.status(400).json({ success: false, message: 'Maximálisan 2 buff lehet egyszerre aktív!' });
+    }
+
+    const existingIdx = inv.active_buffs.findIndex(b => b.category === category);
+    if (existingIdx !== -1 && !confirmOverwrite) {
+      return res.json({ 
+        success: false, 
+        requireConfirmation: true, 
+        message: `Már van egy aktív ${category} buffod! Biztosan felülírod?` 
+      });
+    }
+
+    // Rarity mappings
+    let durationSeconds = 1800; // Rare (30m)
+    let percentIncrease = 5;    // Rare
+    if (rarity === 'epic') {
+        durationSeconds = 7200; // 2h
+        percentIncrease = 8;
+    } else if (rarity === 'legendary') {
+        durationSeconds = 14400; // 4h
+        percentIncrease = 10;
+    }
+
+    if (existingIdx !== -1) {
+        inv.active_buffs.splice(existingIdx, 1);
+    }
+    
+    inv.active_buffs.push({
+        category: category,
+        percent: percentIncrease,
+        expires_at: Math.floor(Date.now() / 1000) + durationSeconds,
+        iconPath: item.iconPath,
+        rarity: rarity
+    });
 
     // Consume item
     item.quantity -= 1;
@@ -461,17 +512,17 @@ router.post('/use', async (req, res) => {
     recalcUsed(inv);
     await saveInventory(req.pool, req.user.specieId, inv);
 
-    // Apply buff
-    if (buffId) {
+    // Provide the old DB table insert just in case legacy systems check it (optional)
+    if (item.buff_id) {
       await req.pool.execute(
         `INSERT INTO active_effect (specie_id, buff_id, start_date) 
          VALUES (?, ?, CURRENT_TIMESTAMP) 
          ON DUPLICATE KEY UPDATE start_date = CURRENT_TIMESTAMP`,
-        [req.user.specieId, buffId]
-      );
+        [req.user.specieId, item.buff_id]
+      ).catch(e => console.error(e)); // Ignore any error
     }
 
-    res.json({ success: true, message: `Used ${item.name}` });
+    res.json({ success: true, message: `Used ${item.name}`, active_buffs: inv.active_buffs });
   } catch (err) {
     console.error('[Inventory] POST /use error:', err.message);
     res.status(500).json({ success: false, message: err.message });
@@ -497,10 +548,15 @@ router.post('/addItem', async (req, res) => {
       existing.quantity += quantity;
     } else {
       let weapon_damage = 0;
+      let armor_point = 0;
       if (itemType === 'weapon') {
         const bDmg = itemData?.base_damage || 10;
-        // weapon_damage = base_damage + random(-1, 1) + (specie.lvl * 2)
-        weapon_damage = itemData?.weapon_damage || (bDmg + (Math.floor(Math.random() * 3) - 1) + (sLvl * 2));
+        const offset = Math.floor(Math.random() * 9) - 3; // -3 to +5
+        weapon_damage = itemData?.weapon_damage || (bDmg + offset + (sLvl * 2));
+      } else if (itemType === 'armor') {
+        const bArm = itemData?.armor_point || 18;
+        const offset = Math.floor(Math.random() * 7) - 2; // -2 to +4
+        armor_point = itemData?.armor_point || (bArm + offset);
       }
 
       inv.items.push({
@@ -514,7 +570,7 @@ router.post('/addItem', async (req, res) => {
         iconPath: itemData?.iconPath || null,
         inventory_size: itemData?.inventory_size || 10,
         ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0, weapon_damage }),
-        ...(itemType === 'armor' && { armor_point: itemData?.armor_point || 0, category: itemData?.category || 'Armor' }),
+        ...(itemType === 'armor' && { armor_point, category: itemData?.category || 'Armor' }),
         ...(itemType === 'food' && { category: itemData?.category || '', buff_id: itemData?.buff_id || null }),
       });
     }
@@ -657,11 +713,29 @@ router.post('/quest/start', async (req, res) => {
     }
 
     inv.stamina.current -= (Number(staminaCost) || 0);
+    const [statsRows] = await req.pool.execute('SELECT base_agility, base_luck FROM specie WHERE id = ?', [req.user.specieId]);
+    const agility = statsRows[0]?.base_agility || 10;
+    const luck = statsRows[0]?.base_luck || 10;
+    const combinedStats = agility + luck;
+    
+    let discount = 0;
+    // Base 15% chance to find a shortcut, increased by luck
+    const chance = 0.15 + Math.min(0.25, (luck / 100)); 
+    if (Math.random() < chance) {
+        // Very minimal reduction: 1% per 10 combined points, max 25%
+        discount = Math.min(0.25, (combinedStats / 10) * 0.01);
+    }
+
+    const originalDuration = durationSeconds;
+    durationSeconds = Math.floor(durationSeconds * (1 - discount));
+
     inv.active_quest = {
       name: questName,
       difficulty,
+      description: req.body.description || '',
       start_time: Math.floor(Date.now() / 1000),
       duration: durationSeconds,
+      original_duration: originalDuration,
       reward_normal: rewardNormal,
       reward_spec: rewardSpec,
       reward_xp: Number(rewardXP) || 0,
@@ -682,6 +756,7 @@ router.post('/quest/claim', async (req, res) => {
     if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
 
     const q = inv.active_quest;
+    const diff = (q.difficulty || 'medium').toLowerCase();
     const now = Math.floor(Date.now() / 1000);
     if (now < q.start_time + q.duration) return res.status(400).json({ success: false, message: 'Quest not finished yet' });
 
@@ -693,18 +768,104 @@ router.post('/quest/claim', async (req, res) => {
     // Award XP and handle level up
     const [specRows] = await req.pool.execute('SELECT lvl, xp FROM specie WHERE id = ?', [req.user.specieId]);
     let levelMsg = "";
+    let sLvl = 1;
     if (specRows[0]) {
+      sLvl = specRows[0].lvl;
       const result = await handleLevelUp(req.pool, req.user.specieId, specRows[0].lvl, specRows[0].xp, questXP);
       if (result.leveledUp) {
           levelMsg = ` Level up! Reached level ${result.lvl}. All stats +${result.increase}!`;
+          sLvl = result.lvl;
       }
     }
 
+    // Drop system logic
+    const drops = [];
+    const roll = Math.random();
+    let numDrops = 0;
+    let allowEpicLeg = false;
+
+    if (diff === 'easy') {
+       if (roll < 0.40) numDrops = 1; // 40% chance
+    } else if (diff === 'medium') {
+       if (roll < 0.70) numDrops = 1; // 70% chance
+       allowEpicLeg = true;
+    } else if (diff === 'hard') {
+       numDrops = roll < 0.40 ? 2 : 1; // 100% chance for 1, 40% for 2
+       allowEpicLeg = true;
+    }
+
+    if (numDrops > 0 && inv.used < inv.capacity) {
+        // Fetch arrays of items
+        const [miscRows] = await req.pool.execute('SELECT * FROM item_misc');
+        const [weapRows] = await req.pool.execute('SELECT * FROM item_weapon WHERE rarity IN ("Common", "Rare", "common", "rare")');
+        
+        for (let i=0; i<numDrops; i++) {
+            // Mostly drop misc (80%), sometimes weapon (20%)
+            const isWeap = Math.random() < 0.20 && weapRows.length > 0;
+            const itemsSource = isWeap ? weapRows : miscRows;
+            
+            // Filter misc by rarity if hard
+            let possibleItems = itemsSource;
+            if (!isWeap && itemsSource.length > 0) {
+               // Define a custom roll for rarity if we are dropping misc
+               const rRoll = Math.random();
+               let targetRarity = 'common';
+               if (diff === 'easy') {
+                   targetRarity = rRoll < 0.1 ? 'rare' : 'common';
+               } else if (diff === 'medium') {
+                   targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
+               } else if (diff === 'hard') {
+                   targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
+               }
+               
+               const filtered = itemsSource.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
+               if (filtered.length > 0) possibleItems = filtered;
+            }
+            
+            if (possibleItems.length > 0) {
+                const dbItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+                const invSize = dbItem.inventory_size || 10;
+                
+                if (inv.used + invSize <= inv.capacity) {
+                    const existing = inv.items.find(x => x.id == dbItem.item_id && x.type === (isWeap ? 'weapon' : 'misc'));
+                    if (existing) {
+                        existing.quantity += 1;
+                    } else {
+                        const newItem = {
+                            id: dbItem.item_id,
+                            type: isWeap ? 'weapon' : 'misc',
+                            name: dbItem.name || 'Unknown Item',
+                            rarity: (dbItem.rarity || 'common').toLowerCase(),
+                            quantity: 1,
+                            description: dbItem.description || '',
+                            sell_price: dbItem.sell_price || Math.round((dbItem.normal_currency_cost || 10) * 0.4),
+                            iconPath: dbItem.iconPath || null,
+                            inventory_size: invSize,
+                        };
+                        if (isWeap) {
+                            const bDmg = dbItem.base_damage || 10;
+                            newItem.base_damage = bDmg;
+                            newItem.weapon_damage = bDmg + (Math.floor(Math.random() * 3) - 1) + (sLvl * 2);
+                        } else {
+                            newItem.category = dbItem.category || '';
+                        }
+                        inv.items.push(newItem);
+                    }
+                    inv.used += invSize;
+                    drops.push(dbItem.name);
+                }
+            }
+        }
+    }
+
     await saveInventory(req.pool, req.user.specieId, inv);
+    
+    let dropMsg = drops.length > 0 ? ` Found items: ${drops.join(', ')}!` : '';
+
     res.json({ 
         success: true, 
-        message: `Quest claimed! +${q.reward_normal} pebbles, +${questXP} XP.${levelMsg}`,
-        rewards: { normal: q.reward_normal, spec: q.reward_spec, xp: questXP } 
+        message: `Quest claimed! +${q.reward_normal} pebbles, +${questXP} XP.${levelMsg}${dropMsg}`,
+        rewards: { normal: q.reward_normal, spec: q.reward_spec, xp: questXP, drops } 
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

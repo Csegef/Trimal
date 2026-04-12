@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
 // TODO: BACKEND - This layout is specific for authenticated users.
-const GameLayout = ({ children, currency, customBg, bgOpacity }) => {
+const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'center' }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeQuest, setActiveQuest] = React.useState(null);
@@ -80,8 +80,8 @@ const GameLayout = ({ children, currency, customBg, bgOpacity }) => {
             <img
               src="/src/assets/design/covers/logo/logo1.png"
               alt="Trimal RPG Logo"
-              className="h-12 md:h-16 object-contain drop-shadow-md hover:scale-105 transition-transform cursor-pointer"
-              onClick={() => navigate('/maingame')}
+              className={`h-12 md:h-16 object-contain drop-shadow-md transition-transform ${location.pathname === '/fight' ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 cursor-pointer'}`}
+              onClick={() => location.pathname !== '/fight' && navigate('/maingame')}
             />
 
             {/* Currency */}
@@ -100,35 +100,49 @@ const GameLayout = ({ children, currency, customBg, bgOpacity }) => {
 
           {/* Center: Navigation Links (Stations) */}
           <nav className="hidden md:flex items-center gap-6">
-            {[
-              { name: 'Inventory', path: '/inventory' },
-              { name: 'Tinkerer', path: '/shop/tinkerer' },
-              { name: 'Herbalist', path: '/shop/herbalist' },
-              { name: "Shaman's hut", path: '/shamans-hut' },
-              { name: 'Mysterious cave', path: '/mysterious-cave' }
-            ].map((station) => (
-              <Link
-                key={station.name}
-                to={station.path}
-                className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative group"
-              >
-                {station.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
-              </Link>
-            ))}
+            {location.pathname === '/fight' ? (
+              /* Combat lock — disable all nav during fight */
+              <span className="text-red-400/70 font-bold uppercase tracking-widest text-xs animate-pulse select-none">
+                In Combat — Navigation Locked
+              </span>
+            ) : (
+              [
+                { name: 'Inventory', path: '/inventory' },
+                { name: 'Tinkerer', path: '/shop/tinkerer' },
+                { name: 'Herbalist', path: '/shop/herbalist' },
+                { name: "Shaman's hut", path: '/shamans-hut' },
+                { name: 'Mysterious cave', path: '/mysterious-cave' }
+              ].map((station) => (
+                <Link
+                  key={station.name}
+                  to={station.path}
+                  className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative group"
+                >
+                  {station.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
+                </Link>
+              ))
+            )}
           </nav>
 
           {/* Right: Logout */}
           <button
-            onClick={handleLogout}
-            className="px-4 py-1.5 bg-red-900/20 hover:bg-red-900/60 text-red-200 border border-red-900/50 hover:border-red-500 rounded transition-all text-xs uppercase font-bold tracking-widest"
+            onClick={location.pathname !== '/fight' ? handleLogout : undefined}
+            disabled={location.pathname === '/fight'}
+            className={`px-4 py-1.5 border rounded transition-all text-xs uppercase font-bold tracking-widest ${
+              location.pathname === '/fight'
+                ? 'bg-stone-900/20 text-stone-600 border-stone-800 cursor-not-allowed opacity-40'
+                : 'bg-red-900/20 hover:bg-red-900/60 text-red-200 border-red-900/50 hover:border-red-500'
+            }`}
           >
             Logout
           </button>
         </header>
 
         {/* Main Game Content */}
-        <main className="grow flex relative items-center justify-center p-4 min-h-0 overflow-visible">
+        <main className={`grow flex relative justify-center p-4 min-h-0 overflow-y-auto scrollbar-hide ${contentAlign === 'start' ? 'items-start' : 'items-center'}`}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {children}
 
           {/* Active Quest Interaction Blocker */}
