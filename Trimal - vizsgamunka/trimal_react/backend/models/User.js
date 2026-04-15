@@ -15,8 +15,8 @@ class User {
     const hashed = await bcrypt.hash(password, salt);
 
     const [result] = await this.pool.execute(
-      `INSERT INTO user (nickname, email, password, salt, last_login, status, currency, spec_currency, description, verification_token, is_verified) 
-       VALUES (?, ?, ?, ?, NOW(), 1, 0, 0, '', ?, 0)`,
+      `INSERT INTO user (nickname, email, password, salt, last_login, status, currency, spec_currency, verification_token, is_verified) 
+       VALUES (?, ?, ?, ?, NOW(), 1, 0, 0, ?, 0)`,
       [nickname, email, hashed, salt, verification_token]
     );
     return { id: result.insertId, nickname, email };
