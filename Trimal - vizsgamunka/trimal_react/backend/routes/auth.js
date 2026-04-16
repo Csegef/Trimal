@@ -68,10 +68,10 @@ router.post('/register', async (req, res) => {
       items: [],
       equipped: {
         weapon: null,
-        armor_head: null,
-        armor_chest: null,
-        armor_legs: null,
-        armor_feet: null
+        armor_cap: null,
+        armor_plate: null,
+        armor_leggings: null,
+        armor_boots: null
       }
     };
 
