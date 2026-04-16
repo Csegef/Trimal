@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import { API_BASE_URL } from "../api/inventoryApi";
 
 const CharacterSignIn = () => {
     const navigate = useNavigate();
@@ -35,8 +34,7 @@ const CharacterSignIn = () => {
         }
 
         try {
-            // const response = await fetch('http://localhost:5000/api/auth/login', {
-            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            const response = await fetch('http://localhost:5000/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email: loginIdentifier, password }),

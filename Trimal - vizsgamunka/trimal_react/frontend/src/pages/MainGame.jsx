@@ -3,7 +3,6 @@ import GameLayout from "../layouts/GameLayout";
 import { useNavigate } from "react-router-dom";
 import PlayerPortrait from "../components/PlayerPortrait";
 import IntroOverlay from "../components/IntroOverlay";
-import { API_BASE_URL } from "../api/inventoryApi";
 
 const MainGame = () => {
   const [userData, setUserData] = useState(null);
@@ -26,7 +25,7 @@ const MainGame = () => {
     // Betöltjük a currency-t és player adatokat
     if (token) {
       // Get detailed player info including createdAt
-      fetch(`${API_BASE_URL}/api/inventory/player`, {
+      fetch('/api/inventory/player', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(r => r.json())
@@ -51,7 +50,7 @@ const MainGame = () => {
         })
         .catch(() => { });
 
-      fetch(`${API_BASE_URL}/api/inventory`, {
+      fetch('/api/inventory', {
         headers: { 'Authorization': `Bearer ${token}` }
       })
         .then(r => r.json())

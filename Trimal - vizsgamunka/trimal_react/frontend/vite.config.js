@@ -6,10 +6,6 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
-  resolve: {
-    preserveSymlinks: true
-  },
-
   server: {
     fs: {
       // Allow serving files from one level up to support symlinks outside the workspace
@@ -17,8 +13,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        // target: 'http://localhost:5000',
-        target: 'https://trimal.onrender.com',
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false,
       },

@@ -1,6 +1,5 @@
 import React from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { API_BASE_URL } from "../api/inventoryApi";
 
 // TODO: BACKEND - This layout is specific for authenticated users.
 const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'center', fullBleed = false }) => {
@@ -11,7 +10,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
   React.useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetch(`${API_BASE_URL}/api/inventory`, {
+      fetch("/api/inventory", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((r) => r.json())
@@ -30,7 +29,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
 
       if (token) {
         // Call logout API endpoint
-        const response = await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        const response = await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

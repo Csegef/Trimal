@@ -1,9 +1,31 @@
-
+-- phpMyAdmin SQL Dump
+-- version 5.2.1
+-- https://www.phpmyadmin.net/
+--
+-- Gép: 127.0.0.1
+-- Létrehozás ideje: 2026. Ápr 12. 06:52
+-- Kiszolgáló verziója: 10.4.32-MariaDB
+-- PHP verzió: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
 SET time_zone = "+00:00";
 
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8mb4 */;
+
+--
+-- Adatbázis: `trimal`
+--
+
+-- --------------------------------------------------------
+
+--
+-- Tábla szerkezet ehhez a táblához `active_effect`
+--
 
 CREATE TABLE `active_effect` (
   `specie_id` int(11) NOT NULL,
@@ -11,11 +33,19 @@ CREATE TABLE `active_effect` (
   `start_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `active_effect`
+--
 
 INSERT INTO `active_effect` (`specie_id`, `buff_id`, `start_date`) VALUES
 (5, 9, '2026-04-11 23:52:56'),
 (5, 13, '2026-04-12 01:07:22');
 
+-- --------------------------------------------------------
+
+--
+-- Tábla szerkezet ehhez a táblához `effect_buff`
+--
 
 CREATE TABLE `effect_buff` (
   `effect_id` int(11) NOT NULL,
@@ -27,6 +57,9 @@ CREATE TABLE `effect_buff` (
   `iconPath` varchar(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `effect_buff`
+--
 
 INSERT INTO `effect_buff` (`effect_id`, `food_id`, `name`, `value`, `category`, `duration`, `iconPath`) VALUES
 (9, NULL, 'Heal', 10, 'buff', 5400, ''),
@@ -38,7 +71,11 @@ INSERT INTO `effect_buff` (`effect_id`, `food_id`, `name`, `value`, `category`, 
 (15, NULL, 'Cold', 5, 'debuff', 0, 'ice_effect.gif'),
 (16, NULL, 'Bleed', 5, 'debuff', 0, 'bleed_effect.gif');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `enemy`
+--
 
 CREATE TABLE `enemy` (
   `enemy_id` int(11) NOT NULL,
@@ -54,6 +91,9 @@ CREATE TABLE `enemy` (
   `type` enum('poison','cold','bleed','none') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- A tábla adatainak kiíratása `enemy`
+--
 
 INSERT INTO `enemy` (`enemy_id`, `name`, `description`, `base_health`, `base_agility`, `base_strength`, `base_luck`, `base_resistance`, `iconPath`, `category`, `type`) VALUES
 (1, 'Dark confiscator', 'Me saw this giant bird. Bigger than me, much bigger. Wings like a shadow. Other me tried to throw a spear. Bird took the spear and flew away. Me just ran.', 11, 11, 11, 11, 11, 'argentavis_magnificens_cover.png', 'Light', 'poison'),
@@ -80,7 +120,11 @@ INSERT INTO `enemy` (`enemy_id`, `name`, `description`, `base_health`, `base_agi
 (22, 'Woolly boulder', 'Hairy boulder. Big horn on nose. Big temper. Me hid in a cave. It tried to dig me out with its horn. Cave almost fell.', 16, 16, 16, 16, 16, 'woolly_rhino_cover.png', 'Heavy', 'cold'),
 (23, 'Short tusk', 'Tusk but with short tusks pointing down. Looks funny. Me laughed once. Then it charged. Me ran faster than ever before. Not funny anymore.', 16, 16, 16, 16, 16, 'deinotherium_cover.png', 'Heavy', 'none');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `environment`
+--
 
 CREATE TABLE `environment` (
   `id` int(11) NOT NULL,
@@ -89,6 +133,9 @@ CREATE TABLE `environment` (
   `iconPath` varchar(5000) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `environment`
+--
 
 INSERT INTO `environment` (`id`, `name`, `description`, `iconPath`) VALUES
 (1, 'Dense forest', 'A dense prehistoric forest where towering ancient trees block much of the sunlight. Early human tribes move carefully between massive roots, gathering berries and hunting small animals, while larger beasts roam deeper in the shadows. The air is heavy with mist, insects, and the constant sounds of unseen life.', 'forest_backgroundFULLHD.png'),
@@ -97,7 +144,11 @@ INSERT INTO `environment` (`id`, `name`, `description`, `iconPath`) VALUES
 (4, 'Stony mountain', 'A prehistoric mountain region with steep cliffs and narrow paths carved by time. Early humans settle near caves and high vantage points, watching herds move below. Large animals dominate the valleys, while strong winds and thin air test the limits of survival.', 'mountain_backgroundFULLHD.png'),
 (5, 'Savannah', 'A vast prehistoric savannah stretching endlessly under the open sky. Tall grass waves in the wind as early human groups follow migrating herds. Powerful animals rule the plains, and survival depends on teamwork, observation, and the careful use of primitive tools.', 'savannah_backgroundFULLHD.png');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `inventory_backup`
+--
 
 CREATE TABLE `inventory_backup` (
   `specie_id` int(11) NOT NULL,
@@ -108,7 +159,11 @@ CREATE TABLE `inventory_backup` (
   `item_quantity` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `item_armor`
+--
 
 CREATE TABLE `item_armor` (
   `item_id` int(11) NOT NULL,
@@ -123,6 +178,9 @@ CREATE TABLE `item_armor` (
   `iconPath` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `item_armor`
+--
 
 INSERT INTO `item_armor` (`item_id`, `name`, `category`, `rarity`, `armor_point`, `normal_currency_cost`, `spec_currency_cost`, `inventory_size`, `description`, `iconPath`) VALUES
 (1, 'Bone boots', 'Armor', 'Epic', 25, 295, 5, 10, 'Hard bone soles strapped over leather.', 'bone-boots.png'),
@@ -142,7 +200,11 @@ INSERT INTO `item_armor` (`item_id`, `name`, `category`, `rarity`, `armor_point`
 (15, 'Hardened wood leggings', 'Armor', 'Rare', 22, 235, 0, 10, 'Leather pants reinforced along the thighs with wood to resist claws and sharp stones.', 'wood-leggings.png'),
 (16, 'Hardened wood plate', 'Armor', 'Rare', 22, 235, 0, 10, 'A leather vest strengthened with wooden pieces provides improved defense against blunt impacts.', 'wood-plate.png');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `item_food`
+--
 
 CREATE TABLE `item_food` (
   `item_id` int(11) NOT NULL,
@@ -157,7 +219,9 @@ CREATE TABLE `item_food` (
   `iconPath` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
+--
+-- A tábla adatainak kiíratása `item_food`
+--
 
 INSERT INTO `item_food` (`item_id`, `buff_id`, `name`, `category`, `rarity`, `normal_currency_cost`, `spec_currency_cost`, `inventory_size`, `description`, `iconPath`) VALUES
 (1, 12, 'Coffee beans', 'agility', 'rare', 50, 0, 10, 'Small coffee beans, they are almost everywhere.', 'agility-s.png'),
@@ -174,7 +238,11 @@ INSERT INTO `item_food` (`item_id`, `buff_id`, `name`, `category`, `rarity`, `no
 (12, 11, 'Buxom figure', 'luck', 'legendary', 110, 5, 10, 'Bring me luck, O buxom me.', 'luck-l.png'),
 (13, 10, 'Mead', 'resistance', 'epic', 800, 1, 10, 'I get dizzy when drinking too much of this, cannot feel anything though.', 'resistance-m.png');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `item_misc`
+--
 
 CREATE TABLE `item_misc` (
   `item_id` int(11) NOT NULL,
@@ -188,6 +256,9 @@ CREATE TABLE `item_misc` (
   `iconPath` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `item_misc`
+--
 
 INSERT INTO `item_misc` (`item_id`, `name`, `category`, `rarity`, `normal_currency_cost`, `spec_currency_cost`, `inventory_size`, `description`, `iconPath`) VALUES
 (1, 'Pebble', 'Misc', 'Common', 20, NULL, 10, 'From a near riverbed', 'misc-common1.png'),
@@ -199,6 +270,11 @@ INSERT INTO `item_misc` (`item_id`, `name`, `category`, `rarity`, `normal_curren
 (7, 'Agni flower', 'Misc', 'Legendary', 50, 3, 10, 'Unseen plant. Even the ones with dedication could not tell anything about it. It seems ancient.', 'misc-legendary1.png'),
 (8, 'Ancient amber', 'Misc', 'Legendary', 50, 3, 10, 'It is rock like but something has been stuck inside it. It has many legs and theres legs on his back', 'misc-legendary2.png');
 
+-- --------------------------------------------------------
+
+--
+-- Tábla szerkezet ehhez a táblához `item_weapon`
+--
 
 CREATE TABLE `item_weapon` (
   `item_id` int(11) NOT NULL,
@@ -213,6 +289,9 @@ CREATE TABLE `item_weapon` (
   `iconPath` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `item_weapon`
+--
 
 INSERT INTO `item_weapon` (`item_id`, `name`, `category`, `rarity`, `base_damage`, `normal_currency_cost`, `spec_currency_cost`, `inventory_size`, `description`, `iconPath`) VALUES
 (1, 'Wooden axe', 'Weapon', 'Common', 10, 100, 0, 10, 'A crude axe made from a root.', 'common_axe.png'),
@@ -236,7 +315,11 @@ INSERT INTO `item_weapon` (`item_id`, `name`, `category`, `rarity`, `base_damage
 (19, 'Worn spear', 'Weapon', 'Legendary', 25, 350, 8, 10, 'This spear has tasted the life of many great beasts; its shaft is stiff with old blood.', 'legendary_spear.png'),
 (20, 'Worn spear thrower', 'Weapon', 'Legendary', 25, 350, 8, 10, 'An spear thrower, stained dark from hands and sacrifice, humming with old power.', 'legendary_throw.png');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `quest`
+--
 
 CREATE TABLE `quest` (
   `quest_id` int(11) NOT NULL,
@@ -249,7 +332,9 @@ CREATE TABLE `quest` (
   `stamina_cost` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
+--
+-- A tábla adatainak kiíratása `quest`
+--
 
 INSERT INTO `quest` (`quest_id`, `specie_id`, `difficulty`, `currency`, `spec_currency`, `xp`, `description`, `stamina_cost`) VALUES
 (1, NULL, 'easy', 15, 0, 5, 'Gather edible mushrooms near the glowing caves. Watch for the blue caps.', 12),
@@ -283,6 +368,11 @@ INSERT INTO `quest` (`quest_id`, `specie_id`, `difficulty`, `currency`, `spec_cu
 (29, NULL, 'medium', 20, 2, 10, 'Purify the water at the tainted lake using special stones.', 16),
 (30, NULL, 'hard', 25, 4, 15, 'Face the spirit beast that haunts the old burial grounds.', 25);
 
+-- --------------------------------------------------------
+
+--
+-- Tábla szerkezet ehhez a táblához `shop`
+--
 
 CREATE TABLE `shop` (
   `id` int(11) NOT NULL,
@@ -294,7 +384,9 @@ CREATE TABLE `shop` (
   `purchased` tinyint(1) DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
+--
+-- A tábla adatainak kiíratása `shop`
+--
 
 INSERT INTO `shop` (`id`, `specie_id`, `shop_type`, `item_type`, `item_id`, `created_date`, `purchased`) VALUES
 (1, 5, 'tinkerer', 'weapon', 12, '2026-03-12', 0),
@@ -370,7 +462,11 @@ INSERT INTO `shop` (`id`, `specie_id`, `shop_type`, `item_type`, `item_id`, `cre
 (71, 5, 'herbalist', 'food', 2, '2026-04-12', 0),
 (72, 5, 'herbalist', 'food', 9, '2026-04-12', 0);
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `shop_backup`
+--
 
 CREATE TABLE `shop_backup` (
   `id` int(11) NOT NULL DEFAULT 0,
@@ -382,7 +478,11 @@ CREATE TABLE `shop_backup` (
   `spec_currency_cost` int(6) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `specie`
+--
 
 CREATE TABLE `specie` (
   `id` int(11) NOT NULL,
@@ -408,7 +508,9 @@ CREATE TABLE `specie` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
+--
+-- A tábla adatainak kiíratása `specie`
+--
 
 INSERT INTO `specie` (`id`, `user_id`, `quest_id`, `specie_name`, `lvl`, `xp`, `stamina`, `base_health`, `base_strength`, `base_agility`, `base_luck`, `base_resistance`, `base_armor`, `inventory_json`, `hair_style`, `beard_style`, `quest_1`, `quest_2`, `quest_3`, `created_at`, `updated_at`) VALUES
 (1, 6, NULL, 'Neanderthal', 1, 0, 100, 5, 5, 5, 5, 5, 0, '{\"capacity\": 200, \"used\": 4, \"currency\": {\"normal\": 0, \"spec\": 0}, \"items\": [{\"id\": 1, \"type\": \"weapon\", \"name\": \"Stone Axe\", \"rarity\": \"Common\", \"quantity\": 1, \"description\": \"A polished stone head grooved and securely fixed to a sturdy haft.\", \"iconPath\": \"rare_axe.png\"}], \"equipped\": {\"weapon\": 1, \"armor_cap\": \"null\", \"armor_plate\": \"null\", \"armor_leggings\": \"null\", \"armor_boots\": \"null\"}}', 'n-hair-5', 'n-beard-3', NULL, NULL, NULL, '2026-02-03 18:41:24', '2026-02-27 06:59:55'),
@@ -421,7 +523,11 @@ INSERT INTO `specie` (`id`, `user_id`, `quest_id`, `specie_name`, `lvl`, `xp`, `
 (8, 13, NULL, 'Sapiens', 1, 0, 100, 10, 10, 10, 10, 10, 0, '{\"capacity\":200,\"used\":0,\"currency\":{\"normal\":0,\"spec\":0},\"items\":[],\"equipped\":{\"weapon\":null,\"armor_head\":null,\"armor_chest\":null,\"armor_legs\":null,\"armor_feet\":null}}', 'hs-hair-5', 'hs-beard-5', 16, 5, 6, '2026-03-04 11:55:52', '2026-03-04 11:55:52'),
 (9, 14, NULL, 'Neanderthal', 1, 0, 100, 10, 10, 10, 10, 10, 0, '{\"capacity\":200,\"used\":0,\"currency\":{\"normal\":0,\"spec\":0},\"items\":[],\"equipped\":{\"weapon\":null,\"armor_head\":null,\"armor_chest\":null,\"armor_legs\":null,\"armor_feet\":null}}', NULL, NULL, 16, 20, 9, '2026-03-31 08:12:04', '2026-03-31 08:12:04');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `specie_backup`
+--
 
 CREATE TABLE `specie_backup` (
   `id` int(11) NOT NULL DEFAULT 0,
@@ -454,7 +560,9 @@ CREATE TABLE `specie_backup` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-
+--
+-- A tábla adatainak kiíratása `specie_backup`
+--
 
 INSERT INTO `specie_backup` (`id`, `user_id`, `shop_id`, `quest_id`, `specie_name`, `lvl`, `xp`, `stamina`, `base_health`, `base_strength`, `base_agility`, `base_luck`, `base_resistance`, `base_armor`, `hair_style`, `beard_style`, `inventory_capacity`, `inventory_state`, `slot_weapon`, `slot_armor_1`, `slot_armor_2`, `slot_armor_3`, `slot_armor_4`, `quest_1`, `quest_2`, `quest_3`, `created_at`, `updated_at`) VALUES
 (1, 6, NULL, NULL, 'Neanderthal', 1, 0, 100, 10, 10, 10, 10, 10, 0, 'n-hair-5', 'n-beard-3', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 18:41:24', '2026-02-03 18:41:24'),
@@ -463,7 +571,11 @@ INSERT INTO `specie_backup` (`id`, `user_id`, `shop_id`, `quest_id`, `specie_nam
 (4, 9, NULL, NULL, 'Floresiensis', 1, 0, 100, 10, 10, 10, 10, 10, 0, 'f-hair-4', 'f-beard-3', 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:07:01', '2026-02-03 19:07:01'),
 (5, 10, NULL, NULL, 'Neanderthal', 1, 0, 100, 10, 10, 10, 10, 10, 0, NULL, NULL, 100, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '2026-02-03 19:17:53', '2026-02-03 19:17:53');
 
+-- --------------------------------------------------------
 
+--
+-- Tábla szerkezet ehhez a táblához `user`
+--
 
 CREATE TABLE `user` (
   `id` int(11) NOT NULL,
@@ -480,6 +592,9 @@ CREATE TABLE `user` (
   `is_verified` tinyint(1) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+--
+-- A tábla adatainak kiíratása `user`
+--
 
 INSERT INTO `user` (`id`, `specie_id`, `email`, `password`, `salt`, `nickname`, `last_login`, `status`, `currency`, `spec_currency`, `verification_token`, `is_verified`) VALUES
 (6, 1, 'asd', '$2b$10$x7T5unm0QVs9sn3OmCMgsemQ3dNQiE3PBph/Kxs9NY/Vrq3GD2Eiy', '$2b$10$x7T5unm0QVs9sn3OmCMgse', 'csegefekete1', '2026-02-03', 1, 0, 0, '2424af9166ab360ac876e1e4c2a01f8a946778e9beed2e1004333d6c9d03592a', 0),
@@ -492,24 +607,39 @@ INSERT INTO `user` (`id`, `specie_id`, `email`, `password`, `salt`, `nickname`, 
 (13, 8, 'veresgaborzalan-40248@taszi.hu', '$2b$10$MOBDsl5SRPZl4V1p3fec4.pdPniY/V0YYq5iPYZ/mu9cSEz7VK4Le', '$2b$10$MOBDsl5SRPZl4V1p3fec4.', 'Teszt', '2026-03-04', 1, 0, 0, NULL, 1),
 (14, 9, 'tester@example.com', '$2b$10$6DMfULYA7nA14tLHKCgLT.K4n/YbTmcKKo.pte2Dc66WMRWwBT.0e', '$2b$10$6DMfULYA7nA14tLHKCgLT.', 'tester', '2026-03-31', 1, 0, 0, '7f223807b96b8f80f7c8a5805b568acce83e63195478d76b9d2c0a84e907a7c5', 0);
 
+--
+-- Indexek a kiírt táblákhoz
+--
 
+--
+-- A tábla indexei `active_effect`
+--
 ALTER TABLE `active_effect`
   ADD PRIMARY KEY (`specie_id`,`buff_id`) USING BTREE,
   ADD KEY `buff_id` (`buff_id`);
 
+--
+-- A tábla indexei `effect_buff`
+--
 ALTER TABLE `effect_buff`
   ADD PRIMARY KEY (`effect_id`),
   ADD KEY `food_id` (`food_id`);
 
-
+--
+-- A tábla indexei `enemy`
+--
 ALTER TABLE `enemy`
   ADD PRIMARY KEY (`enemy_id`);
 
-
+--
+-- A tábla indexei `environment`
+--
 ALTER TABLE `environment`
   ADD PRIMARY KEY (`id`);
 
-
+--
+-- A tábla indexei `item_armor`
+--
 ALTER TABLE `item_armor`
   ADD PRIMARY KEY (`item_id`);
 
@@ -520,20 +650,28 @@ ALTER TABLE `item_food`
   ADD PRIMARY KEY (`item_id`),
   ADD KEY `buff_id` (`buff_id`);
 
-
+--
+-- A tábla indexei `item_misc`
+--
 ALTER TABLE `item_misc`
   ADD PRIMARY KEY (`item_id`);
 
-
+--
+-- A tábla indexei `item_weapon`
+--
 ALTER TABLE `item_weapon`
   ADD PRIMARY KEY (`item_id`);
 
-
+--
+-- A tábla indexei `quest`
+--
 ALTER TABLE `quest`
   ADD PRIMARY KEY (`quest_id`),
   ADD KEY `specie_id` (`specie_id`);
 
-
+--
+-- A tábla indexei `shop`
+--
 ALTER TABLE `shop`
   ADD PRIMARY KEY (`id`),
   ADD KEY `specie_id` (`specie_id`),
@@ -549,80 +687,126 @@ ALTER TABLE `specie`
   ADD KEY `user_id` (`user_id`),
   ADD KEY `quest_id` (`quest_id`);
 
-
+--
+-- A tábla indexei `user`
+--
 ALTER TABLE `user`
   ADD PRIMARY KEY (`id`),
   ADD KEY `specie_id` (`specie_id`);
 
+--
+-- A kiírt táblák AUTO_INCREMENT értéke
+--
 
-
+--
+-- AUTO_INCREMENT a táblához `effect_buff`
+--
 ALTER TABLE `effect_buff`
   MODIFY `effect_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
-
+--
+-- AUTO_INCREMENT a táblához `enemy`
+--
 ALTER TABLE `enemy`
   MODIFY `enemy_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
-
+--
+-- AUTO_INCREMENT a táblához `environment`
+--
 ALTER TABLE `environment`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
-
+--
+-- AUTO_INCREMENT a táblához `item_armor`
+--
 ALTER TABLE `item_armor`
   MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
 
-
+--
+-- AUTO_INCREMENT a táblához `item_food`
+--
 ALTER TABLE `item_food`
   MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
-
+--
+-- AUTO_INCREMENT a táblához `item_misc`
+--
 ALTER TABLE `item_misc`
   MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
-
+--
+-- AUTO_INCREMENT a táblához `item_weapon`
+--
 ALTER TABLE `item_weapon`
   MODIFY `item_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=21;
 
-
+--
+-- AUTO_INCREMENT a táblához `quest`
+--
 ALTER TABLE `quest`
   MODIFY `quest_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=36;
 
-
+--
+-- AUTO_INCREMENT a táblához `shop`
+--
 ALTER TABLE `shop`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
 
-
+--
+-- AUTO_INCREMENT a táblához `specie`
+--
 ALTER TABLE `specie`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
-
+--
+-- AUTO_INCREMENT a táblához `user`
+--
 ALTER TABLE `user`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
+--
+-- Megkötések a kiírt táblákhoz
+--
 
-
+--
+-- Megkötések a táblához `active_effect`
+--
 ALTER TABLE `active_effect`
   ADD CONSTRAINT `active_effect_ibfk_1` FOREIGN KEY (`buff_id`) REFERENCES `effect_buff` (`effect_id`),
   ADD CONSTRAINT `active_effect_ibfk_3` FOREIGN KEY (`specie_id`) REFERENCES `specie` (`id`);
 
-
+--
+-- Megkötések a táblához `effect_buff`
+--
 ALTER TABLE `effect_buff`
   ADD CONSTRAINT `effect_buff_ibfk_1` FOREIGN KEY (`food_id`) REFERENCES `item_food` (`item_id`);
 
-
+--
+-- Megkötések a táblához `item_food`
+--
 ALTER TABLE `item_food`
   ADD CONSTRAINT `item_food_ibfk_2` FOREIGN KEY (`buff_id`) REFERENCES `effect_buff` (`effect_id`);
 
-
+--
+-- Megkötések a táblához `quest`
+--
 ALTER TABLE `quest`
   ADD CONSTRAINT `quest_ibfk_1` FOREIGN KEY (`specie_id`) REFERENCES `specie` (`id`);
 
+--
+-- Megkötések a táblához `specie`
+--
 ALTER TABLE `specie`
   ADD CONSTRAINT `specie_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
   ADD CONSTRAINT `specie_ibfk_3` FOREIGN KEY (`quest_id`) REFERENCES `quest` (`quest_id`);
 
-
+--
+-- Megkötések a táblához `user`
+--
 ALTER TABLE `user`
   ADD CONSTRAINT `user_ibfk_1` FOREIGN KEY (`specie_id`) REFERENCES `specie` (`id`);
 COMMIT;
 
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

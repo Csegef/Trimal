@@ -4,7 +4,6 @@ import GameLayout from "../layouts/GameLayout";
 import { useNavigate } from "react-router-dom";
 import { RARITY_COLOR } from "../models/Item";
 import { motion, AnimatePresence } from "framer-motion";
-import { API_BASE_URL } from "../api/inventoryApi";
 
 const CaveStation = () => {
   const [entities, setEntities] = useState({ enemies: [], weapons: [], armors: [], foods: [] });
@@ -19,8 +18,8 @@ const CaveStation = () => {
     if (!token) { navigate("/"); return; }
     try {
       const [entRes, invRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/entities`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
-        fetch(`${API_BASE_URL}/api/inventory`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch("/api/entities", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
+        fetch("/api/inventory", { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json()),
       ]);
       if (entRes.success) setEntities(entRes.data);
       if (invRes.success && invRes.data?.currency) setCurrency(invRes.data.currency);

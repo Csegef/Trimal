@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import PlayerPortrait from "../components/PlayerPortrait";
-import { API_BASE_URL } from "../api/inventoryApi";
 
 const CharacterRegistration = () => {
   const { state } = useLocation();
@@ -139,8 +138,7 @@ const CharacterRegistration = () => {
     };
 
     try {
-      // const response = await fetch('http://localhost:5000/api/auth/register', {
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

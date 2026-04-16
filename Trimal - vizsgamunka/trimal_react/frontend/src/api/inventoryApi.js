@@ -2,9 +2,7 @@
 // A frontend (Inventory.jsx) ezt a service-t használja.
 // JWT tokent küld az Express backendnek, ami továbbítja a PHP-nak.
 
-// Dev: üres → Vite proxy kezeli. Production (Firebase): teljes Render URL
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
-const BASE_URL = `${API_BASE_URL}/api/inventory`;
+const BASE_URL = '/api/inventory';
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -155,15 +153,15 @@ export function resolveEquipSlot(item) {
   if (item.type === 'weapon') return 'weapon';
   if (item.type === 'armor') {
     const icon = (item.iconPath || '').toLowerCase();
-    const cat = (item.category || '').toLowerCase();
+    const cat  = (item.category || '').toLowerCase();
     if (icon.includes('cap') || icon.includes('helmet') || icon.includes('head') ||
-      cat.includes('cap') || cat.includes('helmet') || cat.includes('head')) return 'armor_cap';
+        cat.includes('cap')  || cat.includes('helmet')  || cat.includes('head')) return 'armor_cap';
     if (icon.includes('plate') || icon.includes('chest') || icon.includes('body') ||
-      cat.includes('plate') || cat.includes('chest') || cat.includes('body')) return 'armor_plate';
+        cat.includes('plate') || cat.includes('chest')   || cat.includes('body')) return 'armor_plate';
     if (icon.includes('leggings') || icon.includes('leg') || icon.includes('pant') ||
-      cat.includes('leggings') || cat.includes('leg') || cat.includes('pant')) return 'armor_leggings';
+        cat.includes('leggings')  || cat.includes('leg')  || cat.includes('pant')) return 'armor_leggings';
     if (icon.includes('boots') || icon.includes('boot') || icon.includes('feet') || icon.includes('shoe') ||
-      cat.includes('boots') || cat.includes('boot') || cat.includes('feet') || cat.includes('shoe')) return 'armor_boots';
+        cat.includes('boots') || cat.includes('boot')    || cat.includes('feet') || cat.includes('shoe')) return 'armor_boots';
     return 'armor_plate'; // fallback
   }
   return null;

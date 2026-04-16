@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../api/inventoryApi';
 
 import bgForest from '../assets/design/backgrounds/quest_background/forest_backgroundFULLHD.jpg';
 import bgIceland from '../assets/design/backgrounds/quest_background/iceland_backgroundFULLHD.jpg';
@@ -29,7 +28,7 @@ const ActiveQuestWaitView = () => {
 
     const loadData = async () => {
       try {
-        const invRes = await fetch(`${API_BASE_URL}/api/inventory`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+        const invRes = await fetch('/api/inventory', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
         if (invRes.success && invRes.data) {
           setCurrency(invRes.data.currency);
           if (invRes.data.active_quest) {
@@ -59,7 +58,7 @@ const ActiveQuestWaitView = () => {
   const handleSkip = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE_URL}/api/inventory/quest/skip`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+      const res = await fetch('/api/inventory/quest/skip', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) setTimeLeft(0);
     } catch (e) { console.error(e); }

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../api/inventoryApi';
 
 const generateQuest = (level, difficultyIndex, idSuffix) => {
   const baseReward = 10 * level;
@@ -84,7 +83,7 @@ const ShamanStation = () => {
 
     const loadData = async () => {
       try {
-        const invRes = await fetch(`${API_BASE_URL}/api/inventory`, { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
+        const invRes = await fetch('/api/inventory', { headers: { Authorization: `Bearer ${token}` } }).then(r => r.json());
         if (invRes.success && invRes.data) {
           if (invRes.data.currency) setCurrency(invRes.data.currency);
           if (invRes.data.stamina) setStamina(invRes.data.stamina);
@@ -141,7 +140,7 @@ const ShamanStation = () => {
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/inventory/quest/start`, {
+      const res = await fetch('/api/inventory/quest/start', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -181,7 +180,7 @@ const ShamanStation = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/api/inventory/quest/restore-stamina`, {
+      const res = await fetch('/api/inventory/quest/restore-stamina', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });

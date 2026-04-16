@@ -12,8 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendVerificationEmail = async (to, nickname, token) => {
-  const baseUrl = process.env.FRONTEND_URL || 'https://trimal---rpg.web.app';
-  const verificationLink = `${baseUrl}/verify?token=${token}`;
+  const verificationLink = `http://localhost:5173/verify?token=${token}`;
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
