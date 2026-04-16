@@ -3,6 +3,7 @@ import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
 import { loadInventoryPage } from '../api/inventoryApi';
 import PlayerPortrait from '../components/PlayerPortrait';
+import { API_BASE_URL } from '../api/inventoryApi';
 
 // Assets
 import damageLeft from '../assets/damage_left.gif';
@@ -131,7 +132,7 @@ const FightPlaceholder = () => {
           weaponDamage: weaponDamage
         };
 
-        const res = await fetch('/api/entities', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await fetch(`${API_BASE_URL}/api/entities`, { headers: { 'Authorization': `Bearer ${token}` } });
         const data = await res.json();
         const enemies = data.data?.enemies || [];
 
@@ -449,7 +450,7 @@ const FightPlaceholder = () => {
 
   const handleQuestEnd = async (token, isWin) => {
     try {
-      const endpoint = isWin ? '/api/inventory/quest/claim' : '/api/inventory/quest/fail';
+      const endpoint = isWin ? `${API_BASE_URL}/api/inventory/quest/claim` : `${API_BASE_URL}/api/inventory/quest/fail`;
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }

@@ -3,16 +3,17 @@ import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import GameLayout from "../layouts/GameLayout";
 import { RARITY_COLOR, RARITY_GLOW, resolveItemImagePath } from "../models/Item";
+import { API_BASE_URL } from "../api/inventoryApi";
 
 const loadShopPage = async (shopType) => {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Not authenticated");
 
   const [shopRes, invRes] = await Promise.all([
-    fetch(`/api/shop/${shopType}`, {
+    fetch(`${API_BASE_URL}/api/shop/${shopType}`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json()),
-    fetch(`/api/inventory`, {
+    fetch(`${API_BASE_URL}/api/inventory`, {
       headers: { Authorization: `Bearer ${token}` },
     }).then(r => r.json())
   ]);
@@ -43,7 +44,7 @@ const loadShopPage = async (shopType) => {
 const buyItem = async (shopId) => {
   const token = localStorage.getItem("token");
   if (!token) throw new Error("Not authenticated");
-  const res = await fetch(`/api/shop/buy`, {
+  const res = await fetch(`${API_BASE_URL}/api/shop/buy`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

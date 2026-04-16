@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
+import { API_BASE_URL } from '../api/inventoryApi';
 
 const EmailVerification = () => {
     const [searchParams] = useSearchParams();
@@ -26,7 +27,7 @@ const EmailVerification = () => {
 
             try {
                 // const response = await fetch(`http://localhost:5000/api/auth/verify-email?token=${token}`);
-                const response = await fetch(`https://trimal.onrender.com/api/auth/verify-email?token=${token}`);
+                const response = await fetch(`${API_BASE_URL}/api/auth/verify-email?token=${token}`);
                 const data = await response.json();
 
                 if (data.success) {
