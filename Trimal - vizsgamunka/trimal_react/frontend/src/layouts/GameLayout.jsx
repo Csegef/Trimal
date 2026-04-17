@@ -58,7 +58,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
 
 
   return (
-    <div className="relative min-h-screen h-screen w-full overflow-hidden font-sans text-stone-100">
+    <div className="relative min-h-screen h-screen w-full overflow-hidden text-stone-100">
       {/* Main Background - Site Background */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
@@ -73,26 +73,26 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
       <div className="relative z-10 flex flex-col h-full">
 
         {/* Navbar */}
-        <header className="flex justify-between items-center p-2 bg-black/60 backdrop-blur-md border-b-2 border-amber-900/50 shadow-lg">
+        <header className="flex justify-between items-center p-2 bg-black/60 backdrop-blur-md border-b-2 border-amber-900/50">
           {/* Left: Logo & Currency */}
           <div className="flex items-center gap-4 md:gap-8">
             {/* Logo */}
             <img
               src="/src/assets/design/covers/logo/logo1.png"
               alt="Trimal RPG Logo"
-              className={`h-12 md:h-16 object-contain drop-shadow-md transition-transform ${location.pathname === '/fight' ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 cursor-pointer'}`}
+              className={`h-12 md:h-16 object-contain transition-transform ${location.pathname === '/fight' ? 'opacity-40 cursor-not-allowed' : 'hover:scale-105 cursor-pointer'}`}
               onClick={() => location.pathname !== '/fight' && navigate('/maingame')}
             />
 
             {/* Currency */}
             <div className="flex flex-col gap-1 bg-stone-900/40 p-1.5 rounded-lg border border-stone-700/50">
               <div className="flex items-center gap-2" title="Normal Currency">
-                <img src="/src/assets/design/currency/currency-normal.png" alt="Gold" className="w-5 h-5 drop-shadow" />
-                <span className="text-amber-300 font-bold text-sm drop-shadow-md">{currency?.normal ?? 0}</span>
+                <img src="/src/assets/design/currency/currency-normal.png" alt="Gold" className="w-5 h-5" />
+                <span className="text-amber-300 font-bold text-sm">{currency?.normal ?? 0}</span>
               </div>
               <div className="flex items-center gap-2" title="Special Currency">
-                <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-5 h-5 drop-shadow" />
-                <span className="text-purple-300 font-bold text-sm drop-shadow-md">{currency?.spec ?? 0}</span>
+                <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-5 h-5" />
+                <span className="text-purple-300 font-bold text-sm">{currency?.spec ?? 0}</span>
               </div>
             </div>
 

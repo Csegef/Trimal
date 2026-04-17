@@ -49,18 +49,38 @@ const ActiveQuestWaitView = () => {
   }, [navigate]);
 
   useEffect(() => {
-    if (timeLeft > 0) {
-      const timer = setInterval(() => setTimeLeft(prev => Math.max(0, prev - 1)), 1000);
-      return () => clearInterval(timer);
-    }
-  }, [timeLeft, activeQuest]);
+    if (!activeQuest) return;
+
+    const computeTimeLeft = () => {
+      const now = Math.floor(Date.now() / 1000);
+      return Math.max(0, activeQuest.start_time + activeQuest.duration - now);
+    };
+
+    // Set initial value from clock
+    setTimeLeft(computeTimeLeft());
+
+    const timer = setInterval(() => {
+      const remaining = computeTimeLeft();
+      setTimeLeft(remaining);
+      if (remaining <= 0) clearInterval(timer);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeQuest]);
 
   const handleSkip = async () => {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('/api/inventory/quest/skip', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
-      if (data.success) setTimeLeft(0);
+      if (data.success) {
+        // Update activeQuest state so the timer effect re-computes with the new start_time
+        // The server set start_time to now - duration - 10, so replicate that here
+        setActiveQuest(prev => prev ? {
+          ...prev,
+          start_time: Math.floor(Date.now() / 1000) - (prev.duration || 0) - 10
+        } : prev);
+      }
     } catch (e) { console.error(e); }
   };
 

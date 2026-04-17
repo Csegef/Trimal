@@ -6,6 +6,28 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 
+// ─── Elemental Buff Definitions ───────────────────────────────────────────────
+const ELEMENTAL_BUFFS = [
+  { type: 'poison', label: 'Poison', color: '#4ade80', dmgPerTick: 3, ticks: 3, description: 'Deals poison damage over 3 turns' },
+  { type: 'cold',   label: 'Frost',  color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
+  { type: 'bleed',  label: 'Bleed',  color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
+];
+
+function rollElementalBuffRandom(playerLevel) {
+  if (Math.random() > 0.15) return null;
+  const base = ELEMENTAL_BUFFS[Math.floor(Math.random() * ELEMENTAL_BUFFS.length)];
+  const scaledDmgPerTick = base.dmgPerTick + Math.floor(playerLevel / 5);
+  return {
+    type: base.type,
+    label: base.label,
+    color: base.color,
+    dmgPerTick: scaledDmgPerTick,
+    ticks: base.ticks,
+    totalDot: scaledDmgPerTick * base.ticks,
+    description: base.description,
+  };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /** Handle level-up logic: increase stats and XP threshold */
@@ -417,10 +439,10 @@ router.post('/sell', async (req, res) => {
 
           if (normalizedType === 'misc') {
             // Misc items scale directly from the DB base cost
-            sellPrice = Math.round(baseCost * (1 + playerLevel * 0.2));
+            sellPrice = Math.round(baseCost * (1 + playerLevel * 0.04));
           } else {
             // Equipment and food resell for 40% of their generated shop price
-            const dynamicBuyPrice = Math.round((baseCost * (1 + playerLevel * 0.2)) * (1 + playerLevel / 5));
+            const dynamicBuyPrice = Math.round(baseCost * (1 + playerLevel * 0.04));
             sellPrice = Math.round(dynamicBuyPrice * 0.40);
           }
         }
@@ -549,13 +571,21 @@ router.post('/addItem', async (req, res) => {
     } else {
       let weapon_damage = 0;
       let armor_point = 0;
+      let elemental_buff = null;
       if (itemType === 'weapon') {
         const bDmg = itemData?.base_damage || 10;
-        const offset = Math.floor(Math.random() * 9) - 3; // -3 to +5
+        const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
         weapon_damage = itemData?.weapon_damage || (bDmg + offset + (sLvl * 2));
+
+        // Roll for elemental buff with damage trade-off
+        elemental_buff = rollElementalBuffRandom(sLvl);
+        if (elemental_buff) {
+          const reduction = 0.15 + (Math.random() * 0.15); // 15-30% reduction
+          weapon_damage = Math.max(1, Math.floor(weapon_damage * (1 - reduction)));
+        }
       } else if (itemType === 'armor') {
         const bArm = itemData?.armor_point || 18;
-        const offset = Math.floor(Math.random() * 7) - 2; // -2 to +4
+        const offset = Math.floor(Math.random() * 11) - 4; // -4 to +6
         armor_point = itemData?.armor_point || (bArm + offset);
       }
 
@@ -569,7 +599,7 @@ router.post('/addItem', async (req, res) => {
         sell_price: itemData?.sell_price || 0,
         iconPath: itemData?.iconPath || null,
         inventory_size: itemData?.inventory_size || 10,
-        ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0, weapon_damage }),
+        ...(itemType === 'weapon' && { base_damage: itemData?.base_damage || 0, weapon_damage, ...(elemental_buff ? { elemental_buff } : {}) }),
         ...(itemType === 'armor' && { armor_point, category: itemData?.category || 'Armor' }),
         ...(itemType === 'food' && { category: itemData?.category || '', buff_id: itemData?.buff_id || null }),
       });
@@ -845,7 +875,15 @@ router.post('/quest/claim', async (req, res) => {
                         if (isWeap) {
                             const bDmg = dbItem.base_damage || 10;
                             newItem.base_damage = bDmg;
-                            newItem.weapon_damage = bDmg + (Math.floor(Math.random() * 3) - 1) + (sLvl * 2);
+                            const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
+                            newItem.weapon_damage = bDmg + offset + (sLvl * 2);
+                            // Roll for elemental buff
+                            const elemBuff = rollElementalBuffRandom(sLvl);
+                            if (elemBuff) {
+                              const reduction = 0.15 + (Math.random() * 0.15);
+                              newItem.weapon_damage = Math.max(1, Math.floor(newItem.weapon_damage * (1 - reduction)));
+                              newItem.elemental_buff = elemBuff;
+                            }
                         } else {
                             newItem.category = dbItem.category || '';
                         }

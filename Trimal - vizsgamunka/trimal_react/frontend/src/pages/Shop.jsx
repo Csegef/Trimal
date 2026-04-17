@@ -73,7 +73,7 @@ function Toast({ toast }) {
   );
 }
 
-function ShopItemTile({ item, onClick, playerInfo }) {
+function ShopItemTile({ item, onClick, playerInfo, inventory }) {
   const [hoverRect, setHoverRect] = useState(null);
   const [imgError, setImgError] = useState(false);
 
@@ -88,6 +88,39 @@ function ShopItemTile({ item, onClick, playerInfo }) {
       </div>
     );
   }
+
+  // Comparison against equipped item
+  const getShopComparison = () => {
+    if (!inventory?.equipped || !shopItem) return null;
+    if (shopItem.type === 'weapon') {
+      const eq = inventory.equipped.weapon;
+      if (!eq || typeof eq !== 'object') return { stat: 'damage', diff: 0, current: 0, next: shopItem.weapon_damage || shopItem.base_damage || 0, noEquipped: true };
+      const eqDmg = eq.weapon_damage || eq.base_damage || 0;
+      const itemDmg = shopItem.weapon_damage || shopItem.base_damage || 0;
+      return { stat: 'damage', diff: itemDmg - eqDmg, current: eqDmg, next: itemDmg, eqElemBuff: eq.elemental_buff };
+    }
+    if (shopItem.type === 'armor') {
+      // Find which armor slot this goes into
+      const icon = (shopItem.iconPath || "").toLowerCase();
+      const cat = (shopItem.category || "").toLowerCase();
+      let slotKey = 'armor_plate';
+      if (icon.includes("cap") || icon.includes("helmet") || icon.includes("head") ||
+        cat.includes("cap") || cat.includes("helmet") || cat.includes("head")) slotKey = "armor_cap";
+      else if (icon.includes("boots") || icon.includes("boot") || icon.includes("feet") || icon.includes("shoe") ||
+        cat.includes("boots") || cat.includes("boot") || cat.includes("feet") || cat.includes("shoe")) slotKey = "armor_boots";
+      else if (icon.includes("leggings") || icon.includes("pant") || (icon.includes("leg") && !icon.includes("legendary")) ||
+        cat.includes("leggings") || cat.includes("pant") || (cat.includes("leg") && !cat.includes("legendary"))) slotKey = "armor_leggings";
+
+      const eq = inventory.equipped[slotKey];
+      if (!eq || typeof eq !== 'object') return { stat: 'armor', diff: 0, current: 0, next: shopItem.armor_point || 0, noEquipped: true };
+      const eqArmor = eq.armor_point || 0;
+      const itemArmor = shopItem.armor_point || 0;
+      return { stat: 'armor', diff: itemArmor - eqArmor, current: eqArmor, next: itemArmor };
+    }
+    return null;
+  };
+  const comparison = getShopComparison();
+  const elemBuff = shopItem.elemental_buff;
 
   return (
     <div
@@ -119,7 +152,7 @@ function ShopItemTile({ item, onClick, playerInfo }) {
         )}
 
         {!isPurchased && (
-          <div className="absolute bottom-1 right-1 bg-stone-900/90 rounded px-1.5 py-0.5 text-[10px] font-bold border border-stone-700/50 flex flex-col items-end gap-0.5">
+          <div className="absolute bottom-1 right-1 bg-stone-900/90 rounded px-1.5 py-0.5 text-[18px] font-bold border border-stone-700/50 flex flex-col items-end gap-0.5">
             {shopItem.buy_price_normal > 0 ? (
               <span className="text-amber-400 flex items-center gap-1">
                 {shopItem.buy_price_normal} {<img src="/src/assets/design/currency/currency-normal.png" alt="Stone" className="w-5 h-5 drop-shadow" />}
@@ -132,6 +165,23 @@ function ShopItemTile({ item, onClick, playerInfo }) {
             ) : null}
           </div>
         )}
+        {/* Elemental buff dot */}
+        {!isPurchased && elemBuff && (
+          <span
+            className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full border border-stone-800"
+            style={{ background: elemBuff.color, boxShadow: `0 0 6px ${elemBuff.color}` }}
+            title={elemBuff.label}
+          />
+        )}
+        {/* Comparison arrow */}
+        {!isPurchased && comparison && !comparison.noEquipped && (
+          <span
+            className={`absolute top-1.5 left-1.5 text-[20px] font-black leading-none ${comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-500'
+              }`}
+          >
+            {comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}
+          </span>
+        )}
         {isPurchased ? (
           <div className="absolute inset-0 flex items-center justify-center bg-stone-950/60 font-bold text-red-500 tracking-widest">
             SOLD
@@ -143,25 +193,25 @@ function ShopItemTile({ item, onClick, playerInfo }) {
         <div
           className="fixed z-[9999] pointer-events-none"
           style={{
-            minWidth: "160px", maxWidth: "220px",
+            minWidth: "150px", maxWidth: "210px",
             left: hoverRect.left + (hoverRect.width / 2),
             top: hoverRect.top - 10,
             transform: "translate(-50%, -100%)"
           }}
         >
           <div
-            className="rounded-lg px-3 py-2 text-[11px] text-stone-300 leading-snug shadow-2xl border border-stone-700/70"
+            className="rounded-lg px-2 py-1 text-[13px] text-stone-300 leading-tight shadow-2xl border border-stone-700/70"
             style={{
               background: "rgba(12,7,2,0.95)",
               borderColor: RARITY_COLOR[rarity] + "66",
             }}
           >
-            <div className="font-bold text-[13px] leading-tight mb-1" style={{ color: RARITY_COLOR[rarity] }}>
+            <div className="text-[18px] font-title leading-tight mb-0.5" style={{ color: RARITY_COLOR[rarity] }}>
               {shopItem.name}
             </div>
-            <div className="mb-1.5">
+            <div className="mb-0.5">
               <span
-                className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded"
+                className="text-[12px] uppercase tracking-widest px-1.5 py-0.5 rounded"
                 style={{
                   color: RARITY_COLOR[rarity],
                   background: RARITY_COLOR[rarity] + "22",
@@ -172,28 +222,76 @@ function ShopItemTile({ item, onClick, playerInfo }) {
               </span>
             </div>
             {shopItem.type === "weapon" && (shopItem.base_damage != null || shopItem.weapon_damage != null) && (
-              <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-red-400 mb-1 flex flex-col gap-0.5">
                 <span>Item Damage: {shopItem.weapon_damage || shopItem.base_damage}</span>
                 <span className="text-stone-400 font-medium">Combat Damage: {Math.round((shopItem.weapon_damage || shopItem.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
               </div>
             )}
+            {/* Elemental Buff Badge */}
+            {shopItem.type === "weapon" && elemBuff && (
+              <div
+                className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
+                style={{ color: elemBuff.color, borderColor: elemBuff.color + '44', background: elemBuff.color + '11' }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: elemBuff.color }} />
+                  {elemBuff.label} — {elemBuff.dmgPerTick} dmg × {elemBuff.ticks} turns
+                </span>
+                <span className="text-[12px] opacity-80 leading-tight">{elemBuff.description}</span>
+              </div>
+            )}
             {shopItem.type === "armor" && shopItem.armor_point != null && (
-              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-blue-400 mb-1 flex flex-col gap-0.5">
                 <span>Item Armor: {shopItem.armor_point}</span>
                 <span className="text-stone-400 font-medium">Combat Defense: {shopItem.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
               </div>
             )}
             {shopItem.type === "food" && shopItem.category && (
-              <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-green-400 mb-1 flex flex-col gap-0.5">
                 <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {shopItem.category}</span>
                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
               </div>
             )}
-            <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800 mb-2 mt-2">
+            {/* Comparison vs equipped */}
+            {comparison && (
+              <div className="mt-0.5 pt-0.5 border-t border-stone-800">
+                <div className="text-[12px] uppercase tracking-widest text-stone-500 mb-0.5">
+                  vs. Equipped
+                </div>
+                {comparison.noEquipped ? (
+                  <div className="text-[12px] text-green-400/80">No item equipped — direct upgrade!</div>
+                ) : (
+                  <>
+                    <div className={`text-[13px] flex items-center gap-1 ${comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
+                      }`}>
+                      <span>{comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}</span>
+                      <span>
+                        {comparison.stat === 'damage' ? 'Damage' : 'Armor'}:
+                        {' '}{comparison.current} → {comparison.next}
+                        {' '}({comparison.diff > 0 ? '+' : ''}{comparison.diff})
+                      </span>
+                    </div>
+                    {comparison.diff > 0 && (
+                      <div className="text-[12px] text-green-500/80 mt-0.5">⬆ Upgrade</div>
+                    )}
+                    {comparison.diff < 0 && elemBuff && (
+                      <div className="text-[12px] text-amber-400/80 mt-0.5">⚠ Lower damage, but has {elemBuff.label} effect!</div>
+                    )}
+                    {comparison.diff < 0 && !elemBuff && (
+                      <div className="text-[12px] text-red-500/80 mt-0.5">⬇ Downgrade</div>
+                    )}
+                    {comparison.eqElemBuff && !elemBuff && (
+                      <div className="text-[12px] text-amber-400/80 mt-0.5">⚠ Equipped has {comparison.eqElemBuff.label} — you'll lose it!</div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+            <div className="text-stone-400 text-[13px] leading-tight pt-0.5 border-t border-stone-800 mb-1 mt-1">
               {shopItem.description}
             </div>
             <div className="mt-2 pt-2 border-t border-stone-800 flex flex-col gap-1">
-              <div className="text-stone-500 font-semibold text-[9px] tracking-widest uppercase">Price</div>
+              <div className="text-stone-500 text-[12px] tracking-widest uppercase">Price</div>
               {shopItem.buy_price_normal > 0 ? (
                 <span className="text-amber-400 flex items-center gap-1">
                   {shopItem.buy_price_normal} {<img src="/src/assets/design/currency/currency-normal.png" alt="Stone" className="w-5 h-5 drop-shadow" />}
@@ -340,10 +438,10 @@ const Shop = () => {
 
         {/* Header - Corner aligned (Absolute top left to avoid flex flows affecting it) */}
         <div className="absolute top-4 left-6 pointer-events-auto max-w-sm md:max-w-xl z-20">
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl  text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
             {shopType === 'tinkerer' ? "Tinkerer's Workshop" : "Herbalist's Garden"}
           </h1>
-          <p className="text-stone-300 mt-2 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
+          <p className="text-stone-300 mt-2  tracking-wider text-m md:text-l drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
             {shopType === 'tinkerer'
               ? "A place of grease, and finely crafted weapons. Upgrade your gear or browse the latest masterworks."
               : "The air here is thick with the scent of wild herbs and potent elixirs. Find something to heal your wounds or boost your spirits."}
@@ -351,30 +449,31 @@ const Shop = () => {
         </div>
 
         {/* Bottom Wares Panel */}
-        <div className="pointer-events-auto mt-auto mb-12 w-full max-w-7xl mx-auto shrink-0 px-4 md:px-8 z-10">
-          <div className="bg-stone-900/90 backdrop-blur-xl border-2 border-amber-900/30 rounded-3xl p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
+        <div className="pointer-events-auto mt-auto mb-6 w-full max-w-7xl mx-auto shrink-0 px-4 md:px-8 z-10">
+          <div className="bg-stone-900/90 backdrop-blur-xl border-2 border-amber-900/30 rounded-3xl p-4 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
             <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">
-              <h2 className="text-xl md:text-2xl font-black text-stone-200 tracking-widest uppercase">
+              <h2 className="text-xl md:text-2xl text-stone-200 tracking-widest uppercase">
                 Available Wares
               </h2>
-              <div className="hidden md:flex gap-2 text-stone-500 font-bold uppercase tracking-widest text-xs">
-                Next Refill: <span className="text-amber-600">Daily at Midnight</span>
+              <div className="hidden md:flex gap-2 text-stone-500 uppercase tracking-widest text-xs">
+                Next Refill: <span className="text-amber-600">Daily, at Midnight</span>
               </div>
             </div>
 
             {loading ? (
               <div className="flex flex-col items-center justify-center py-10 gap-4">
                 <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-stone-400 font-bold animate-pulse text-sm">Browsing stock...</span>
+                <span className="text-stone-400 animate-pulse text-sm">Browsing stock...</span>
               </div>
             ) : (
               <div className="flex overflow-x-auto gap-6 pb-4 pt-2 px-2 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900/50">
                 {shopItems.length > 0 ? (
                   shopItems.map((shopItemInfo, idx) => (
-                    <div key={shopItemInfo.shop_id || idx} className="min-w-[200px] w-[200px] shrink-0">
+                    <div key={shopItemInfo.shop_id || idx} className="min-w-[160px] w-[160px] shrink-0">
                       <ShopItemTile
                         item={shopItemInfo}
                         playerInfo={playerInfo}
+                        inventory={inventory}
                         onClick={(e) => openBuyMenu(shopItemInfo, e)}
                       />
                     </div>

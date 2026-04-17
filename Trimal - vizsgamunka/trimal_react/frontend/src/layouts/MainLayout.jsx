@@ -1,8 +1,12 @@
 import React from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const MainLayout = ({ children }) => {
+  const location = useLocation();
+  const isHome = location.pathname === "/" || location.pathname === "/registration";
+
   return (
-    <div className="relative min-h-screen w-full overflow-hidden font-sans text-stone-100">
+    <div className="relative min-h-screen w-full overflow-hidden text-stone-100">
       {/* Background Image */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
@@ -16,10 +20,21 @@ const MainLayout = ({ children }) => {
 
       {/* Content Wrapper */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header / Logo - kisebb */}
-        <header className="flex justify-center py-3 md:py-4">
+        {/* Header / Logo */}
+        <header className="relative flex justify-center py-3 md:py-4">
+          {/* Back to Home button — only shown on sub-pages (not on login/registration) */}
+          {!isHome && (
+            <Link
+              to="/"
+              className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 flex items-center gap-2 px-4 py-2 bg-stone-900/70 hover:bg-stone-800 border-2 border-stone-600 hover:border-amber-500 rounded-xl text-stone-300 hover:text-amber-400 transition-all text-xs md:text-sm font-bold tracking-wider uppercase shadow-lg z-20"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+              </svg>
+              Home
+            </Link>
+          )}
           <img
-            // ./src/assets/logo1.png
             src="/src/assets/design/covers/logo/logo1.png"
             alt="Trimal RPG Logo"
             className="h-28 md:h-44 lg:h-52 object-contain drop-shadow-2xl"

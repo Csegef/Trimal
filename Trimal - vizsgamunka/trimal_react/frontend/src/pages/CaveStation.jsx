@@ -143,12 +143,12 @@ const CaveStation = () => {
                     >
                       {currentEntity.rarity || currentEntity.category} • {category === "other stuff" ? ((currentEntity.iconPath || "").match(/^([a-z]+)-[sml]\.png$/i)?.[1] || "item") : (currentEntity.type || "Historical")}
                     </span>
-                    <h2 className="text-3xl font-black text-stone-100 tracking-wider uppercase leading-none">
+                    <h2 className="text-4xl text-stone-100 tracking-wider uppercase leading-none">
                       {currentEntity.name}
                     </h2>
                   </header>
 
-                  <p className="text-stone-300 text-sm leading-relaxed font-medium mb-8">
+                  <p className="text-stone-300 text-lg leading-relaxed font-medium mb-8">
                     {currentEntity.description || (
                       category === "enemy"
                         ? "Fragmented biometric data suggests a formidable predator from the deep-earth strata."

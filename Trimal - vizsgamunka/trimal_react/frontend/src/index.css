@@ -1,2 +1,55 @@
 @import "tailwindcss"; 
 @plugin "daisyui";
+
+@font-face {
+  font-family: 'GrapeSoda';
+  src: url('./fonts/grapesoda_2/GrapeSoda.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'LeviWindows';
+  src: url('./fonts/leviwindows/Windows Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  font-family: 'LeviWindows', sans-serif;
+  font-size: 16px; /* Reverted to 16px to maintain component proportions */
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+body {
+  font-family: 'LeviWindows', sans-serif;
+  line-height: 1.2;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeSpeed;
+}
+
+h1, h2, h3, h4, h5, h6, .font-title {
+  font-family: 'GrapeSoda', sans-serif;
+  letter-spacing: 0.5px;
+  text-shadow: none !important;
+}
+
+
+/* Disable selecting or dragging images across the entire site */
+img {
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  pointer-events: none; /* Recommended for pure icons/assets to prevent drag-stutter */
+}
+
+/* Re-enable pointer events for interactive images */
+button img, a img, .cursor-pointer {
+  pointer-events: auto !important;
+}
+
+

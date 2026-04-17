@@ -1,5 +1,6 @@
 // src/pages/Inventory.jsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import GameLayout from "../layouts/GameLayout";
 import {
@@ -102,7 +103,7 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
   const { label } = slotData;
   const rarity = (equippedItem?.rarity || "common").toLowerCase();
   const isEmpty = !equippedItem;
-  const [hovered, setHovered] = useState(false);
+  const [hoverRect, setHoverRect] = useState(null);
   const [imgError, setImgError] = useState(false);
 
   // Reset image error state when equipped item changes
@@ -113,12 +114,12 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
   return (
     <div
       className="relative w-full"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={(e) => setHoverRect(e.currentTarget.getBoundingClientRect())}
+      onMouseLeave={() => setHoverRect(null)}
     >
       <button
         onClick={onClick}
-        title={equippedItem && !hovered ? equippedItem.name : isEmpty ? label : undefined}
+        title={equippedItem && !hoverRect ? equippedItem.name : isEmpty ? label : undefined}
         style={{
           borderColor: isEmpty ? "rgba(120,85,50,0.35)" : RARITY_COLOR[rarity],
           boxShadow: isEmpty ? "none" : `0 0 8px ${RARITY_GLOW[rarity]}`,
@@ -141,14 +142,20 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
         )}
       </button>
 
-      {/* Hover description tooltip */}
-      {hovered && equippedItem && (
+      {/* Hover description tooltip using Portal to avoid clipping */}
+      {hoverRect && equippedItem && createPortal(
         <div
-          className="absolute z-50 bottom-[110%] left-1/2 -translate-x-1/2 pointer-events-none"
-          style={{ minWidth: "150px", maxWidth: "210px" }}
+          className="fixed z-[99999] pointer-events-none"
+          style={{
+            minWidth: "150px", maxWidth: "210px",
+            left: hoverRect.left + (hoverRect.width / 2),
+            top: hoverRect.top - 8,
+            transform: "translate(-50%, -100%)",
+            filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8))'
+          }}
         >
           <div
-            className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug shadow-2xl border border-stone-700/70"
+            className="rounded-lg px-2 py-1 text-[13px] text-stone-200 leading-tight shadow-2xl border border-stone-700/70"
             style={{
               background: "rgba(12,7,2,0.97)",
               borderColor: RARITY_COLOR[rarity] + "55",
@@ -156,15 +163,15 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
           >
             {/* Name */}
             <div
-              className="font-bold text-[12px] leading-tight mb-1"
+              className="text-[18px] font-title leading-tight mb-0.5"
               style={{ color: RARITY_COLOR[rarity] }}
             >
               {equippedItem.name}
             </div>
             {/* Rarity badge */}
-            <div className="mb-1.5">
+            <div className="mb-0.5">
               <span
-                className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded"
+                className="text-[12px] uppercase tracking-widest px-1.5 py-0.5 rounded"
                 style={{
                   color: RARITY_COLOR[rarity],
                   background: RARITY_COLOR[rarity] + "22",
@@ -176,36 +183,50 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
             </div>
             {/* Stats */}
             {equippedItem.type === "weapon" && (equippedItem.base_damage != null || equippedItem.weapon_damage != null) && (
-              <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-red-400 mb-1 flex flex-col gap-0.5">
                 <span>Item Damage: {equippedItem.weapon_damage || equippedItem.base_damage}</span>
                 <span className="text-stone-400 font-medium">Combat Damage: {Math.round((equippedItem.weapon_damage || equippedItem.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
               </div>
             )}
+            {/* Elemental Buff Badge */}
+            {equippedItem.type === "weapon" && equippedItem.elemental_buff && (
+              <div
+                className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
+                style={{ color: equippedItem.elemental_buff.color, borderColor: equippedItem.elemental_buff.color + '44', background: equippedItem.elemental_buff.color + '11' }}
+              >
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: equippedItem.elemental_buff.color }} />
+                  {equippedItem.elemental_buff.label} — {equippedItem.elemental_buff.dmgPerTick} dmg × {equippedItem.elemental_buff.ticks} turns
+                </span>
+                <span className="text-[12px] opacity-80 leading-tight">{equippedItem.elemental_buff.description}</span>
+              </div>
+            )}
             {equippedItem.type === "armor" && equippedItem.armor_point != null && (
-              <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-blue-400 mb-1 flex flex-col gap-0.5">
                 <span>Item Armor: {equippedItem.armor_point}</span>
                 <span className="text-stone-400 font-medium">Combat Defense: {equippedItem.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
               </div>
             )}
             {equippedItem.type === "food" && equippedItem.category && (
-              <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+              <div className="text-[14px] text-green-400 mb-1 flex flex-col gap-0.5">
                 <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {equippedItem.category}</span>
                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
               </div>
             )}
             {/* Description */}
             {equippedItem.description && (
-              <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800">
+              <div className="text-stone-400 text-[13px] leading-tight pt-0.5 border-t border-stone-800">
                 {equippedItem.description}
               </div>
             )}
           </div>
           {/* Arrow */}
           <div
-            className="mx-auto w-2 h-2 rotate-45 -mt-1"
+            className="mx-auto w-2 h-2 rotate-45 -mt-1 relative z-[99999]"
             style={{ background: "rgba(12,7,2,0.97)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
           />
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -469,11 +490,11 @@ const Inventory = () => {
 
           {/* Header */}
           <div className="flex items-center gap-4 flex-wrap pb-4">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
               Equipment &amp; Bag
             </h1>
             {playerInfo && (
-              <span className="text-stone-300 font-bold tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] mt-1">
+              <span className="text-stone-300 tracking-wider text-xs md:text-sm drop-shadow-[0_0_10px_rgba(0,0,0,1)] mt-1">
                 {playerInfo.name}
               </span>
             )}
@@ -638,11 +659,22 @@ const Inventory = () => {
                       if (item && isEquippable(item)) actions.push("equip");
                       if (item && item.type === "food") actions.push("use");
                       if (item) actions.push("sell");
+
+                      // Find the matching equipped item for comparison
+                      let equippedForComparison = undefined;
+                      if (item && (item.type === 'weapon' || item.type === 'armor')) {
+                        const targetSlot = resolveEquipSlot(item);
+                        if (targetSlot) {
+                          equippedForComparison = getEquippedItem(targetSlot) ?? null;
+                        }
+                      }
+
                       return (
                         <ItemSlotTile
                           key={idx}
                           item={item}
                           playerInfo={playerInfo}
+                          equipped={equippedForComparison}
                           onClick={item ? (e) => openActionMenu(item, actions, null, e) : undefined}
                         />
                       );

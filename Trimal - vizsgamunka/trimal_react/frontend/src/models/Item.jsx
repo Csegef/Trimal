@@ -5,7 +5,8 @@
 // The inventory_json in `specie` stores items as plain objects.
 // These helpers normalise, display and reason about those objects.
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 // ─── Rarity ───────────────────────────────────────────────────────────────────
 
@@ -188,8 +189,8 @@ export function getItemStats(item) {
 // ─── ItemSlotTile ─────────────────────────────────────────────────────────────
 // A single square tile used in the bag grid.
 
-export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }) {
-    const [hovered, setHovered] = React.useState(false);
+export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity = false }) {
+    const [hoverRect, setHoverRect] = useState(null);
 
     if (!item) {
         return (
@@ -203,18 +204,42 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
     if (rarity === "legendray") rarity = "legendary";
 
     const imageSrc = resolveItemImagePath(item);
-    const [imgError, setImgError] = React.useState(false);
+    const [imgError, setImgError] = useState(false);
 
     // Reset image error state when item prop changes (e.g., slot re-rendered with new item)
-    React.useEffect(() => {
+    useEffect(() => {
         setImgError(false);
     }, [item]);
 
+    // Comparison logic
+    const getComparison = () => {
+        if (!equipped || !item) return null;
+        if (item.type === 'weapon' && equipped.type === 'weapon') {
+            const itemDmg = item.weapon_damage || item.base_damage || 0;
+            const eqDmg = equipped.weapon_damage || equipped.base_damage || 0;
+            const diff = itemDmg - eqDmg;
+            return { stat: 'damage', diff, current: eqDmg, next: itemDmg };
+        }
+        if (item.type === 'armor' && equipped.type === 'armor') {
+            const itemArmor = item.armor_point || 0;
+            const eqArmor = equipped.armor_point || 0;
+            const diff = itemArmor - eqArmor;
+            return { stat: 'armor', diff, current: eqArmor, next: itemArmor };
+        }
+        return null;
+    };
+    const comparison = getComparison();
+
+    // Has elemental buff?
+    const elemBuff = item.elemental_buff;
+    // Has elemental on equipped?
+    const eqElemBuff = equipped?.elemental_buff;
+
     return (
         <div
-            className="relative w-full aspect-square overflow-visible"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
+            className="relative w-full aspect-square"
+            onMouseEnter={(e) => setHoverRect(e.currentTarget.getBoundingClientRect())}
+            onMouseLeave={() => setHoverRect(null)}
         >
             <button
                 onClick={onClick}
@@ -239,27 +264,40 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                         x{item.quantity}
                     </span>
                 )}
+                {/* Elemental buff indicator dot */}
+                {elemBuff && (
+                    <span
+                        className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border border-stone-800"
+                        style={{ background: elemBuff.color, boxShadow: `0 0 4px ${elemBuff.color}` }}
+                        title={elemBuff.label}
+                    />
+                )}
+                {/* Comparison arrow indicator */}
+                {comparison && (
+                    <span
+                        className={`absolute top-1 left-1 text-[10px] font-black leading-none ${
+                            comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-500'
+                        }`}
+                    >
+                        {comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}
+                    </span>
+                )}
             </button>
 
-            {/* Hover description tooltip - fixed positioned to avoid z-index/overflow clipping */}
-            {hovered && (
+            {/* Hover description tooltip using Portal to avoid clipping */}
+            {hoverRect && createPortal(
                 <div
-                    className="fixed z-[9999] pointer-events-none"
+                    className="fixed z-[99999] pointer-events-none"
                     style={{
-                        bottom: 'auto',
-                        // Tooltip is positioned via onMouseEnter but since we can't use mouse coords here easily,
-                        // we use an overlay approach: absolutely relative but with overflow-visible parent
+                        minWidth: "150px", maxWidth: "210px",
+                        left: hoverRect.left + (hoverRect.width / 2),
+                        top: hoverRect.top - 8,
+                        transform: "translate(-50%, -100%)",
+                        filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8))'
                     }}
                 >
-                </div>
-            )}
-            {hovered && (
-                <div
-                    className="absolute z-[9999] bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 pointer-events-none"
-                    style={{ minWidth: "160px", maxWidth: "220px", filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.8))' }}
-                >
                     <div
-                        className="rounded-lg px-3 py-2 text-[11px] text-stone-200 leading-snug border"
+                        className="rounded-lg px-2 py-1 text-[13px] text-stone-200 leading-tight border"
                         style={{
                             background: "rgba(12,7,2,0.98)",
                             borderColor: RARITY_COLOR[rarity] + "55",
@@ -267,15 +305,15 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                     >
                         {/* Name */}
                         <div
-                            className="font-bold text-[12px] leading-tight mb-1"
+                            className="text-[18px] font-title leading-tight mb-0.5"
                             style={{ color: RARITY_COLOR[rarity] }}
                         >
                             {item.name}
                         </div>
                         {/* Rarity badge */}
-                        <div className="mb-1.5">
+                        <div className="mb-1">
                             <span
-                                className="text-[9px] uppercase tracking-widest font-semibold px-1.5 py-0.5 rounded"
+                                className="text-[12px] uppercase tracking-widest px-1.5 py-0.5 rounded"
                                 style={{
                                     color: RARITY_COLOR[rarity],
                                     background: RARITY_COLOR[rarity] + "22",
@@ -285,38 +323,91 @@ export function ItemSlotTile({ item, onClick, playerInfo, hideQuantity = false }
                                 {rarity}
                             </span>
                         </div>
-                        {/* Stats */}
+                        {/* Weapon Stats */}
                         {item.type === "weapon" && (item.base_damage != null || item.weapon_damage != null) && (
-                            <div className="text-[10px] text-red-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                            <div className="text-[14px] text-red-400 mb-1 flex flex-col gap-0.5">
                                 <span>Item Damage: {item.weapon_damage || item.base_damage}</span>
                                 <span className="text-stone-400 font-medium">Combat Damage: {Math.round((item.weapon_damage || item.base_damage) * 1.5 * (1 + ((playerInfo?.stats?.strength ?? 10) / 25)))}</span>
                             </div>
                         )}
+                        {/* Elemental Buff Badge */}
+                        {item.type === "weapon" && elemBuff && (
+                            <div
+                                className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
+                                style={{ color: elemBuff.color, borderColor: elemBuff.color + '44', background: elemBuff.color + '11' }}
+                            >
+                                <span className="flex items-center gap-1">
+                                    <span className="w-2 h-2 rounded-full inline-block" style={{ background: elemBuff.color }} />
+                                    {elemBuff.label} — {elemBuff.dmgPerTick} dmg × {elemBuff.ticks} turns
+                                </span>
+                                <span className="text-[12px] opacity-80 leading-tight">{elemBuff.description}</span>
+                            </div>
+                        )}
+                        {/* Armor Stats */}
                         {item.type === "armor" && item.armor_point != null && (
-                            <div className="text-[10px] text-blue-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                            <div className="text-[14px] text-blue-400 mb-1 flex flex-col gap-0.5">
                                 <span>Item Armor: {item.armor_point}</span>
                                 <span className="text-stone-400 font-medium">Combat Defense: {item.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
                             </div>
                         )}
+                        {/* Food Stats */}
                         {item.type === "food" && item.category && (
-                            <div className="text-[10px] text-green-400 font-bold mb-1.5 flex flex-col gap-0.5">
+                            <div className="text-[14px] text-green-400 mb-1 flex flex-col gap-0.5">
                                 <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {item.category}</span>
                                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
                             </div>
                         )}
+                        {/* Comparison Section */}
+                        {comparison && (
+                            <div className="mt-0.5 pt-0.5 border-t border-stone-800">
+                                <div className="text-[12px] uppercase tracking-widest text-stone-500 mb-0.5">
+                                    vs. Equipped
+                                </div>
+                                <div className={`text-[14px] flex items-center gap-1 ${
+                                    comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
+                                }`}>
+                                    <span>{comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}</span>
+                                    <span>
+                                        {comparison.stat === 'damage' ? 'Damage' : 'Armor'}:
+                                        {' '}{comparison.current} → {comparison.next}
+                                        {' '}({comparison.diff > 0 ? '+' : ''}{comparison.diff})
+                                    </span>
+                                </div>
+                                {comparison.diff > 0 && (
+                                    <div className="text-[12px] text-green-500/80 mt-0.5">⬆ Upgrade</div>
+                                )}
+                                {comparison.diff < 0 && elemBuff && (
+                                    <div className="text-[12px] text-amber-400/80 mt-0.5">⚠ Lower damage, but has {elemBuff.label} effect!</div>
+                                )}
+                                {comparison.diff < 0 && !elemBuff && (
+                                    <div className="text-[12px] text-red-500/80 mt-0.5">⬇ Downgrade</div>
+                                )}
+                                {/* Show if equipped has elemental but this doesn't */}
+                                {eqElemBuff && !elemBuff && (
+                                    <div className="text-[12px] text-amber-400/80 mt-0.5">⚠ Equipped has {eqElemBuff.label} — you'll lose it!</div>
+                                )}
+                            </div>
+                        )}
+                        {/* No equipped item for comparison */}
+                        {!comparison && equipped === null && (item.type === 'weapon' || item.type === 'armor') && (
+                            <div className="mt-1 pt-1 border-t border-stone-800">
+                                <div className="text-[12px] text-green-400/80">No item equipped in this slot — direct upgrade!</div>
+                            </div>
+                        )}
                         {/* Description */}
                         {item.description && (
-                            <div className="text-stone-400 text-[10px] leading-snug pt-1 border-t border-stone-800">
+                            <div className="text-stone-400 text-[13px] leading-tight pt-0.5 border-t border-stone-800">
                                 {item.description}
                             </div>
                         )}
                     </div>
                     {/* Arrow */}
                     <div
-                        className="mx-auto w-2 h-2 rotate-45 -mt-1"
+                        className="mx-auto w-2 h-2 rotate-45 -mt-1 relative z-[99999]"
                         style={{ background: "rgba(12,7,2,0.98)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
                     />
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

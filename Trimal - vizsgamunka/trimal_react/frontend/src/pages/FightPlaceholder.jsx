@@ -326,7 +326,7 @@ const FightPlaceholder = () => {
           setEnemyDmgText({ val: `-${dmg}`, color: isCrit ? 'text-yellow-400' : 'text-red-500' });
           addLog(`You hit ${eObj.name} for ${dmg} damage${isCrit ? ' (CRIT)!' : '.'}`);
           if (rageActive) addLog(`Rage active! (+50% DMG, +40% CRIT)`);
-          else if (state.rageTurns === 0 && state.rageTriggered) {} // silent
+          else if (state.rageTurns === 0 && state.rageTriggered) { } // silent
 
           await delay(600);
           setEnemyAnim(null);
@@ -482,7 +482,7 @@ const FightPlaceholder = () => {
       <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col py-4 px-2 md:px-6">
 
         {/* VS Header — centered */}
-        <h1 className="text-3xl font-black text-stone-200 tracking-[0.4em] uppercase text-center mb-5 drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
+        <h1 className="text-3xl text-stone-200 tracking-[0.4em] uppercase text-center mb-5 drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
           VS
         </h1>
 
@@ -491,11 +491,11 @@ const FightPlaceholder = () => {
 
           {/* ── PLAYER CARD ── */}
           <div className="flex-1 flex flex-col items-center min-w-0 bg-black/40 border border-stone-700/50 rounded-2xl p-4 backdrop-blur-sm shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
-            <h2 className="text-lg font-black text-amber-400 uppercase tracking-widest mb-2 drop-shadow-[0_1px_6px_rgba(0,0,0,1)]">{player.name}</h2>
+            <h2 className="text-lg text-amber-400 uppercase tracking-widest mb-2 drop-shadow-[0_1px_6px_rgba(0,0,0,1)]">{player.name}</h2>
 
             {/* Health Bar */}
             <div className="w-full max-w-[260px] mb-4">
-              <div className="flex text-[10px] font-bold text-stone-400 mb-1 justify-center">
+              <div className="flex text-[10px] text-stone-400 mb-1 justify-center">
                 <span>{player.hp} / {player.maxHp} HP</span>
               </div>
               <div className="w-full h-2.5 bg-black/60 border border-stone-700/60 rounded-full overflow-hidden">
@@ -582,11 +582,11 @@ const FightPlaceholder = () => {
 
           {/* ── ENEMY CARD ── */}
           <div className="flex-1 flex flex-col items-center min-w-0 bg-black/40 border border-stone-700/50 rounded-2xl p-4 backdrop-blur-sm shadow-[0_4px_24px_rgba(0,0,0,0.6)]">
-            <h2 className="text-lg font-black text-red-400 uppercase tracking-widest mb-2 drop-shadow-[0_1px_6px_rgba(0,0,0,1)]">{enemy.name}</h2>
+            <h2 className="text-lg text-red-400 uppercase tracking-widest mb-2 drop-shadow-[0_1px_6px_rgba(0,0,0,1)]">{enemy.name}</h2>
 
             {/* Health Bar */}
             <div className="w-full max-w-[260px] mb-4">
-              <div className="flex text-[10px] font-bold text-stone-400 mb-1 justify-center">
+              <div className="flex text-[10px] text-stone-400 mb-1 justify-center">
                 <span>{enemy.hp} / {enemy.maxHp} HP</span>
               </div>
               <div className="w-full h-2.5 bg-black/60 border border-stone-700/60 rounded-full overflow-hidden flex justify-end">
@@ -644,7 +644,7 @@ const FightPlaceholder = () => {
       {(gameState === 'victory' || gameState === 'defeat') && (
         <div className="fixed inset-0 bg-black/85 z-[200] flex items-center justify-center backdrop-blur-md">
           <div className="bg-stone-950/95 border border-stone-800 p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-md w-full text-center mx-4">
-            <h2 className={`text-4xl font-black uppercase tracking-widest mb-4 ${gameState === 'victory' ? 'text-green-400' : 'text-red-400'}`}>
+            <h2 className={`text-4xl uppercase tracking-widest mb-4 ${gameState === 'victory' ? 'text-green-400' : 'text-red-400'}`}>
               {gameState}
             </h2>
             <p className="text-stone-400 mb-6 font-medium text-sm">
@@ -683,11 +683,11 @@ const FightPlaceholder = () => {
               </div>
             )}
             {gameState === 'defeat' && (
-              <div className="mb-8 text-stone-500 text-sm font-bold uppercase tracking-widest">Earned Nothing</div>
+              <div className="mb-8 text-stone-500 text-sm uppercase tracking-widest">Earned Nothing</div>
             )}
             <button
               onClick={handleFinish}
-              className="px-8 py-4 bg-amber-800 hover:bg-amber-700 border-2 border-amber-600 text-amber-100 rounded-xl font-bold uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(180,83,9,0.4)] active:scale-95 w-full"
+              className="px-8 py-4 bg-amber-800 hover:bg-amber-700 border-2 border-amber-600 text-amber-100 rounded-xl uppercase tracking-widest transition-all shadow-[0_0_20px_rgba(180,83,9,0.4)] active:scale-95 w-full"
             >
               Continue Journey
             </button>

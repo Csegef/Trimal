@@ -1,3 +1,58 @@
+// ─── Elemental Buff System ────────────────────────────────────────────────────
+// ~15% of weapons get a random elemental buff (poison/cold/bleed).
+// When a weapon has an elemental buff, its raw damage is reduced by 15-30%
+// so the player must weigh raw damage vs. DoT utility.
+const ELEMENTAL_BUFFS = [
+  { type: 'poison', label: 'Poison', color: '#4ade80', dmgPerTick: 3, ticks: 3, description: 'Deals poison damage over 3 turns' },
+  { type: 'cold',   label: 'Frost',  color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
+  { type: 'bleed',  label: 'Bleed',  color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
+];
+
+/**
+ * Roll for an elemental buff on a weapon. Returns null or a buff object.
+ * @param {number} seed - deterministic seed (e.g. shopRow.id or Date.now())
+ * @param {number} playerLevel
+ */
+function rollElementalBuff(seed, playerLevel) {
+  // Use seeded pseudo-random for deterministic results in shop
+  const roll = Math.abs(Math.sin(seed * 13.37)) % 1;
+  if (roll > 0.15) return null; // 85% chance of NO buff
+
+  const buffIdx = Math.floor(Math.abs(Math.sin(seed * 7.13)) * ELEMENTAL_BUFFS.length) % ELEMENTAL_BUFFS.length;
+  const base = ELEMENTAL_BUFFS[buffIdx];
+
+  // Scale DoT damage slightly with level
+  const scaledDmgPerTick = base.dmgPerTick + Math.floor(playerLevel / 5);
+
+  return {
+    type: base.type,
+    label: base.label,
+    color: base.color,
+    dmgPerTick: scaledDmgPerTick,
+    ticks: base.ticks,
+    totalDot: scaledDmgPerTick * base.ticks,
+    description: base.description,
+  };
+}
+
+/**
+ * Roll for an elemental buff using true randomness (for quest drops, addItem, etc.)
+ */
+function rollElementalBuffRandom(playerLevel) {
+  if (Math.random() > 0.15) return null;
+  const base = ELEMENTAL_BUFFS[Math.floor(Math.random() * ELEMENTAL_BUFFS.length)];
+  const scaledDmgPerTick = base.dmgPerTick + Math.floor(playerLevel / 5);
+  return {
+    type: base.type,
+    label: base.label,
+    color: base.color,
+    dmgPerTick: scaledDmgPerTick,
+    ticks: base.ticks,
+    totalDot: scaledDmgPerTick * base.ticks,
+    description: base.description,
+  };
+}
+
 const generateShopItemsForDay = async (pool, specieId) => {
   // Ellenőrizzük, hogy van-e már a mai napra generált tárgy
   const [existing] = await pool.execute(
@@ -9,31 +64,44 @@ const generateShopItemsForDay = async (pool, specieId) => {
     return; // Már vannak generált elemek a mai napra
   }
 
-  // Lekérjük az összes lehetséges tárgyat típusonként
-  const [weapons] = await pool.execute(`SELECT item_id FROM item_weapon`);
-  const [armors] = await pool.execute(`SELECT item_id FROM item_armor`);
-  const [foods] = await pool.execute(`SELECT item_id FROM item_food`);
+  // Lekérjük az összes lehetséges tárgyat típusonként (with rarity info for weighting)
+  const [weapons] = await pool.execute(`SELECT item_id, rarity FROM item_weapon`);
+  const [armors] = await pool.execute(`SELECT item_id, rarity FROM item_armor`);
+  const [foods] = await pool.execute(`SELECT item_id, rarity FROM item_food`);
 
-  const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)]?.item_id;
+  // Rarity-weighted random pick: common ~60%, rare ~25%, epic ~12%, legendary ~3%
+  const getWeightedItem = (arr) => {
+    if (!arr.length) return undefined;
+    const roll = Math.random();
+    let targetRarity;
+    if (roll < 0.03)       targetRarity = 'legendary';
+    else if (roll < 0.15)  targetRarity = 'epic';
+    else if (roll < 0.40)  targetRarity = 'rare';
+    else                   targetRarity = 'common';
+
+    const filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
+    const pool_ = filtered.length > 0 ? filtered : arr; // fallback to all if none match
+    return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
+  };
 
   // Tinkerer: 3 fegyver, 3 páncél
   const tinkererItems = [
-    { type: 'weapon', itemId: getRandomItem(weapons) },
-    { type: 'weapon', itemId: getRandomItem(weapons) },
-    { type: 'weapon', itemId: getRandomItem(weapons) },
-    { type: 'armor', itemId: getRandomItem(armors) },
-    { type: 'armor', itemId: getRandomItem(armors) },
-    { type: 'armor', itemId: getRandomItem(armors) }
+    { type: 'weapon', itemId: getWeightedItem(weapons) },
+    { type: 'weapon', itemId: getWeightedItem(weapons) },
+    { type: 'weapon', itemId: getWeightedItem(weapons) },
+    { type: 'armor', itemId: getWeightedItem(armors) },
+    { type: 'armor', itemId: getWeightedItem(armors) },
+    { type: 'armor', itemId: getWeightedItem(armors) }
   ];
 
   // Herbalist: 6 food
   const herbalistItems = [
-    { type: 'food', itemId: getRandomItem(foods) },
-    { type: 'food', itemId: getRandomItem(foods) },
-    { type: 'food', itemId: getRandomItem(foods) },
-    { type: 'food', itemId: getRandomItem(foods) },
-    { type: 'food', itemId: getRandomItem(foods) },
-    { type: 'food', itemId: getRandomItem(foods) }
+    { type: 'food', itemId: getWeightedItem(foods) },
+    { type: 'food', itemId: getWeightedItem(foods) },
+    { type: 'food', itemId: getWeightedItem(foods) },
+    { type: 'food', itemId: getWeightedItem(foods) },
+    { type: 'food', itemId: getWeightedItem(foods) },
+    { type: 'food', itemId: getWeightedItem(foods) }
   ];
 
   const insertShopItem = async (shopType, item) => {
@@ -90,14 +158,10 @@ const getShopItems = async (req, res) => {
         if (items.length > 0) {
           const itemDetails = items[0];
 
-          // Árszámítás logikája (enyhébb szorzókkal, hogy olcsóbbak legyenek a tárgyak)
-          // Dinamikus árkalkulátor: szintfüggő infláció (csökkentett mértékű drágulás)
+          // Árszámítás logikája — simple linear scaling: +4% per level
           const calculatePrice = (baseCost) => {
             if (!baseCost) return 0;
-            // Picit kevesebb mint az eredeti: szintenként 8%-kal drágul a baseline
-            const price = baseCost * (1 + playerLevel * 0.08);
-            // Erősítjük a tompítást (12-vel osztjuk a szintet) - ez lelassítja a túlzott áremelkedést
-            return Math.round(price * (1 + playerLevel / 12));
+            return Math.round(baseCost * (1 + playerLevel * 0.04));
           };
 
           const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
@@ -105,12 +169,23 @@ const getShopItems = async (req, res) => {
 
           let itemWeaponDmg = itemDetails.base_damage;
           let itemArmorPt = itemDetails.armor_point;
+          let elementalBuff = null;
 
           if (row.item_type === 'weapon') {
-             const offset = Math.floor((Math.sin(row.id) * 0.5 + 0.5) * 9) - 3;
+             // More variance: -5 to +8 offset for unique feel
+             const offset = Math.floor((Math.sin(row.id * 3.14) * 0.5 + 0.5) * 14) - 5;
              itemWeaponDmg = itemDetails.base_damage + offset + (playerLevel * 2);
+
+             // Roll elemental buff (deterministic based on shop row id)
+             elementalBuff = rollElementalBuff(row.id, playerLevel);
+             if (elementalBuff) {
+               // Reduce raw damage by 15-30% when weapon has a buff (trade-off)
+               const reduction = 0.15 + (Math.abs(Math.sin(row.id * 2.71)) * 0.15);
+               itemWeaponDmg = Math.max(1, Math.floor(itemWeaponDmg * (1 - reduction)));
+             }
           } else if (row.item_type === 'armor') {
-             const offset = Math.floor((Math.sin(row.id) * 0.5 + 0.5) * 7) - 2;
+             // More variance: -4 to +6 offset
+             const offset = Math.floor((Math.sin(row.id * 2.71) * 0.5 + 0.5) * 11) - 4;
              itemArmorPt = itemDetails.armor_point + offset;
           }
 
@@ -124,7 +199,8 @@ const getShopItems = async (req, res) => {
               weapon_damage: itemWeaponDmg,
               armor_point: itemArmorPt,
               buy_price_normal: buyPriceNormal,
-              buy_price_spec: buyPriceSpec
+              buy_price_spec: buyPriceSpec,
+              ...(elementalBuff ? { elemental_buff: elementalBuff } : {})
             }
           });
         }
@@ -185,11 +261,10 @@ const buyShopItem = async (req, res) => {
     }
     const itemDetails = items[0];
 
-    // Árszámítás
+    // Árszámítás — simple linear scaling: +4% per level
     const calculatePrice = (baseCost) => {
       if (!baseCost) return 0;
-      const price = baseCost * (1 + playerLevel * 0.08);
-      return Math.round(price * (1 + playerLevel / 12));
+      return Math.round(baseCost * (1 + playerLevel * 0.04));
     };
 
     const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
@@ -228,10 +303,18 @@ const buyShopItem = async (req, res) => {
     
     // Fegyver specifikus sebzés inicializálása
     if (shopItem.item_type === 'weapon') {
-      const offset = Math.floor((Math.sin(shopItem.id) * 0.5 + 0.5) * 9) - 3; // Deterministic random between -3 and +5
+      const offset = Math.floor((Math.sin(shopItem.id * 3.14) * 0.5 + 0.5) * 14) - 5;
       newItem.weapon_damage = itemDetails.base_damage + offset + (playerLevel * 2);
+
+      // Roll elemental buff (deterministic based on shop row id)
+      const elementalBuff = rollElementalBuff(shopItem.id, playerLevel);
+      if (elementalBuff) {
+        const reduction = 0.15 + (Math.abs(Math.sin(shopItem.id * 2.71)) * 0.15);
+        newItem.weapon_damage = Math.max(1, Math.floor(newItem.weapon_damage * (1 - reduction)));
+        newItem.elemental_buff = elementalBuff;
+      }
     } else if (shopItem.item_type === 'armor') {
-      const offset = Math.floor((Math.sin(shopItem.id) * 0.5 + 0.5) * 7) - 2; // -2 to +4
+      const offset = Math.floor((Math.sin(shopItem.id * 2.71) * 0.5 + 0.5) * 11) - 4;
       newItem.armor_point = itemDetails.armor_point + offset;
     }
     
