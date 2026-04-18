@@ -42,7 +42,13 @@ const FightPlaceholder = () => {
     delayPromise: null,
     rageTurns: 0,
     rageTriggered: false,
-    sapiensFirstHitUsed: false
+    sapiensFirstHitUsed: false,
+    // Dungeon enemy-side superpowers
+    enemyRageTurns: 0,
+    enemyRageTriggered: false,
+    enemySapiensFirstHitUsed: false,
+    isDungeon: false,
+    enemyPrefix: null,
   });
 
   const debuffIcons = {
@@ -131,51 +137,95 @@ const FightPlaceholder = () => {
           weaponDamage: weaponDamage
         };
 
-        const res = await fetch('/api/entities', { headers: { 'Authorization': `Bearer ${token}` } });
-        const data = await res.json();
-        const enemies = data.data?.enemies || [];
+        // ─── Dungeon: build prehistoric human enemy inline ───────────────────
+        const isDungeon = !!inventory.active_quest.isDungeon;
+        combatState.current.isDungeon = isDungeon;
+        combatState.current.enemyPrefix = inventory.active_quest.enemyPrefix || null;
 
-        if (enemies.length === 0) throw new Error('No enemies found');
+        let eObj;
 
-        const difficultyToCategory = {
-          easy: 'Light',
-          medium: 'Medium',
-          hard: 'Heavy'
-        };
-        const qDifficulty = inventory.active_quest.difficulty?.toLowerCase() || 'medium';
-        const targetCategory = difficultyToCategory[qDifficulty] || 'Medium';
+        if (isDungeon) {
+          const ePrefix = inventory.active_quest.enemyPrefix || 'n';
+          const eName = inventory.active_quest.enemyName || 'Ancient Warrior';
+          const dungeonId = inventory.active_quest.dungeonId || 1;
+          const eLvl = playerInfo?.lvl || 1;
+          const statMult = 1 + ((eLvl - 1) * 0.40); // slightly harder than animals
 
-        let possibleEnemies = enemies.filter(e => e.category === targetCategory);
-        if (possibleEnemies.length === 0) possibleEnemies = enemies; // Fallback just in case
+          // Stat bases scale by dungeon tier
+          const tierMults = { 1: 1.0, 2: 1.25, 3: 1.55 };
+          const tier = tierMults[dungeonId] || 1.0;
+          const baseStr  = Math.ceil(10 * statMult * tier);
+          const baseAgi  = Math.ceil(10 * statMult * tier);
+          const baseLuck = Math.ceil(8  * statMult * tier);
+          const baseRes  = Math.ceil(8  * statMult * tier);
+          const eMaxHp   = Math.ceil(12 * 20 * statMult * tier);
 
-        const rndEnemyData = possibleEnemies[Math.floor(Math.random() * possibleEnemies.length)];
+          eObj = {
+            name: eName,
+            iconPath: null,     // will use PlayerPortrait instead
+            isDungeonHuman: true,
+            enemyPrefix: ePrefix,
+            category: 'Medium',
+            type: 'none',
+            stats: { strength: baseStr, agility: baseAgi, luck: baseLuck, resistance: baseRes },
+            maxHp: eMaxHp,
+            hp: eMaxHp,
+          };
 
-        let eLvl = playerInfo?.lvl || 1;
-        // Easy: no boost → Light enemies easy to beat
-        // Medium: +1 boost → Medium enemies moderately harder
-        // Hard: no boost, but Heavy base stats (16) are ~2x Light/Medium's (~8), creating natural difficulty
-        if (qDifficulty === 'medium') eLvl += 0.2;
+          // Homo Sapiens: coin flip for first turn
+          let startTurn = (eObj.stats.agility > pObj.stats.agility) ? 'enemy' : 'player';
+          if (pObj.class === 'Sapiens') startTurn = 'player';
+          if (ePrefix === 'hs') {
+            startTurn = Math.random() < 0.5 ? 'player' : 'enemy';
+            addLog(`Lean Scout calls a coin flip — ${startTurn === 'player' ? 'you strike first!' : 'the scout strikes first!'}`);
+          }
+          combatState.current.turn = startTurn;
+        } else {
+          // ─── Normal quest enemy from /api/entities ───────────────────────────
+          const res = await fetch('/api/entities', { headers: { 'Authorization': `Bearer ${token}` } });
+          const data = await res.json();
+          const enemies = data.data?.enemies || [];
 
-        const statMult = 1 + ((eLvl - 1) * 0.35);
+          if (enemies.length === 0) throw new Error('No enemies found');
 
-        const eMaxHp = rndEnemyData.base_health * 20 * statMult;
+          const difficultyToCategory = {
+            easy: 'Light',
+            medium: 'Medium',
+            hard: 'Heavy'
+          };
+          const qDifficulty = inventory.active_quest.difficulty?.toLowerCase() || 'medium';
+          const targetCategory = difficultyToCategory[qDifficulty] || 'Medium';
 
-        const eObj = {
-          name: rndEnemyData.name,
-          iconPath: rndEnemyData.iconPath,
-          category: rndEnemyData.category,
-          type: rndEnemyData.type,
-          stats: {
-            strength: Math.ceil(rndEnemyData.base_strength * statMult),
-            agility: Math.ceil(rndEnemyData.base_agility * statMult),
-            luck: Math.ceil(rndEnemyData.base_luck * statMult),
-            resistance: Math.ceil(rndEnemyData.base_resistance * statMult)
-          },
-          maxHp: Math.ceil(eMaxHp),
-          hp: Math.ceil(eMaxHp)
-        };
+          let possibleEnemies = enemies.filter(e => e.category === targetCategory);
+          if (possibleEnemies.length === 0) possibleEnemies = enemies;
 
-        if (!isMounted) return;
+          const rndEnemyData = possibleEnemies[Math.floor(Math.random() * possibleEnemies.length)];
+
+          let eLvl = playerInfo?.lvl || 1;
+          if (qDifficulty === 'medium') eLvl += 0.2;
+
+          const statMult = 1 + ((eLvl - 1) * 0.35);
+          const eMaxHp = rndEnemyData.base_health * 20 * statMult;
+
+          eObj = {
+            name: rndEnemyData.name,
+            iconPath: rndEnemyData.iconPath,
+            category: rndEnemyData.category,
+            type: rndEnemyData.type,
+            stats: {
+              strength: Math.ceil(rndEnemyData.base_strength * statMult),
+              agility: Math.ceil(rndEnemyData.base_agility * statMult),
+              luck: Math.ceil(rndEnemyData.base_luck * statMult),
+              resistance: Math.ceil(rndEnemyData.base_resistance * statMult)
+            },
+            maxHp: Math.ceil(eMaxHp),
+            hp: Math.ceil(eMaxHp)
+          };
+
+          let startTurn = (eObj.stats.agility > pObj.stats.agility) ? 'enemy' : 'player';
+          if (pObj.class === 'Sapiens') startTurn = 'player';
+          combatState.current.turn = startTurn;
+        }
 
         combatState.current.playerHp = pObj.maxHp;
         combatState.current.enemyHp = eObj.maxHp;
@@ -184,10 +234,9 @@ const FightPlaceholder = () => {
         combatState.current.rageTurns = 0;
         combatState.current.rageTriggered = false;
         combatState.current.sapiensFirstHitUsed = false;
-
-        let startTurn = (eObj.stats.agility > pObj.stats.agility) ? 'enemy' : 'player';
-        if (pObj.class === 'Sapiens') startTurn = 'player'; // Sapiens első ütés
-        combatState.current.turn = startTurn;
+        combatState.current.enemyRageTurns = 0;
+        combatState.current.enemyRageTriggered = false;
+        combatState.current.enemySapiensFirstHitUsed = false;
         combatState.current.active = true;
 
         setPlayer(pObj);
@@ -197,6 +246,7 @@ const FightPlaceholder = () => {
 
         // Start combat loop directly
         runCombatLoop(token);
+
 
       } catch (err) {
         console.error('Fight init error:', err);
@@ -236,6 +286,13 @@ const FightPlaceholder = () => {
       if (pHp <= 0 || eHp <= 0) break;
 
       if (turn === 'player') {
+        let eEvadeChance = Math.min(10, eObj.stats.agility * 0.2);
+        if (eObj.category === 'Light') eEvadeChance = Math.min(50, eObj.stats.agility * 0.5);
+        if (Math.random() * 100 < eEvadeChance) {
+          turn = 'enemy';
+          continue;
+        }
+
         const isCrit = Math.random() * 100 < pObj.stats.luck;
         let rawDmg = pObj.weaponDamage * 1.5 * (1 + pObj.stats.strength / 25);
         rawDmg *= (0.9 + Math.random() * 0.2);
@@ -245,6 +302,13 @@ const FightPlaceholder = () => {
         eHp = Math.max(0, eHp - dmg);
         turn = 'enemy';
       } else {
+        let pEvadeChance = Math.min(10, pObj.stats.agility * 0.2);
+        if (pObj.class === 'Floresiensis' && (pHp / pObj.maxHp) < 0.25) pEvadeChance = Math.max(pEvadeChance, 50);
+        if (Math.random() * 100 < pEvadeChance) {
+          turn = 'player';
+          continue;
+        }
+
         const isCrit = Math.random() * 100 < (eObj.category === 'Heavy'
           ? Math.min(25, eObj.stats.luck * 0.3)
           : eObj.stats.luck);
@@ -283,10 +347,11 @@ const FightPlaceholder = () => {
         if (!state.active) break;
 
         let evaded = false;
+        let evadeChance = Math.min(10, eObj.stats.agility * 0.2);
         if (eObj.category === 'Light') {
-          const evadeChance = Math.min(50, eObj.stats.agility * 0.5);
-          if (Math.random() * 100 < evadeChance) evaded = true;
+          evadeChance = Math.min(50, eObj.stats.agility * 0.5);
         }
+        if (Math.random() * 100 < evadeChance) evaded = true;
 
         if (evaded) {
           setEnemyDmgText({ val: `MISS`, color: 'text-stone-400' });
@@ -349,26 +414,80 @@ const FightPlaceholder = () => {
         await delay(400);
         if (!state.active) break;
 
-        // Floresiensis: reflex
         let autoEvade = false;
+        let isReflex = false;
+        const playerDodgeChance = Math.min(10, pObj.stats.agility * 0.2);
+        
+        if (Math.random() * 100 < playerDodgeChance) {
+          autoEvade = true;
+        }
+
+        // Floresiensis: reflex
         if (pObj.class === 'Floresiensis' && (state.playerHp / pObj.maxHp) < 0.25) {
-          if (Math.random() < 0.50) autoEvade = true;
+          if (!autoEvade && Math.random() < 0.50) {
+            autoEvade = true;
+            isReflex = true;
+          } else if (autoEvade) {
+            isReflex = true;
+          }
         }
 
         if (autoEvade) {
-          setPlayerDmgText({ val: `REFLEX!`, color: 'text-stone-400' });
-          addLog(`You used REFLEX to instinctively evade!`);
+          setPlayerDmgText({ val: isReflex ? `REFLEX!` : `DODGED!`, color: 'text-stone-400' });
+          addLog(isReflex ? `You used REFLEX to instinctively evade!` : `You agilely dodged the attack!`);
           await delay(600);
           setPlayerDmgText(null);
           setEnemyAnim(null);
         } else {
+          // Dungeon enemy superpowers (mirror of player classes)
+          const ePrefix = state.enemyPrefix;
+
+          // Neanderthal enemy: rage on low HP
+          if (ePrefix === 'n' && state.enemyRageTurns === 0 && !state.enemyRageTriggered) {
+            if ((state.enemyHp / eObj.maxHp) < 0.30) {
+              if (Math.random() < 0.40) {
+                state.enemyRageTurns = 2;
+                state.enemyRageTriggered = true;
+                addLog(`${eObj.name} enters a primal rage! (+50% DMG, +40% CRIT)`);
+              }
+            }
+          }
+
+          // Floresiensis enemy: reflex auto-evade on low HP
+          let enemyAutoEvade = false;
+          if (ePrefix === 'f' && (state.enemyHp / eObj.maxHp) < 0.25) {
+            if (Math.random() < 0.50) enemyAutoEvade = true;
+          }
+
+          if (enemyAutoEvade) {
+            setPlayerDmgText({ val: 'EVADED!', color: 'text-stone-400' });
+            addLog(`${eObj.name} vanishes into shadow — attack evaded!`);
+            await delay(600);
+            setPlayerDmgText(null);
+            setEnemyAnim(null);
+            // skip to next turn without hitting the player
+          } else {
           let isCrit = Math.random() * 100 < eObj.stats.luck;
           if (eObj.category === 'Heavy') {
             isCrit = Math.random() * 100 < Math.min(25, eObj.stats.luck * 0.3); // Hard cap at 25%
           }
 
-          // Unified 2.5x damage multiplier for all enemy types - raw base stats create difficulty gap
+          // Homo Sapiens enemy: +25% on first hit
           let enemyIncomingDmg = (eObj.stats.strength * 2.5 + 10) * (0.9 + Math.random() * 0.2);
+          if (ePrefix === 'hs' && !state.enemySapiensFirstHitUsed) {
+            enemyIncomingDmg *= 1.25;
+            state.enemySapiensFirstHitUsed = true;
+            addLog(`${eObj.name} exploits their superior intellect! First strike +25%`);
+          }
+
+          // Neanderthal enemy rage boost
+          const enemyRageActive = state.enemyRageTurns > 0;
+          if (enemyRageActive) {
+            enemyIncomingDmg *= 1.50;
+            isCrit = isCrit || Math.random() * 100 < 40;
+            state.enemyRageTurns -= 1;
+          }
+
           if (isCrit) enemyIncomingDmg *= 2;
 
           const effectiveArmor = pObj.stats.armor + (pObj.lvl * 3);
@@ -431,6 +550,7 @@ const FightPlaceholder = () => {
           await delay(600);
           setPlayerAnim(null);
           setPlayerDmgText(null);
+          } // end enemyAutoEvade else
         }
 
         // Check defeat
@@ -607,11 +727,21 @@ const FightPlaceholder = () => {
                   className="absolute inset-0 w-full h-full object-contain z-40 pointer-events-none"
                   style={{ animation: 'fadeInOut 0.7s ease-in-out forwards' }} />
               )}
-              <img
-                src={`/src/assets/design/covers/enemy_covers/final_imgs/${enemy.iconPath}`}
-                alt={enemy.name}
-                style={{ maxHeight: '210px', maxWidth: '210px', width: 'auto', height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9))' }}
-              />
+              {enemy.isDungeonHuman ? (
+                <div style={{ width: '210px', height: '210px', position: 'relative', overflow: 'visible' }}>
+                  <PlayerPortrait
+                    className={enemy.enemyPrefix === 'n' ? 'Neanderthal' : enemy.enemyPrefix === 'hs' ? 'Sapiens' : 'Floresiensis'}
+                    hairStyle={5}
+                    beardStyle={5}
+                  />
+                </div>
+              ) : (
+                <img
+                  src={`/src/assets/design/covers/enemy_covers/final_imgs/${enemy.iconPath}`}
+                  alt={enemy.name}
+                  style={{ maxHeight: '210px', maxWidth: '210px', width: 'auto', height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.9))' }}
+                />
+              )}
               {enemyDmgText && (
                 <div className={`absolute top-2 left-1/2 font-black text-5xl z-[100] drop-shadow-[0_4px_8px_rgba(0,0,0,1)] ${enemyDmgText.color}`}
                   style={{ animation: 'floatUp 0.9s ease-out forwards' }}>

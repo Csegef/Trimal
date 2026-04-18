@@ -142,6 +142,17 @@ async function loadInventory(pool, specieId) {
     changed = true;
   }
 
+  // Handle dungeon unlock persistence
+  if (!inv.dungeons_unlocked) {
+    const hasScript = (inv.items || []).some(
+      i => i.type === 'misc' && (i.name || '').toLowerCase().includes('dungeon')
+    );
+    if (hasScript) {
+      inv.dungeons_unlocked = true;
+      changed = true;
+    }
+  }
+
   if (changed) {
     await saveInventory(pool, specieId, inv);
   }
@@ -788,7 +799,8 @@ router.post('/quest/claim', async (req, res) => {
     const q = inv.active_quest;
     const diff = (q.difficulty || 'medium').toLowerCase();
     const now = Math.floor(Date.now() / 1000);
-    if (now < q.start_time + q.duration) return res.status(400).json({ success: false, message: 'Quest not finished yet' });
+    // Dungeons skip the time check (they go straight to fight, duration=1)
+    if (!q.isDungeon && now < q.start_time + q.duration) return res.status(400).json({ success: false, message: 'Quest not finished yet' });
 
     inv.currency.normal = (inv.currency.normal || 0) + q.reward_normal;
     inv.currency.spec = (inv.currency.spec || 0) + q.reward_spec;
@@ -822,6 +834,9 @@ router.post('/quest/claim', async (req, res) => {
     } else if (diff === 'hard') {
        numDrops = roll < 0.40 ? 2 : 1; // 100% chance for 1, 40% for 2
        allowEpicLeg = true;
+    } else if (diff === 'dungeon') {
+       numDrops = 2; // Always 2 drops in dungeons
+       allowEpicLeg = true;
     }
 
     if (numDrops > 0 && inv.used < inv.capacity) {
@@ -846,10 +861,20 @@ router.post('/quest/claim', async (req, res) => {
                    targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
                } else if (diff === 'hard') {
                    targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
+               } else if (diff === 'dungeon') {
+                   // Dungeons: much better loot
+                   targetRarity = rRoll < 0.4 ? 'rare' : (rRoll < 0.7 ? 'epic' : (rRoll < 0.9 ? 'legendary' : 'common'));
                }
                
-               const filtered = itemsSource.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
+               const filtered = itemsSource
+                 .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
+                 // Exclude dungeon_script from random drops — it's a special unlock item
+                 .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
                if (filtered.length > 0) possibleItems = filtered;
+               else {
+                 // Fallback: still exclude dungeon_script
+                 possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+               }
             }
             
             if (possibleItems.length > 0) {
@@ -920,6 +945,90 @@ router.post('/quest/skip', async (req, res) => {
     await saveInventory(req.pool, req.user.specieId, inv);
     res.json({ success: true, message: 'Skipped' });
   } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/dungeon/start ──────────────────────────────────────
+router.post('/dungeon/start', async (req, res) => {
+  try {
+    const { dungeonId } = req.body;
+    if (!dungeonId) return res.status(400).json({ success: false, message: 'Missing: dungeonId' });
+
+    const DUNGEON_DATA = [
+      null, // 0-index padding
+      { id: 1, name: 'Neanderthal Valley', enemyName: 'Squab Warrior', enemyPrefix: 'n',
+        bg: '/src/assets/design/backgrounds/dungeon/dungeon_level1.png',
+        minLevel: 5, staminaCost: 40,
+        getRewards: (lvl) => ({ normal: lvl * 15, spec: Math.floor(lvl / 2), xp: 60 }) },
+      { id: 2, name: 'Standing Stone Circle', enemyName: 'Lean Scout', enemyPrefix: 'hs',
+        bg: '/src/assets/design/backgrounds/dungeon/dungeon_level2.png',
+        minLevel: 15, staminaCost: 40,
+        getRewards: (lvl) => ({ normal: lvl * 25, spec: lvl, xp: 80 }) },
+      { id: 3, name: 'The Hidden Lagoon', enemyName: 'Tiny Stalker', enemyPrefix: 'f',
+        bg: '/src/assets/design/backgrounds/dungeon/dungeon_level3.png',
+        minLevel: 30, staminaCost: 40,
+        getRewards: (lvl) => ({ normal: lvl * 40, spec: lvl * 2, xp: 120 }) },
+    ];
+
+    const dungeon = DUNGEON_DATA[dungeonId];
+    if (!dungeon) return res.status(400).json({ success: false, message: 'Invalid dungeon ID' });
+
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    if (inv.active_quest !== null)
+      return res.status(400).json({ success: false, message: 'A quest is already active' });
+
+    if (inv.stamina.current < dungeon.staminaCost)
+      return res.status(400).json({ success: false, message: 'Not enough stamina' });
+
+    // Check player level
+    const [lvlRows] = await req.pool.execute('SELECT lvl FROM specie WHERE id = ?', [req.user.specieId]);
+    const playerLevel = lvlRows[0]?.lvl || 1;
+    if (playerLevel < dungeon.minLevel)
+      return res.status(400).json({ success: false, message: `Requires level ${dungeon.minLevel}` });
+
+    // Check dungeon_script in inventory
+    const scriptIndex = (inv.items || []).findIndex(
+      i => i.type === 'misc' && (i.name || '').toLowerCase().includes('dungeon')
+    );
+    if (scriptIndex === -1)
+      return res.status(400).json({ success: false, message: 'You need a Dungeon Script to access dungeons' });
+
+    // Consume the dungeon_script
+    const scriptItem = inv.items[scriptIndex];
+    scriptItem.quantity -= 1;
+    if (scriptItem.quantity <= 0) {
+      inv.items.splice(scriptIndex, 1);
+    }
+    recalcUsed(inv);
+
+    const rewards = dungeon.getRewards(playerLevel);
+
+    inv.stamina.current -= dungeon.staminaCost;
+
+    inv.active_quest = {
+      name: dungeon.name,
+      difficulty: 'dungeon',
+      description: '',
+      start_time: Math.floor(Date.now() / 1000),
+      duration: 1, // immediate — dungeon goes straight to fight
+      original_duration: 1,
+      reward_normal: rewards.normal,
+      reward_spec: rewards.spec,
+      reward_xp: rewards.xp,
+      background: dungeon.bg,
+      isDungeon: true,
+      dungeonId: dungeon.id,
+      enemyName: dungeon.enemyName,
+      enemyPrefix: dungeon.enemyPrefix,
+    };
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, data: inv.active_quest });
+  } catch (err) {
+    console.error('[Dungeon] POST /dungeon/start error:', err.message);
     res.status(500).json({ success: false, message: err.message });
   }
 });
