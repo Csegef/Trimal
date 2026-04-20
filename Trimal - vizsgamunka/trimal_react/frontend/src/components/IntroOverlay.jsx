@@ -26,7 +26,7 @@ But the people then didn't know that. They only knew that when the earth sang, y
       className={`fixed inset-0 z-[1000] flex items-center justify-center p-4 backdrop-blur-xl bg-black/80 transition-opacity duration-700 ${fadeOut ? "opacity-0" : "opacity-100"}`}
     >
       <div className="relative max-w-5xl w-full bg-stone-900/90 border-2 border-amber-900/40 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[70vh]">
-        
+
         {/* Video Side */}
         <div className="w-full md:w-1/2 bg-black flex items-center justify-center p-4">
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-stone-800 shadow-inner">
@@ -44,27 +44,27 @@ But the people then didn't know that. They only knew that when the earth sang, y
 
         {/* Text Side */}
         <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-between bg-stone-900/40 relative overflow-hidden">
-             {/* Decorative Elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-900/10 blur-3xl rounded-full -mr-16 -mt-16" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-600/5 blur-3xl rounded-full -ml-16 -mb-16" />
+          {/* Decorative Elements */}
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-900/10 blur-3xl rounded-full -mr-16 -mt-16" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-600/5 blur-3xl rounded-full -ml-16 -mb-16" />
 
-            <div className="relative z-10 flex-grow overflow-y-auto scrollbar-thin pr-4 mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-amber-500 mb-6 tracking-tighter uppercase border-b border-amber-900/30 pb-2">
-                    Primeval Resonance
-                </h2>
-                <div className="text-stone-300 text-sm md:text-base leading-relaxed space-y-4 font-serif italic text-justify">
-                    {contextText.split('\n\n').map((para, i) => (
-                        <p key={i}>{para}</p>
-                    ))}
-                </div>
+          <div className="relative z-10 flex-grow overflow-y-auto scrollbar-thin pr-4 mb-6">
+            <h2 className="text-2xl md:text-3xl text-amber-500 mb-6 tracking-tighter uppercase border-b border-amber-900/30 pb-2">
+              Primeval Resonance
+            </h2>
+            <div className="text-stone-300 text-sm md:text-base leading-relaxed space-y-4 font-serif italic text-justify">
+              {contextText.split('\n\n').map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
             </div>
+          </div>
 
-            <button
-                onClick={handleClose}
-                className="relative z-10 w-full py-3 bg-amber-900/40 hover:bg-amber-800/60 border border-amber-700/50 text-amber-200 font-bold rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] tracking-widest uppercase text-sm"
-            >
-                Embrace the Song
-            </button>
+          <button
+            onClick={handleClose}
+            className="relative z-10 w-full py-3 bg-amber-900/40 hover:bg-amber-800/60 border border-amber-700/50 text-amber-200 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] tracking-widest uppercase text-sm"
+          >
+            Embrace the Song
+          </button>
         </div>
       </div>
 

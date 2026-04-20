@@ -218,7 +218,7 @@ const CharacterRegistration = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.username ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.username ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Enter username"
               />
               {errors.username && (
@@ -235,7 +235,7 @@ const CharacterRegistration = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.email ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.email ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="your@email.com"
               />
               {errors.email && (
@@ -267,7 +267,7 @@ const CharacterRegistration = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.password ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.password ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Min. 8 characters"
               />
               {errors.password && (
@@ -284,7 +284,7 @@ const CharacterRegistration = () => {
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.confirmPassword ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.confirmPassword ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Re-enter password"
               />
               {errors.confirmPassword && (

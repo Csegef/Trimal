@@ -520,8 +520,8 @@ const Inventory = () => {
               </div>
             </div>
           ) : (
-            /* Two-column layout: character panel (left) + bag panel (right) */
-            <div className="grid grid-cols-[1fr_1fr] gap-5">
+            /* Layout: stacked on mobile, two-column on large screens */
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5">
 
               {/* ══ LEFT: Character + equipment + stats ══════════════════════ */}
               <div className="flex flex-col gap-4">

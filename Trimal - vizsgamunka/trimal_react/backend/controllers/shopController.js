@@ -68,6 +68,7 @@ const generateShopItemsForDay = async (pool, specieId) => {
   const [weapons] = await pool.execute(`SELECT item_id, rarity FROM item_weapon`);
   const [armors] = await pool.execute(`SELECT item_id, rarity FROM item_armor`);
   const [foods] = await pool.execute(`SELECT item_id, rarity FROM item_food`);
+  const [misc] = await pool.execute(`SELECT item_id, rarity FROM item_misc`);
 
   // Rarity-weighted random pick: common ~60%, rare ~25%, epic ~12%, legendary ~3%
   const getWeightedItem = (arr) => {
@@ -87,14 +88,23 @@ const generateShopItemsForDay = async (pool, specieId) => {
     return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
   };
 
-  // Tinkerer: 3 fegyver, 3 páncél
+  const dungeonScripts = misc.filter(m => (m.name || '').toLowerCase().includes('dungeon'));
+
+  // Tinkerer: 3 fegyver, 2 páncél, 10% esélyen Dungeon Script
+  const getTinkererMiscSlot = () => {
+    if (dungeonScripts.length > 0 && Math.random() < 0.10) {
+      return { type: 'misc', itemId: getWeightedItem(dungeonScripts) };
+    }
+    return { type: 'armor', itemId: getWeightedItem(armors) };
+  };
+
   const tinkererItems = [
     { type: 'weapon', itemId: getWeightedItem(weapons) },
     { type: 'weapon', itemId: getWeightedItem(weapons) },
     { type: 'weapon', itemId: getWeightedItem(weapons) },
     { type: 'armor', itemId: getWeightedItem(armors) },
     { type: 'armor', itemId: getWeightedItem(armors) },
-    { type: 'armor', itemId: getWeightedItem(armors) }
+    getTinkererMiscSlot()
   ];
 
   // Herbalist: 6 food
@@ -231,6 +241,8 @@ const buyShopItem = async (req, res) => {
     const specie = species[0];
     const playerLevel = specie.lvl;
     const inventory = JSON.parse(specie.inventory_json || '{}');
+    const defaultAch = { enemiesEnc: [], weaponsEnc: [], armorsEnc: [], foodsEnc: [], maxCrits: 0, flawlessWins: 0, deaths: 0, spentNormal: 0, foundLegendary: false, hoarderAchieved: false };
+    inventory.achievements = { ...defaultAch, ...(inventory.achievements || {}) };
 
     // 2. Bolt tárgy lekérése és validálása
     const [shopRows] = await pool.execute(
@@ -281,7 +293,7 @@ const buyShopItem = async (req, res) => {
     // Javasolt: levonjuk amilyen ár meg van határozva.
     
     if (inventory.currency.normal < buyPriceNormal || inventory.currency.spec < buyPriceSpec) {
-      return res.status(400).json({ success: false, message: 'Nincs elég pénzed a vásárláshoz' });
+      return res.status(400).json({ success: false, message: 'You do not have enough currency' });
     }
 
     inventory.currency.normal -= buyPriceNormal;
@@ -328,6 +340,19 @@ const buyShopItem = async (req, res) => {
 
     inventory.items.push(newItem);
     inventory.used += invSize;
+
+    // Track achievements
+    inventory.achievements.spentNormal += buyPriceNormal;
+    if (inventory.used >= inventory.capacity) inventory.achievements.hoarderAchieved = true;
+    if (itemDetails.rarity && itemDetails.rarity.toLowerCase() === 'legendary') inventory.achievements.foundLegendary = true;
+    
+    if (shopItem.item_type === 'weapon' && !inventory.achievements.weaponsEnc.includes(itemDetails.item_id)) {
+       inventory.achievements.weaponsEnc.push(itemDetails.item_id);
+    } else if (shopItem.item_type === 'armor' && !inventory.achievements.armorsEnc.includes(itemDetails.item_id)) {
+       inventory.achievements.armorsEnc.push(itemDetails.item_id);
+    } else if ((shopItem.item_type === 'food' || shopItem.item_type === 'misc') && !inventory.achievements.foodsEnc.includes(itemDetails.item_id)) {
+       inventory.achievements.foodsEnc.push(itemDetails.item_id);
+    }
 
     // 5. Frissítés mentése
     await pool.execute(
@@ -376,6 +401,7 @@ const rerollShop = async (req, res) => {
     const [weapons] = await pool.execute(`SELECT item_id, rarity FROM item_weapon`);
     const [armors] = await pool.execute(`SELECT item_id, rarity FROM item_armor`);
     const [foods] = await pool.execute(`SELECT item_id, rarity FROM item_food`);
+    const [misc] = await pool.execute(`SELECT item_id, rarity FROM item_misc`);
     const getWeightedItem = (arr) => {
       if (!arr.length) return undefined;
       const roll = Math.random();
@@ -402,13 +428,20 @@ const rerollShop = async (req, res) => {
       );
     };
     
+    const dungeonScripts = misc.filter(m => (m.name || '').toLowerCase().includes('dungeon'));
+
     if (shopType === 'tinkerer') {
       await insertShopItem('weapon', getWeightedItem(weapons));
       await insertShopItem('weapon', getWeightedItem(weapons));
       await insertShopItem('weapon', getWeightedItem(weapons));
       await insertShopItem('armor', getWeightedItem(armors));
       await insertShopItem('armor', getWeightedItem(armors));
-      await insertShopItem('armor', getWeightedItem(armors));
+      
+      if (dungeonScripts.length > 0 && Math.random() < 0.10) {
+        await insertShopItem('misc', getWeightedItem(dungeonScripts));
+      } else {
+        await insertShopItem('armor', getWeightedItem(armors));
+      }
     } else if (shopType === 'herbalist') {
       for(let i=0; i<6; i++) {
         await insertShopItem('food', getWeightedItem(foods));

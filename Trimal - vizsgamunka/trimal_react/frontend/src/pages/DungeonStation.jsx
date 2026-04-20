@@ -174,14 +174,14 @@ const DungeonStation = () => {
     return (
       <GameLayout currency={currency}>
         <div className="flex flex-col items-center justify-center h-[80vh] gap-6 px-4 text-center max-w-lg mx-auto">
-          <h1 className="text-3xl md:text-4xl text-red-400 uppercase tracking-widest font-black drop-shadow-lg">
+          <h1 className="text-3xl md:text-4xl text-red-400 uppercase tracking-widest  drop-shadow-lg">
             Access Denied
           </h1>
           <div className="w-16 h-0.5 bg-red-800/60 rounded-full" />
           <p className="text-stone-400 leading-relaxed text-base">
-            The dungeon gates remain sealed. You need a{' '}
-            <span className="text-amber-400 font-bold">Dungeon Script</span>{' '}
-            in your possession to unlock this place.
+            The paths to those dungeons are remain sealed. You need a{' '}
+            <span className="text-amber-400">Dungeon Script</span>{' '}
+            in your possession to find those paths.
           </p>
           <p className="text-stone-500 text-sm">
             Seek out a Dungeon Script from merchants or as rare spoils of battle — only then will these ancient doors open for you.

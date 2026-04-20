@@ -241,22 +241,23 @@ const ShamanStation = () => {
       contentAlign="start"
       fullBleed={true}
     >
-      <div className="relative z-10 w-full h-full flex items-stretch justify-end overflow-hidden">
+      <div className="relative z-10 w-full h-full flex flex-col md:flex-row items-stretch justify-between overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.04] pointer-events-none z-[5] mix-blend-screen" />
 
-        {/* Title - Top Left Corner (Absolute) */}
-        <div className="absolute top-4 left-6 pointer-events-auto max-w-sm md:max-w-xl z-20">
-          <h1 className="text-3xl md:text-4xl lg:text-5xl text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
-            Shaman's Hut
-          </h1>
-          <p className="text-stone-300 mt-2 tracking-wider text-m md:text-l drop-shadow-[0_0_10px_rgba(0,0,0,1)] hidden md:block">
-            Seek the wisdom of the spirits and undertake dangerous quests for great rewards.
-          </p>
-        </div>
+        {/* Left Side: Title and Stamina */}
+        <div className="relative z-20 flex-1 p-4 md:p-6 flex flex-col justify-between pointer-events-none shrink-0 min-h-0">
+          <div className="pointer-events-auto mb-4 md:mb-0 max-w-sm md:max-w-xl">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
+              Shaman's Hut
+            </h1>
+            <p className="text-stone-300 mt-2 tracking-wider text-sm md:text-base drop-shadow-[0_0_10px_rgba(0,0,0,1)] hidden md:block">
+              Seek the wisdom of the spirits and undertake dangerous quests for great rewards.
+            </p>
+          </div>
 
-        {/* Stamina Display specifically for Shaman - Wide Bottom Left (Absolute) */}
+        {/* Stamina Display specifically for Shaman - Wide Bottom Left */}
         {stamina && (
-          <div className="absolute bottom-6 left-6 pointer-events-auto z-20 w-[calc(100%-480px)] max-w-4xl pr-8">
+          <div className="pointer-events-auto w-full md:max-w-4xl md:pr-8 mt-auto md:mb-0 mb-4 flex-shrink-0">
             <div className="flex justify-between items-center mb-2 drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
               <span className="text-stone-300 text-[11px] font-bold uppercase tracking-widest">Stamina</span>
               <span className="text-stone-400 text-[11px] font-bold tabular-nums">{stamina.current} / {stamina.max}</span>
@@ -287,7 +288,7 @@ const ShamanStation = () => {
             </button>
           </div>
         )}
-
+        </div>
         {/* Right Side: Quest Carousel Panel */}
         <div className="relative z-10 w-full md:w-[350px] lg:w-[400px] xl:w-[450px] bg-stone-950/80 backdrop-blur-xl border-l-[3px] border-amber-900/30 p-4 md:p-6 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-amber-900/50 ml-auto">
           <h2 className="text-2xl text-stone-200 tracking-widest uppercase mb-8 text-center border-b-[2px] border-stone-800 pb-4 shrink-0">

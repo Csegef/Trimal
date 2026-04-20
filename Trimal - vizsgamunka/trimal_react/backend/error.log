@@ -267,3 +267,46 @@
 2026-04-20T11:42:35.173Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-04-20T11:43:19.664Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-04-20T11:57:22.723Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T17:36:03.450Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T18:25:11.786Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:01:43.507Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:02:18.152Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:04:50.491Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:12:48.574Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:21:23.345Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:23:18.599Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:25:32.651Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:26:11.917Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T19:28:14.205Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T20:19:16.653Z - Attempting registration for: csege0306@gmail.com, michaeljackson
+2026-04-20T20:19:16.654Z - Checking existing user
+2026-04-20T20:19:16.658Z - Creating user...
+2026-04-20T20:19:16.740Z - EXCEPTION: Error: Unknown column 'description' in 'field list'
+    at PromisePool.execute (E:\Downloads\trimalbuildfinal\Trimal\Trimal - vizsgamunka\trimal_react\backend\node_modules\mysql2\lib\promise\pool.js:54:22)
+    at User.create (E:\Downloads\trimalbuildfinal\Trimal\Trimal - vizsgamunka\trimal_react\backend\models\User.js:17:38)
+    at async E:\Downloads\trimalbuildfinal\Trimal\Trimal - vizsgamunka\trimal_react\backend\routes\auth.js:45:21
+2026-04-20T20:20:01.533Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T20:20:01.669Z - Attempting registration for: csege0306@gmail.com, michaeljackson
+2026-04-20T20:20:01.670Z - Checking existing user
+2026-04-20T20:20:01.712Z - Creating user...
+2026-04-20T20:20:01.847Z - User created with ID: 15
+2026-04-20T20:20:01.848Z - Creating character...
+2026-04-20T20:20:01.954Z - Character created
+2026-04-20T20:20:01.954Z - Generating initial shop items...
+2026-04-20T20:20:02.395Z - Initial shop items generated
+2026-04-20T20:20:02.470Z - User linked to character
+2026-04-20T20:20:02.471Z - Sending email...
+2026-04-20T20:20:04.186Z - MAILER: Verification email sent: 250 2.0.0 OK  1776716404 5b1f17b1804b1-48a4b329542sm88728195e9.3 - gsmtp
+2026-04-20T20:32:47.992Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T20:46:15.278Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T20:46:43.821Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:03:08.786Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:03:22.691Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:25:44.781Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:30:47.522Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:33:38.219Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:34:05.825Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:35:03.115Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:35:59.563Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:36:53.350Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-20T21:46:16.414Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19

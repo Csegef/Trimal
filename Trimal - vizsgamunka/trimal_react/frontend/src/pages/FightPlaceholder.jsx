@@ -66,10 +66,14 @@ const FightPlaceholder = () => {
   }, [logs]);
 
   // Initialization
+  const hasInit = useRef(false);
+
   useEffect(() => {
     let isMounted = true;
 
     const initFight = async () => {
+      if (hasInit.current) return;
+      hasInit.current = true;
       try {
         const token = localStorage.getItem('token');
         if (!token) return navigate('/');
@@ -149,12 +153,16 @@ const FightPlaceholder = () => {
         if (isArena) {
           eObj = inventory.active_quest.enemyObj;
           combatState.current.turn = pObj.stats.agility >= eObj.stats.agility ? 'player' : 'enemy';
+          
+          const prefixMap = { 'Neanderthal': 'n', 'Sapiens': 'hs', 'Floresiensis': 'f' };
+          combatState.current.enemyPrefix = prefixMap[eObj.class] || 'n';
         } else if (isDungeon) {
           const ePrefix = inventory.active_quest.enemyPrefix || 'n';
           const eName = inventory.active_quest.enemyName || 'Ancient Warrior';
           const dungeonId = inventory.active_quest.dungeonId || 1;
           const eLvl = playerInfo?.lvl || 1;
-          const statMult = 1 + ((eLvl - 1) * 0.40); // slightly harder than animals
+          let statMult = 1 + ((eLvl - 1) * 0.40); // slightly harder than animals
+          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Beginner boost for levels 1-3
 
           // Stat bases scale by dungeon tier
           const tierMults = { 1: 1.0, 2: 1.25, 3: 1.55 };
@@ -209,7 +217,8 @@ const FightPlaceholder = () => {
           let eLvl = playerInfo?.lvl || 1;
           if (qDifficulty === 'medium') eLvl += 0.2;
 
-          const statMult = 1 + ((eLvl - 1) * 0.35);
+          let statMult = 1 + ((eLvl - 1) * 0.35);
+          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Beginner boost for levels 1-3
           const eMaxHp = rndEnemyData.base_health * 20 * statMult;
 
           eObj = {
@@ -248,6 +257,9 @@ const FightPlaceholder = () => {
         setEnemy(eObj);
         setGameState('active');
         addLog(`A wild ${eObj.name} appears!`);
+        if (playerInfo?.lvl <= 3) {
+          setTimeout(() => addLog("Beginner Boost: The enemy seems noticeably weaker."), 10);
+        }
 
         // Start combat loop directly
         runCombatLoop(token);
@@ -361,7 +373,7 @@ const FightPlaceholder = () => {
         if (evaded) {
           setEnemyDmgText({ val: `MISS`, color: 'text-stone-400' });
           addLog(`${eObj.name} evaded your attack!`);
-          await delay(600);
+          await delay(400);
           setEnemyDmgText(null);
           setPlayerAnim(null);
         } else {
@@ -387,7 +399,13 @@ const FightPlaceholder = () => {
           rawDmg = rawDmg * eReductionMult;
 
           let dmg = Math.max(1, Math.floor(rawDmg));
-          if (isCrit) dmg *= 2;
+          if (isCrit) {
+            dmg *= 2;
+            state.currentConsecutiveCrits = (state.currentConsecutiveCrits || 0) + 1;
+            if (state.currentConsecutiveCrits > (state.maxConsecutiveCrits || 0)) state.maxConsecutiveCrits = state.currentConsecutiveCrits;
+          } else {
+            state.currentConsecutiveCrits = 0;
+          }
 
           state.enemyHp = Math.max(0, state.enemyHp - dmg);
           setEnemy(prev => ({ ...prev, hp: state.enemyHp }));
@@ -398,7 +416,7 @@ const FightPlaceholder = () => {
           if (rageActive) addLog(`Rage active! (+50% DMG, +40% CRIT)`);
           else if (state.rageTurns === 0 && state.rageTriggered) { } // silent
 
-          await delay(600);
+          await delay(400);
           setEnemyAnim(null);
           setEnemyDmgText(null);
         }
@@ -440,7 +458,7 @@ const FightPlaceholder = () => {
         if (autoEvade) {
           setPlayerDmgText({ val: isReflex ? `REFLEX!` : `DODGED!`, color: 'text-stone-400' });
           addLog(isReflex ? `You used REFLEX to instinctively evade!` : `You agilely dodged the attack!`);
-          await delay(600);
+          await delay(400);
           setPlayerDmgText(null);
           setEnemyAnim(null);
         } else {
@@ -467,7 +485,7 @@ const FightPlaceholder = () => {
           if (enemyAutoEvade) {
             setPlayerDmgText({ val: 'EVADED!', color: 'text-stone-400' });
             addLog(`${eObj.name} vanishes into shadow — attack evaded!`);
-            await delay(600);
+            await delay(400);
             setPlayerDmgText(null);
             setEnemyAnim(null);
             // skip to next turn without hitting the player
@@ -552,7 +570,7 @@ const FightPlaceholder = () => {
           setPlayerAnim('hit');
           setEnemyAnim(null);
 
-          await delay(600);
+          await delay(400);
           setPlayerAnim(null);
           setPlayerDmgText(null);
           } // end enemyAutoEvade else
@@ -575,11 +593,17 @@ const FightPlaceholder = () => {
   const handleQuestEnd = async (token, isWin) => {
     try {
       let endpoint = isWin ? '/api/inventory/quest/claim' : '/api/inventory/quest/fail';
-      let payload = {};
+      const achData = { 
+        maxCrits: combatState.current.maxConsecutiveCrits || 0,
+        flawlessWin: isWin && combatState.current.playerHp === combatState.current.playerObj.maxHp,
+        enemyEncountered: combatState.current.isArena ? null : combatState.current.enemyObj?.name
+      };
+      
+      let payload = { achievementsData: achData };
       
       if (combatState.current.isArena) {
         endpoint = '/api/arena/claim';
-        payload = { isWin };
+        payload.isWin = isWin;
       }
 
       const res = await fetch(endpoint, {
@@ -744,12 +768,16 @@ const FightPlaceholder = () => {
                   className="absolute inset-0 w-full h-full object-contain z-40 pointer-events-none"
                   style={{ animation: 'fadeInOut 0.7s ease-in-out forwards' }} />
               )}
-              {enemy.isDungeonHuman ? (
+              {(enemy.isDungeonHuman || enemy.isArenaHuman) ? (
                 <div style={{ width: '210px', height: '210px', position: 'relative', overflow: 'visible' }}>
                   <PlayerPortrait
-                    className={enemy.enemyPrefix === 'n' ? 'Neanderthal' : enemy.enemyPrefix === 'hs' ? 'Sapiens' : 'Floresiensis'}
-                    hairStyle={5}
-                    beardStyle={5}
+                    className={
+                      enemy.isArenaHuman
+                        ? (enemy.class || 'Neanderthal')
+                        : (enemy.enemyPrefix === 'n' ? 'Neanderthal' : enemy.enemyPrefix === 'hs' ? 'Sapiens' : 'Floresiensis')
+                    }
+                    hairStyle={enemy.isArenaHuman ? (enemy.hairStyle || 0) : 5}
+                    beardStyle={enemy.isArenaHuman ? (enemy.beardStyle || 0) : 5}
                   />
                 </div>
               ) : (

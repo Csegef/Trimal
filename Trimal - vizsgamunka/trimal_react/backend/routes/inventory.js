@@ -103,7 +103,19 @@ async function loadInventory(pool, specieId) {
       last_reset: Math.floor(Date.now() / 1000)
     },
     active_quest: null,
-    active_buffs: []
+    active_buffs: [],
+    achievements: {
+      enemiesEnc: [],
+      weaponsEnc: [],
+      armorsEnc: [],
+      foodsEnc: [],
+      maxCrits: 0,
+      flawlessWins: 0,
+      deaths: 0,
+      spentNormal: 0,
+      foundLegendary: false,
+      hoarderAchieved: false
+    }
   };
 
   const raw = rows[0].inventory_json;
@@ -113,6 +125,11 @@ async function loadInventory(pool, specieId) {
       const parsedStamina = parsed.stamina || {};
 
       inv = { ...inv, ...parsed };
+
+      // Migrate existing players: preserve nested achievements fields
+      if (parsed.achievements) {
+        inv.achievements = { ...inv.achievements, ...parsed.achievements };
+      }
 
       // Deep merge stamina so we don't drop fields. Prioritize the DB specie.stamina column if it exists.
       inv.stamina = {
@@ -130,7 +147,16 @@ async function loadInventory(pool, specieId) {
   // Handle stamina refresh and trim expired buffs
   const nowStr = Math.floor(Date.now() / 1000);
   let changed = false;
-  if (nowStr - inv.stamina.last_reset >= 86400) {
+
+  // Midnight-based daily reset: compare calendar dates (server local time)
+  const lastResetDate = new Date(inv.stamina.last_reset * 1000);
+  const nowDate = new Date();
+  const isSameDay =
+    lastResetDate.getFullYear() === nowDate.getFullYear() &&
+    lastResetDate.getMonth() === nowDate.getMonth() &&
+    lastResetDate.getDate() === nowDate.getDate();
+
+  if (!isSameDay) {
     inv.stamina.current = inv.stamina.max;
     inv.stamina.last_reset = nowStr;
     changed = true;
@@ -796,6 +822,14 @@ router.post('/quest/claim', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
 
+    // Track combat achievements from request body
+    const achData = req.body.achievementsData || {};
+    if (achData.maxCrits > inv.achievements.maxCrits) inv.achievements.maxCrits = achData.maxCrits;
+    if (achData.flawlessWin) inv.achievements.flawlessWins += 1;
+    if (achData.enemyEncountered && !inv.achievements.enemiesEnc.includes(achData.enemyEncountered)) {
+      inv.achievements.enemiesEnc.push(achData.enemyEncountered);
+    }
+
     const q = inv.active_quest;
     const diff = (q.difficulty || 'medium').toLowerCase();
     const now = Math.floor(Date.now() / 1000);
@@ -804,15 +838,20 @@ router.post('/quest/claim', async (req, res) => {
 
     inv.currency.normal = (inv.currency.normal || 0) + q.reward_normal;
     inv.currency.spec = (inv.currency.spec || 0) + q.reward_spec;
-    const questXP = q.reward_xp || 0;
-    inv.active_quest = null;
-
     // Award XP and handle level up
     const [specRows] = await req.pool.execute('SELECT lvl, xp FROM specie WHERE id = ?', [req.user.specieId]);
     let levelMsg = "";
-    let sLvl = 1;
+    let sLvlOriginal = specRows[0] ? specRows[0].lvl : 1;
+    let sLvl = sLvlOriginal;
+    let questXP = q.reward_xp || 0;
+
+    // BEGINNER BOOST: Level 1-3 players receive 2x XP
+    const isBeginner = sLvlOriginal <= 3;
+    if (isBeginner) {
+        questXP = Math.floor(questXP * 2);
+    }
+
     if (specRows[0]) {
-      sLvl = specRows[0].lvl;
       const result = await handleLevelUp(req.pool, req.user.specieId, specRows[0].lvl, specRows[0].xp, questXP);
       if (result.leveledUp) {
           levelMsg = ` Level up! Reached level ${result.lvl}. All stats +${result.increase}!`;
@@ -826,7 +865,11 @@ router.post('/quest/claim', async (req, res) => {
     let numDrops = 0;
     let allowEpicLeg = false;
 
-    if (diff === 'easy') {
+    if (isBeginner) {
+       // BEGINNER BOOST: Always 2 drops, better chance for useful items
+       numDrops = 2;
+       allowEpicLeg = true;
+    } else if (diff === 'easy') {
        if (roll < 0.40) numDrops = 1; // 40% chance
     } else if (diff === 'medium') {
        if (roll < 0.70) numDrops = 1; // 70% chance
@@ -838,6 +881,9 @@ router.post('/quest/claim', async (req, res) => {
        numDrops = 2; // Always 2 drops in dungeons
        allowEpicLeg = true;
     }
+
+    // Set quest to null after calculating XP and modifiers
+    inv.active_quest = null;
 
     if (numDrops > 0 && inv.used < inv.capacity) {
         // Fetch arrays of items
@@ -898,6 +944,7 @@ router.post('/quest/claim', async (req, res) => {
                             inventory_size: invSize,
                         };
                         if (isWeap) {
+                            if (!inv.achievements.weaponsEnc.includes(dbItem.item_id)) inv.achievements.weaponsEnc.push(dbItem.item_id);
                             const bDmg = dbItem.base_damage || 10;
                             newItem.base_damage = bDmg;
                             const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
@@ -910,11 +957,15 @@ router.post('/quest/claim', async (req, res) => {
                               newItem.elemental_buff = elemBuff;
                             }
                         } else {
+                            if (!inv.achievements.foodsEnc.includes(dbItem.item_id)) inv.achievements.foodsEnc.push(dbItem.item_id);
                             newItem.category = dbItem.category || '';
                         }
+                        if (dbItem.rarity && dbItem.rarity.toLowerCase() === 'legendary') inv.achievements.foundLegendary = true;
+                        
                         inv.items.push(newItem);
                     }
                     inv.used += invSize;
+                    if (inv.used >= inv.capacity) inv.achievements.hoarderAchieved = true;
                     drops.push(dbItem.name);
                 }
             }
@@ -1039,6 +1090,9 @@ router.post('/quest/fail', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
 
+    // Track death/failure achievement
+    if (inv.achievements) inv.achievements.deaths += 1;
+
     inv.active_quest = null;
     await saveInventory(req.pool, req.user.specieId, inv);
     res.json({ success: true, message: 'Quest failed' });
@@ -1058,6 +1112,46 @@ router.post('/quest/restore-stamina', async (req, res) => {
 
     await saveInventory(req.pool, req.user.specieId, inv);
     res.json({ success: true, stamina: inv.stamina });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// ─── POST /api/inventory/achievements/claim ─────────────────────────────────────
+router.post('/achievements/claim', async (req, res) => {
+  try {
+    const { achId } = req.body;
+    const inv = await loadInventory(req.pool, req.user.specieId);
+    if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
+
+    if (!inv.achievements.claimedRewards) inv.achievements.claimedRewards = [];
+    if (inv.achievements.claimedRewards.includes(achId)) {
+      return res.status(400).json({ success: false, message: 'Reward already claimed!' });
+    }
+
+    const REWARDS = {
+      1: { norm: 500, spec: 10 },
+      2: { norm: 1000, spec: 20 },
+      3: { norm: 1000, spec: 20 },
+      4: { norm: 800, spec: 15 },
+      5: { norm: 300, spec: 5 },
+      6: { norm: 400, spec: 10 },
+      7: { norm: 1000, spec: 10 },
+      8: { norm: 200, spec: 2 },
+      9: { norm: 600, spec: 15 },
+      10: { norm: 500, spec: 5 }
+    };
+
+    const reward = REWARDS[achId];
+    if (!reward) return res.status(400).json({ success: false, message: 'Invalid achievement ID' });
+
+    if (!inv.currency) inv.currency = { normal: 0, spec: 0 };
+    inv.currency.normal += reward.norm;
+    inv.currency.spec += reward.spec;
+    inv.achievements.claimedRewards.push(achId);
+
+    await saveInventory(req.pool, req.user.specieId, inv);
+    res.json({ success: true, message: `Reward claimed: +${reward.norm} pebbles, +${reward.spec} special currency!`, currency: inv.currency, claimedRewards: inv.achievements.claimedRewards });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

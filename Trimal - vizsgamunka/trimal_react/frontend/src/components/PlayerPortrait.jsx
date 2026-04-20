@@ -6,17 +6,19 @@ import React from 'react';
 export const parseStyleId = (val) => {
     if (val == null) return 0;
     if (typeof val === "number") return val;
-    const m = String(val).match(/(\d+)$/);
-    return m ? parseInt(m[1], 10) : 0;
+    // Extract the first sequence of digits found in the string
+    const m = String(val).match(/\d+/);
+    return m ? parseInt(m[0], 10) : 0;
 };
 
 /**
  * Gets the correct species prefix for cosmetic assets
  */
 export const getSpeciesPrefix = (className) => {
-    if (className === 'Sapiens') return 'hs'; // Homo Sapiens
-    if (className === 'Floresiensis') return 'f';
-    if (className === 'Neanderthal') return 'n'; // Neanderthal (default)
+    const c = (className || '').toLowerCase();
+    if (c === 'sapiens' || c === 'homo sapiens') return 'hs';
+    if (c === 'floresiensis') return 'f';
+    return 'n'; // Neanderthal (default)
 };
 
 const PlayerPortrait = ({ className, hairStyle, beardStyle, classNameOverride = "" }) => {

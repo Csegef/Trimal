@@ -90,7 +90,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
       <div className="relative z-10 flex flex-col h-full">
 
         {/* Navbar */}
-        <header className="relative z-50 flex justify-between items-center p-2 bg-black/60 backdrop-blur-md border-b-2 border-amber-900/50">
+        <header className="relative z-50 flex flex-wrap justify-between items-center p-2 bg-black/60 backdrop-blur-md border-b-2 border-amber-900/50">
           {/* Left: Logo & Currency */}
           <div className="flex items-center gap-4 md:gap-8">
             {/* Logo */}
@@ -116,32 +116,38 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
           </div>
 
           {/* Center: Navigation Links (Stations) */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="flex w-full order-last mt-2 md:mt-0 md:w-auto md:order-none items-center justify-center md:justify-start gap-4 md:gap-6 overflow-x-auto md:overflow-visible scrollbar-hide pb-1 md:pb-0 px-2">
             {location.pathname === '/fight' ? (
               /* Combat lock — disable all nav during fight */
               <span className="text-red-400/70 font-bold uppercase tracking-widest text-xs animate-pulse select-none">
                 In Combat — Navigation Locked
               </span>
             ) : (
-              [
-                { name: 'Inventory', path: '/inventory' },
-                { name: 'Tinkerer', path: '/shop/tinkerer' },
-                { name: 'Herbalist', path: '/shop/herbalist' }
-              ].map((station) => (
-                <Link
-                  key={station.name}
-                  to={station.path}
-                  className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative group"
-                >
-                  {station.name}
-                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
-                </Link>
-              )).concat([
-                /* Cave dropdown */
-                <div key="cave-dropdown" className="relative group" ref={caveRef}>
+              <>
+                {[
+                  { name: 'Inventory', path: '/inventory', mobileOnly: false },
+                  { name: 'Tinkerer', path: '/shop/tinkerer', mobileOnly: false },
+                  { name: 'Herbalist', path: '/shop/herbalist', mobileOnly: false },
+                  { name: 'Quests', path: '/shamans-hut', mobileOnly: true },
+                  { name: 'Dungeons', path: '/dungeons', mobileOnly: true },
+                  { name: 'Ancient Book', path: '/mysterious-cave', mobileOnly: true },
+                  { name: 'Leaderboard', path: '/leaderboard', mobileOnly: true }
+                ].map((station) => (
+                  <Link
+                    key={station.name}
+                    to={station.path}
+                    className={`text-stone-300 whitespace-nowrap hover:text-amber-400 font-bold uppercase tracking-wider text-[11px] md:text-sm transition-colors relative group ${station.mobileOnly ? 'md:hidden' : ''}`}
+                  >
+                    {station.name}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
+                  </Link>
+                ))}
+
+                {/* Cave dropdown (Desktop only) */}
+                <div className="relative hidden md:block" ref={caveRef}>
                   <button
                     onClick={() => setCaveOpen(o => !o)}
-                    className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
+                    className="peer text-stone-300 whitespace-nowrap hover:text-amber-400 font-bold uppercase tracking-wider text-[11px] md:text-sm transition-colors flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
                   >
                     Mysterious cave
                     <svg
@@ -150,8 +156,8 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
                   </button>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all peer-hover:w-full pointer-events-none"></span>
 
                   {caveOpen && (
                     <div className="absolute top-full left-0 mt-2 w-40 bg-stone-950/95 border border-amber-900/40 rounded-xl shadow-2xl backdrop-blur-md z-50 overflow-hidden">
@@ -172,12 +178,13 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                       </Link>
                     </div>
                   )}
-                </div>,
-                /* Shaman dropdown */
-                <div key="shaman-dropdown" className="relative" ref={shamanRef}>
+                </div>
+
+                {/* Shaman dropdown (Desktop only) */}
+                <div className="relative hidden md:block" ref={shamanRef}>
                   <button
                     onClick={() => setShamanOpen(o => !o)}
-                    className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative group flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
+                    className="peer text-stone-300 whitespace-nowrap hover:text-amber-400 font-bold uppercase tracking-wider text-[11px] md:text-sm transition-colors flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
                   >
                     Shaman&#39;s hut
                     <svg
@@ -186,8 +193,8 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
-                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
                   </button>
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all peer-hover:w-full pointer-events-none"></span>
 
                   {shamanOpen && (
                     <div className="absolute top-full left-0 mt-2 w-40 bg-stone-950/95 border border-amber-900/40 rounded-xl shadow-2xl backdrop-blur-md z-50 overflow-hidden">
@@ -209,7 +216,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                     </div>
                   )}
                 </div>
-              ])
+              </>
             )}
           </nav>
 
@@ -218,8 +225,8 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
             onClick={location.pathname !== '/fight' ? handleLogout : undefined}
             disabled={location.pathname === '/fight'}
             className={`px-4 py-1.5 border rounded transition-all text-xs uppercase font-bold tracking-widest ${location.pathname === '/fight'
-                ? 'bg-stone-900/20 text-stone-600 border-stone-800 cursor-not-allowed opacity-40'
-                : 'bg-red-900/20 hover:bg-red-900/60 text-red-200 border-red-900/50 hover:border-red-500'
+              ? 'bg-stone-900/20 text-stone-600 border-stone-800 cursor-not-allowed opacity-40'
+              : 'bg-red-900/20 hover:bg-red-900/60 text-red-200 border-red-900/50 hover:border-red-500'
               }`}
           >
             Logout

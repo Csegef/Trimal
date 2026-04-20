@@ -88,7 +88,7 @@ const CharacterSignIn = () => {
                             type="text"
                             value={loginIdentifier}
                             onChange={(e) => setLoginIdentifier(e.target.value)}
-                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                             placeholder="Enter username or email"
                         />
                     </div>
@@ -101,7 +101,7 @@ const CharacterSignIn = () => {
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
+                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                             placeholder="Enter password"
                         />
                     </div>
