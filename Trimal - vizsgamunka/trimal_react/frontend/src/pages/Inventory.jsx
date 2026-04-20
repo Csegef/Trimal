@@ -140,6 +140,14 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
         ) : (
           <span className="text-stone-700 text-[10px] italic uppercase tracking-widest">{label}</span>
         )}
+        {equippedItem?.elemental_buff && (
+          <img
+            src={`/src/assets/design/status_effects/status_indicators/status_${equippedItem.elemental_buff.type || 'poison'}.png`}
+            alt={equippedItem.elemental_buff.label}
+            title={equippedItem.elemental_buff.label}
+            className="absolute top-1 left-1 w-4 h-4 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] z-10"
+          />
+        )}
       </button>
 
       {/* Hover description tooltip using Portal to avoid clipping */}
@@ -194,8 +202,8 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
                 className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
                 style={{ color: equippedItem.elemental_buff.color, borderColor: equippedItem.elemental_buff.color + '44', background: equippedItem.elemental_buff.color + '11' }}
               >
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: equippedItem.elemental_buff.color }} />
+                <span className="flex items-center gap-1.5">
+                  <img src={`/src/assets/design/status_effects/status_indicators/status_${equippedItem.elemental_buff.type || 'poison'}.png`} className="w-4 h-4 drop-shadow-sm" alt="icon" />
                   {equippedItem.elemental_buff.label} — {equippedItem.elemental_buff.dmgPerTick} dmg × {equippedItem.elemental_buff.ticks} turns
                 </span>
                 <span className="text-[12px] opacity-80 leading-tight">{equippedItem.elemental_buff.description}</span>

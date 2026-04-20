@@ -54,7 +54,7 @@ const MainLayout = ({ children }) => {
 
               {/* Bal oszlop: Játék info */}
               <div className="space-y-2">
-                <h3 className="text-amber-400 font-bold uppercase tracking-wider text-sm md:text-base">
+                <h3 className="text-amber-400 uppercase tracking-wider text-sm md:text-base">
                   Trimal RPG
                 </h3>
                 <p className="text-stone-300 text-xs md:text-sm leading-relaxed">
@@ -67,7 +67,7 @@ const MainLayout = ({ children }) => {
 
               {/* Középső oszlop: Linkek */}
               <div className="space-y-2">
-                <h3 className="text-amber-400 font-bold uppercase tracking-wider text-sm md:text-base">
+                <h3 className="text-amber-400  uppercase tracking-wider text-sm md:text-base">
                   Links
                 </h3>
                 <ul className="space-y-1 text-xs md:text-sm">
@@ -91,7 +91,7 @@ const MainLayout = ({ children }) => {
 
               {/* Jobb oszlop: Kapcsolat & Social */}
               <div className="space-y-2">
-                <h3 className="text-amber-400 font-bold uppercase tracking-wider text-sm md:text-base">
+                <h3 className="text-amber-400 uppercase tracking-wider text-sm md:text-base">
                   Contacts
                 </h3>
                 <ul className="space-y-1 text-xs md:text-sm text-stone-300">
@@ -122,9 +122,9 @@ const MainLayout = ({ children }) => {
             {/* Bottom Bar */}
             <div className="mt-6 pt-4 border-t border-stone-700 text-center">
               <p className="text-stone-400 text-xs">
-                Created by: <span className="text-amber-400 font-semibold">Veres Gabor Zalan and Fekete Csege</span> |
-                Version: <span className="text-amber-400">1.0.0</span> |
-                Build: <span className="text-stone-500">2025.01.21</span>
+                Created by: <span className="text-amber-400 ">Veres Gabor Zalan and Fekete Csege</span> |
+                Version: <span className="text-amber-400">1.27.0</span> |
+                Build: <span className="text-stone-500">2025.04.20</span>
               </p>
             </div>
           </div>

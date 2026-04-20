@@ -166,7 +166,7 @@ const CharacterRegistration = () => {
 
         {/* Bal oldal: Karakter összefoglaló */}
         <div className="w-full lg:w-100 shrink-0 backdrop-blur-sm p-4 md:p-6 rounded-xl md:rounded-2xl border-4 shadow-xl bg-stone-900/50 border-stone-700">
-          <h2 className="text-xl md:text-2xl font-black text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-2 md:pb-3 mb-4">
+          <h2 className="text-xl md:text-2xl text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-2 md:pb-3 mb-4">
             Your Character
           </h2>
 
@@ -184,18 +184,18 @@ const CharacterRegistration = () => {
           {/* Karakter adatok */}
           <div className="space-y-2 text-stone-300">
             <div className="flex justify-between items-center p-2 bg-stone-800/50 rounded">
-              <span className="font-bold text-sm uppercase tracking-wider">Species:</span>
-              <span className="text-amber-400 font-bold">{selectedClass.name}</span>
+              <span className=" text-sm uppercase tracking-wider">Species:</span>
+              <span className="text-amber-400 ">{selectedClass.name}</span>
             </div>
             <div className="flex justify-between items-center p-2 bg-stone-800/50 rounded">
-              <span className="font-bold text-sm uppercase tracking-wider">Hair:</span>
-              <span className="text-amber-400 font-bold">
+              <span className=" text-sm uppercase tracking-wider">Hair:</span>
+              <span className="text-amber-400 ">
                 {hairIndex === 0 ? "Bald" : `Style ${hairIndex}`}
               </span>
             </div>
             <div className="flex justify-between items-center p-2 bg-stone-800/50 rounded">
-              <span className="font-bold text-sm uppercase tracking-wider">Beard:</span>
-              <span className="text-amber-400 font-bold">
+              <span className=" text-sm uppercase tracking-wider">Beard:</span>
+              <span className="text-amber-400">
                 {beardIndex === 0 ? "Shaved" : `Style ${beardIndex}`}
               </span>
             </div>
@@ -204,53 +204,53 @@ const CharacterRegistration = () => {
 
         {/* Jobb oldal: Regisztrációs form */}
         <div className="grow w-full max-w-md backdrop-blur-sm p-4 md:p-6 rounded-xl md:rounded-2xl border-4 shadow-xl bg-stone-900/50 border-stone-700">
-          <h2 className="text-xl md:text-2xl font-black text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-2 md:pb-3 mb-4 md:mb-6">
+          <h2 className="text-xl md:text-2xl text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-2 md:pb-3 mb-4 md:mb-6">
             Create Account
           </h2>
 
           <div className="space-y-4">
             {/* Felhasználónév */}
             <div className="space-y-2">
-              <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
+              <label className="text-stone-300 uppercase tracking-wider text-sm md:text-base">
                 Username
               </label>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.username ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Enter username"
               />
               {errors.username && (
-                <p className="text-red-400 text-sm font-semibold">{errors.username}</p>
+                <p className="text-red-400 text-sm">{errors.username}</p>
               )}
             </div>
 
             {/* Email */}
             <div className="space-y-2">
-              <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
+              <label className="text-stone-300  uppercase tracking-wider text-sm md:text-base">
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.email ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="your@email.com"
               />
               {errors.email && (
-                <p className="text-red-400 text-sm font-semibold">{errors.email}</p>
+                <p className="text-red-400 text-sm">{errors.email}</p>
               )}
             </div>
 
             {/* Jelszó */}
             <div className="space-y-2">
               <div className="flex justify-between items-end">
-                <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
+                <label className="text-stone-300 uppercase tracking-wider text-sm md:text-base">
                   Password
                 </label>
                 {password && (
-                  <span className={`text-xs font-bold uppercase ${strengthInfo.text}`}>
+                  <span className={`text-xs  uppercase ${strengthInfo.text}`}>
                     {strengthInfo.label}
                   </span>
                 )}
@@ -267,28 +267,28 @@ const CharacterRegistration = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.password ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Min. 8 characters"
               />
               {errors.password && (
-                <p className="text-red-400 text-sm font-semibold">{errors.password}</p>
+                <p className="text-red-400 text-sm ">{errors.password}</p>
               )}
             </div>
 
             {/* Jelszó megerősítés */}
             <div className="space-y-2">
-              <label className="text-stone-300 font-bold uppercase tracking-wider text-sm md:text-base">
+              <label className="text-stone-300  uppercase tracking-wider text-sm md:text-base">
                 Confirm Password
               </label>
               <input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                className={`w-full px-3 md:px-4 py-2 md:py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${errors.confirmPassword ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                 placeholder="Re-enter password"
               />
               {errors.confirmPassword && (
-                <p className="text-red-400 text-sm font-semibold">{errors.confirmPassword}</p>
+                <p className="text-red-400 text-sm ">{errors.confirmPassword}</p>
               )}
             </div>
 

@@ -116,8 +116,8 @@ const FightPlaceholder = () => {
           Object.values(inventory.equipped).forEach(item => {
             if (item) {
               if (item.armor_point) armor += item.armor_point;
-              if (item.type === 'weapon' && (item.base_damage || item.weapon_damage)) {
-                weaponDamage = item.base_damage || item.weapon_damage;
+              if (item.type === 'weapon' && (item.weapon_damage || item.base_damage)) {
+                weaponDamage = item.weapon_damage || item.base_damage;
               }
             }
           });
@@ -139,12 +139,17 @@ const FightPlaceholder = () => {
 
         // ─── Dungeon: build prehistoric human enemy inline ───────────────────
         const isDungeon = !!inventory.active_quest.isDungeon;
+        const isArena = !!inventory.active_quest.isArena;
         combatState.current.isDungeon = isDungeon;
+        combatState.current.isArena = isArena;
         combatState.current.enemyPrefix = inventory.active_quest.enemyPrefix || null;
 
         let eObj;
 
-        if (isDungeon) {
+        if (isArena) {
+          eObj = inventory.active_quest.enemyObj;
+          combatState.current.turn = pObj.stats.agility >= eObj.stats.agility ? 'player' : 'enemy';
+        } else if (isDungeon) {
           const ePrefix = inventory.active_quest.enemyPrefix || 'n';
           const eName = inventory.active_quest.enemyName || 'Ancient Warrior';
           const dungeonId = inventory.active_quest.dungeonId || 1;
@@ -569,17 +574,29 @@ const FightPlaceholder = () => {
 
   const handleQuestEnd = async (token, isWin) => {
     try {
-      const endpoint = isWin ? '/api/inventory/quest/claim' : '/api/inventory/quest/fail';
+      let endpoint = isWin ? '/api/inventory/quest/claim' : '/api/inventory/quest/fail';
+      let payload = {};
+      
+      if (combatState.current.isArena) {
+        endpoint = '/api/arena/claim';
+        payload = { isWin };
+      }
+
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: Object.keys(payload).length > 0 ? JSON.stringify(payload) : undefined
       });
       const data = await res.json();
-      if (isWin && data.success && data.rewards) {
-        setRewards(data.rewards);
+      if (isWin && data.success) {
+        if (data.rewards) setRewards(data.rewards);
+        if (data.stolenItem) setRewards(prev => ({ ...prev, stolenItem: data.stolenItem }));
       }
     } catch (e) {
-      console.error("Failed handling quest end:", e);
+      console.error("Failed handling quest/arena end:", e);
     }
   };
 
@@ -784,22 +801,40 @@ const FightPlaceholder = () => {
             </p>
             {gameState === 'victory' && rewards && (
               <div className="flex flex-col mb-8 gap-4 w-full">
-                <div className="flex gap-4 bg-black/40 p-4 rounded-xl border border-stone-800 justify-center">
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] text-stone-500 uppercase tracking-widest">Normal</span>
-                    <span className="text-amber-400 font-black">+{rewards.normal}</span>
-                  </div>
-                  {rewards.spec > 0 && (
+                {rewards.normal !== undefined && (
+                  <div className="flex gap-4 bg-black/40 p-4 rounded-xl border border-stone-800 justify-center">
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] text-stone-500 uppercase tracking-widest">Special</span>
-                      <span className="text-purple-400 font-black">+{rewards.spec}</span>
+                      <span className="text-[10px] text-stone-500 uppercase tracking-widest">Normal</span>
+                      <span className="text-amber-400 font-black">+{rewards.normal}</span>
                     </div>
-                  )}
-                  <div className="flex flex-col items-center">
-                    <span className="text-[10px] text-stone-500 uppercase tracking-widest">XP</span>
-                    <span className="text-blue-400 font-black">+{rewards.xp}</span>
+                    {rewards.spec > 0 && (
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] text-stone-500 uppercase tracking-widest">Special</span>
+                        <span className="text-purple-400 font-black">+{rewards.spec}</span>
+                      </div>
+                    )}
+                    <div className="flex flex-col items-center">
+                      <span className="text-[10px] text-stone-500 uppercase tracking-widest">XP</span>
+                      <span className="text-blue-400 font-black">+{rewards.xp}</span>
+                    </div>
                   </div>
-                </div>
+                )}
+                {rewards.stolenItem && (
+                  <div className="bg-amber-900/30 border border-amber-500/50 p-4 rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                    <span className="text-[11px] text-amber-500 uppercase font-black tracking-[0.2em] block mb-2">Item Stolen!</span>
+                    <div className="flex items-center gap-3 justify-center">
+                      <div className="w-12 h-12 bg-black/60 rounded border border-amber-500/40 flex items-center justify-center p-1">
+                        {rewards.stolenItem.iconPath ? (
+                          <img src={`/src/assets/design/items/${rewards.stolenItem.type === 'weapon' ? 'weapon/' + (rewards.stolenItem.rarity || 'common') + '/' : rewards.stolenItem.type === 'armor' ? 'armor/' + (rewards.stolenItem.rarity || 'common') + '/' : rewards.stolenItem.type === 'misc' ? 'misc/' : 'food/heal/'}${rewards.stolenItem.iconPath}`} alt="stolen" className="object-contain w-full h-full" />
+                        ) : '🎁'}
+                      </div>
+                      <div className="text-left">
+                        <div className="font-bold text-amber-100">{rewards.stolenItem.name}</div>
+                        <div className="text-[10px] uppercase tracking-wider opacity-60">Rarity: {rewards.stolenItem.rarity || 'Common'}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {rewards.drops && rewards.drops.length > 0 && (
                   <div className="flex flex-col items-center bg-black/40 p-3 rounded-xl border border-stone-800">
                     <span className="text-[9px] text-stone-500 uppercase tracking-widest mb-1">Items Found</span>

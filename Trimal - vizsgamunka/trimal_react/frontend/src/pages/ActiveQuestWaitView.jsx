@@ -32,8 +32,12 @@ const ActiveQuestWaitView = () => {
         if (invRes.success && invRes.data) {
           setCurrency(invRes.data.currency);
           if (invRes.data.active_quest) {
-            setActiveQuest(invRes.data.active_quest);
             const quest = invRes.data.active_quest;
+            if (quest.isArena) {
+              navigate('/fight');
+              return;
+            }
+            setActiveQuest(quest);
             setMaxTime(quest.duration || 1);
             const now = Math.floor(Date.now() / 1000);
             setTimeLeft(Math.max(0, quest.start_time + quest.duration - now));

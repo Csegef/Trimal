@@ -69,7 +69,7 @@ const CharacterSignIn = () => {
     return (
         <MainLayout>
             <div className="w-full max-w-md backdrop-blur-sm p-6 md:p-8 rounded-2xl border-4 shadow-xl bg-stone-900/50 border-stone-700">
-                <h1 className="text-2xl md:text-3xl font-black text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-4 mb-6 tracking-wide">
+                <h1 className="text-3xl md:text-4xl text-amber-400 uppercase text-center border-b-2 border-stone-600 pb-4 mb-6 tracking-wide">
                     Login
                 </h1>
 
@@ -81,27 +81,27 @@ const CharacterSignIn = () => {
 
                 <form onSubmit={handleLogin} className="space-y-5">
                     <div className="space-y-2">
-                        <label className="text-stone-300 font-bold uppercase tracking-wider text-sm">
+                        <label className="text-stone-300  uppercase tracking-wider text-sm">
                             Username or Email
                         </label>
                         <input
                             type="text"
                             value={loginIdentifier}
                             onChange={(e) => setLoginIdentifier(e.target.value)}
-                            className="w-full px-4 py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                             placeholder="Enter username or email"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-stone-300 font-bold uppercase tracking-wider text-sm">
+                        <label className="text-stone-300  uppercase tracking-wider text-sm">
                             Password
                         </label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 bg-stone-900 border-2 border-stone-700 rounded text-amber-100 focus:border-amber-600 focus:outline-none transition-colors"
+                            className={`w-full px-4 py-3 bg-stone-900 border-2 rounded text-amber-100 focus:outline-none transition-all duration-300 ${error ? 'border-red-500 scale-[1.02] focus:border-red-500 bg-red-950/30' : 'border-stone-700 focus:border-amber-600'}`}
                             placeholder="Enter password"
                         />
                     </div>
@@ -117,13 +117,12 @@ const CharacterSignIn = () => {
                 <div className="mt-6 text-center text-stone-400 text-sm">
                     <p>
                         Don't have a character yet?{" "}
-                        <Link to="/class-selection" className="text-amber-400 hover:text-amber-300 font-bold underline decoration-2 underline-offset-2">
+                        <Link to="/class-selection" className="text-amber-400 hover:text-amber-300  underline decoration-2 underline-offset-2">
                             Create one here!
                         </Link>
                     </p>
                 </div>
 
-                {/* TODO: BACKEND - Remove this Dev Helper Section when backend is ready */}
                 <div className="mt-8 pt-4 border-t border-stone-700 text-center">
                     <p className="text-stone-500 text-xs italic mb-2">Development Tools</p>
                     <button

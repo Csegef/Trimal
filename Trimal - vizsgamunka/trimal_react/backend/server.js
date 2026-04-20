@@ -38,7 +38,7 @@ app.use('/api/shop', require('./routes/shop'));
 app.use('/api/quest', require('./routes/quest'));
 app.use('/api/effects', require('./routes/effects'));
 app.use('/api/entities', require('./routes/entities'));
-
+app.use('/api/arena', require('./routes/arena'));
 
 app.get('/', (req, res) => {
   res.send('Trimal RPG Backend Running with MySQL');

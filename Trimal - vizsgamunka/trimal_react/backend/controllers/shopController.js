@@ -71,16 +71,19 @@ const generateShopItemsForDay = async (pool, specieId) => {
 
   // Rarity-weighted random pick: common ~60%, rare ~25%, epic ~12%, legendary ~3%
   const getWeightedItem = (arr) => {
-    if (!arr.length) return undefined;
     const roll = Math.random();
     let targetRarity;
-    if (roll < 0.03)       targetRarity = 'legendary';
-    else if (roll < 0.15)  targetRarity = 'epic';
-    else if (roll < 0.40)  targetRarity = 'rare';
+    if (roll < 0.01)       targetRarity = 'legendary';
+    else if (roll < 0.04)  targetRarity = 'epic';
+    else if (roll < 0.35)  targetRarity = 'rare';
     else                   targetRarity = 'common';
 
-    const filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
-    const pool_ = filtered.length > 0 ? filtered : arr; // fallback to all if none match
+    let filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
+    if (filtered.length === 0 && targetRarity === 'common') {
+       filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
+       if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
+    }
+    const pool_ = filtered.length > 0 ? filtered : arr;
     return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
   };
 
@@ -340,7 +343,7 @@ const buyShopItem = async (req, res) => {
 
     res.json({ 
       success: true, 
-      message: 'Sikeres vásárlás!',
+      message: 'Successful purchase!',
       currency: inventory.currency
     });
 
@@ -350,8 +353,78 @@ const buyShopItem = async (req, res) => {
   }
 };
 
+const rerollShop = async (req, res) => {
+  const pool = req.pool;
+  const { shopType } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    const [species] = await pool.execute(`SELECT id, inventory_json FROM specie WHERE user_id = ? LIMIT 1`, [userId]);
+    if (species.length === 0) return res.status(404).json({ success: false, message: 'Character not found' });
+    const specie = species[0];
+    const inventory = JSON.parse(specie.inventory_json || '{}');
+    const rerollCost = 10;
+    if (!inventory.currency || inventory.currency.spec < rerollCost) {
+      return res.status(400).json({ success: false, message: 'Not enough special currency to reroll (Cost: 10)' });
+    }
+    
+    inventory.currency.spec -= rerollCost;
+    await pool.execute(`UPDATE specie SET inventory_json = ? WHERE id = ?`, [JSON.stringify(inventory), specie.id]);
+    
+    await pool.execute(`DELETE FROM shop WHERE specie_id = ? AND shop_type = ? AND created_date = CURDATE()`, [specie.id, shopType]);
+    
+    const [weapons] = await pool.execute(`SELECT item_id, rarity FROM item_weapon`);
+    const [armors] = await pool.execute(`SELECT item_id, rarity FROM item_armor`);
+    const [foods] = await pool.execute(`SELECT item_id, rarity FROM item_food`);
+    const getWeightedItem = (arr) => {
+      if (!arr.length) return undefined;
+      const roll = Math.random();
+      let targetRarity;
+      if (roll < 0.01)       targetRarity = 'legendary';
+      else if (roll < 0.04)  targetRarity = 'epic';
+      else if (roll < 0.35)  targetRarity = 'rare';
+      else                   targetRarity = 'common';
+      
+      let filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
+      if (filtered.length === 0 && targetRarity === 'common') {
+         filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
+         if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
+      }
+      const pool_ = filtered.length > 0 ? filtered : arr;
+      return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
+    };
+    
+    const insertShopItem = async (type, itemId) => {
+      if (!itemId) return;
+      await pool.execute(
+        `INSERT INTO shop (specie_id, shop_type, item_type, item_id, created_date, purchased) VALUES (?, ?, ?, ?, CURDATE(), 0)`,
+        [specie.id, shopType, type, itemId]
+      );
+    };
+    
+    if (shopType === 'tinkerer') {
+      await insertShopItem('weapon', getWeightedItem(weapons));
+      await insertShopItem('weapon', getWeightedItem(weapons));
+      await insertShopItem('weapon', getWeightedItem(weapons));
+      await insertShopItem('armor', getWeightedItem(armors));
+      await insertShopItem('armor', getWeightedItem(armors));
+      await insertShopItem('armor', getWeightedItem(armors));
+    } else if (shopType === 'herbalist') {
+      for(let i=0; i<6; i++) {
+        await insertShopItem('food', getWeightedItem(foods));
+      }
+    }
+    
+    res.json({ success: true, message: 'Shop rerolled successfully!', currency: inventory.currency });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'Error rerolling shop' });
+  }
+};
+
 module.exports = {
   generateShopItemsForDay,
   getShopItems,
-  buyShopItem
+  buyShopItem,
+  rerollShop
 };

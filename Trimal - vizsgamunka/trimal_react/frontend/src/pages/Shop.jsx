@@ -56,6 +56,22 @@ const buyItem = async (shopId) => {
   return data;
 };
 
+const rerollShopItems = async (shopType) => {
+  const token = localStorage.getItem("token");
+  if (!token) throw new Error("Not authenticated");
+  const res = await fetch(`/api/shop/reroll`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ shopType })
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || "Reroll failed");
+  return data;
+};
+
 function Toast({ toast }) {
   if (!toast) return null;
   const isError = toast.type === "error";
@@ -165,22 +181,22 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
             ) : null}
           </div>
         )}
-        {/* Elemental buff dot */}
+        {/* Elemental indicator (Top-Left) */}
         {!isPurchased && elemBuff && (
-          <span
-            className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full border border-stone-800"
-            style={{ background: elemBuff.color, boxShadow: `0 0 6px ${elemBuff.color}` }}
+          <img
+            src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`}
+            alt={elemBuff.label}
             title={elemBuff.label}
+            className="absolute top-1.5 left-1.5 w-5 h-5 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] z-10"
           />
         )}
-        {/* Comparison arrow */}
+        {/* Comparison arrow (Top-Right) */}
         {!isPurchased && comparison && !comparison.noEquipped && (
-          <span
-            className={`absolute top-1.5 left-1.5 text-[20px] font-black leading-none ${comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-500'
-              }`}
-          >
-            {comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}
-          </span>
+          <img
+            src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`}
+            alt={comparison.diff > 0 ? 'Up' : comparison.diff < 0 ? 'Down' : 'Neutral'}
+            className="absolute top-1.5 right-1.5 w-5 h-5 drop-shadow-md z-10"
+          />
         )}
         {isPurchased ? (
           <div className="absolute inset-0 flex items-center justify-center bg-stone-950/60 font-bold text-red-500 tracking-widest">
@@ -233,8 +249,8 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
                 className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
                 style={{ color: elemBuff.color, borderColor: elemBuff.color + '44', background: elemBuff.color + '11' }}
               >
-                <span className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ background: elemBuff.color }} />
+                <span className="flex items-center gap-1.5">
+                  <img src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`} className="w-4 h-4 drop-shadow-sm" alt="icon" />
                   {elemBuff.label} — {elemBuff.dmgPerTick} dmg × {elemBuff.ticks} turns
                 </span>
                 <span className="text-[12px] opacity-80 leading-tight">{elemBuff.description}</span>
@@ -264,7 +280,7 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
                   <>
                     <div className={`text-[13px] flex items-center gap-1 ${comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
                       }`}>
-                      <span>{comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}</span>
+                      <img src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`} className="w-3.5 h-3.5" alt="indicator" />
                       <span>
                         {comparison.stat === 'damage' ? 'Damage' : 'Armor'}:
                         {' '}{comparison.current} → {comparison.next}
@@ -415,6 +431,20 @@ const Shop = () => {
     }
   }, [busy, actionMenu, showToast, load]);
 
+  const handleReroll = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await rerollShopItems(shopType);
+      showToast(res.message);
+      await load();
+    } catch (err) {
+      showToast(err.message || "Failed to reroll", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <GameLayout
       currency={inventory?.currency}
@@ -455,8 +485,18 @@ const Shop = () => {
               <h2 className="text-xl md:text-2xl text-stone-200 tracking-widest uppercase">
                 Available Wares
               </h2>
-              <div className="hidden md:flex gap-2 text-stone-500 uppercase tracking-widest text-xs">
-                Next Refill: <span className="text-amber-600">Daily, at Midnight</span>
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={handleReroll}
+                  disabled={busy}
+                  className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 active:bg-stone-600 transition-colors border border-stone-600 rounded text-purple-400 uppercase tracking-widest text-xs font-bold shadow-lg"
+                >
+                  <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-4 h-4" />
+                  Reroll Wares (10)
+                </button>
+                <div className="hidden md:flex gap-2 text-stone-500 uppercase tracking-widest text-xs">
+                  Next Refill: <span className="text-amber-600">Daily, at Midnight</span>
+                </div>
               </div>
             </div>
 
@@ -466,25 +506,27 @@ const Shop = () => {
                 <span className="text-stone-400 animate-pulse text-sm">Browsing stock...</span>
               </div>
             ) : (
-              <div className="flex overflow-x-auto gap-6 pb-4 pt-2 px-2 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900/50">
-                {shopItems.length > 0 ? (
-                  shopItems.map((shopItemInfo, idx) => (
-                    <div key={shopItemInfo.shop_id || idx} className="min-w-[160px] w-[160px] shrink-0">
-                      <ShopItemTile
-                        item={shopItemInfo}
-                        playerInfo={playerInfo}
-                        inventory={inventory}
-                        onClick={(e) => openBuyMenu(shopItemInfo, e)}
-                      />
+              <div className="w-full overflow-x-auto pb-4 pt-2 px-2 scrollbar-thin scrollbar-thumb-stone-700 scrollbar-track-stone-900/50">
+                <div className="flex gap-6 w-max mx-auto">
+                  {shopItems.length > 0 ? (
+                    shopItems.map((shopItemInfo, idx) => (
+                      <div key={shopItemInfo.shop_id || idx} className="min-w-[160px] w-[160px] shrink-0">
+                        <ShopItemTile
+                          item={shopItemInfo}
+                          playerInfo={playerInfo}
+                          inventory={inventory}
+                          onClick={(e) => openBuyMenu(shopItemInfo, e)}
+                        />
+                      </div>
+                    ))
+                  ) : (
+                    <div className="w-full min-w-[50vw] py-16 text-center bg-stone-950/30 rounded-2xl border-2 border-dashed border-stone-800">
+                      <p className="text-stone-500 font-bold italic tracking-wider uppercase text-sm">
+                        The merchant has nothing to offer you today.
+                      </p>
                     </div>
-                  ))
-                ) : (
-                  <div className="w-full py-16 text-center bg-stone-950/30 rounded-2xl border-2 border-dashed border-stone-800">
-                    <p className="text-stone-500 font-bold italic tracking-wider uppercase text-sm">
-                      The merchant has nothing to offer you today.
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>

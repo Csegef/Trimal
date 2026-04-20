@@ -11,7 +11,7 @@ const DUNGEON_DESCRIPTIONS = [
 const DUNGEONS = [
   {
     id: 1,
-    name: "Neanderthal Valley",
+    name: "Squab other me Valley",
     bg: "/src/assets/design/backgrounds/dungeon/dungeon_level1.png",
     minLevel: 5,
     enemyName: "Squab Warrior",

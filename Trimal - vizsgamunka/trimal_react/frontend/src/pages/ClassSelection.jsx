@@ -63,7 +63,7 @@ const ClassSelection = () => {
     <MainLayout>
       <div className="w-full max-w-4xl px-4">
         {/* Fejléc - kisebb margin */}
-        <h1 className="text-3xl md:text-4xl font-black text-center mb-4 md:mb-6 drop-shadow-lg text-amber-500 tracking-wider">
+        <h1 className="text-3xl md:text-4xl  text-center mb-4 md:mb-6 drop-shadow-lg text-amber-500 tracking-wider">
           CHOOSE YOUR SPECIE!
         </h1>
 
@@ -75,20 +75,7 @@ const ClassSelection = () => {
               onClick={handlePrev}
               className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 shrink-0"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={3}
-                stroke="currentColor"
-                className="w-6 h-6 md:w-8 md:h-8 text-amber-200"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.75 19.5L8.25 12l7.5-7.5"
-                />
-              </svg>
+              <span className="text-amber-200 text-3xl md:text-4xl leading-none">&lt;</span>
             </button>
 
             {/* Carousel - kisebb */}
@@ -120,27 +107,14 @@ const ClassSelection = () => {
               onClick={handleNext}
               className="p-2 md:p-3 bg-stone-800/80 hover:bg-amber-700/80 rounded-full transition-colors border-2 border-amber-900/50 cursor-pointer z-20 shrink-0"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={3}
-                stroke="currentColor"
-                className="w-6 h-6 md:w-8 md:h-8 text-amber-200"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                />
-              </svg>
+              <span className="text-amber-200 text-3xl md:text-4xl leading-none">&gt;</span>
             </button>
           </div>
 
           {/* Leírás - kisebb padding */}
           <div className="w-full mb-4 md:mb-6">
             <div className="border-3 md:border-4 border-stone-700 rounded-xl md:rounded-2xl p-3 md:p-4 shadow-xl backdrop-blur-sm bg-stone-900/60">
-              <h2 className="text-2xl md:text-3xl font-bold text-amber-400 mb-1 md:mb-2 text-center uppercase">
+              <h2 className="text-2xl md:text-3xl text-amber-400 mb-1 md:mb-2 text-center uppercase">
                 {classes[currentIndex].name}
               </h2>
               <p className="text-stone-300 text-xs md:text-sm text-center leading-relaxed">
@@ -149,12 +123,12 @@ const ClassSelection = () => {
               {/* Special ability */}
               {classes[currentIndex].specialAbility && (
                 <div className="mt-3 pt-3 border-t border-stone-700/60">
-                  <div className="text-[10px] uppercase tracking-widest text-amber-600/80 font-semibold mb-1.5 text-center">
+                  <div className="text-[10px] uppercase tracking-widest text-amber-600/80  mb-1.5 text-center">
                     Special Ability
                   </div>
                   <div className="flex flex-col items-center gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-amber-400 font-bold text-sm">
+                      <span className="text-amber-400 text-sm">
                         {classes[currentIndex].specialAbility.name}
                       </span>
                     </div>

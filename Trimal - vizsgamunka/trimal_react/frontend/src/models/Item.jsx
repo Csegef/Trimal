@@ -264,23 +264,22 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                         x{item.quantity}
                     </span>
                 )}
-                {/* Elemental buff indicator dot */}
+                {/* Elemental buff indicator (Top-Left) */}
                 {elemBuff && (
-                    <span
-                        className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full border border-stone-800"
-                        style={{ background: elemBuff.color, boxShadow: `0 0 4px ${elemBuff.color}` }}
+                    <img
+                        src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`}
+                        alt={elemBuff.label}
                         title={elemBuff.label}
+                        className="absolute top-1 left-1 w-4 h-4 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] z-10"
                     />
                 )}
-                {/* Comparison arrow indicator */}
+                {/* Comparison arrow indicator (Top-Right) */}
                 {comparison && (
-                    <span
-                        className={`absolute top-1 left-1 text-[10px] font-black leading-none ${
-                            comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-500'
-                        }`}
-                    >
-                        {comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}
-                    </span>
+                    <img
+                        src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`}
+                        alt="indicator"
+                        className="absolute top-1 right-1 w-3.5 h-3.5 drop-shadow-md z-10"
+                    />
                 )}
             </button>
 
@@ -336,8 +335,8 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                                 className="text-[13px] mb-1 px-1.5 py-0.5 rounded-md border flex flex-col gap-0.5"
                                 style={{ color: elemBuff.color, borderColor: elemBuff.color + '44', background: elemBuff.color + '11' }}
                             >
-                                <span className="flex items-center gap-1">
-                                    <span className="w-2 h-2 rounded-full inline-block" style={{ background: elemBuff.color }} />
+                                <span className="flex items-center gap-1.5">
+                                    <img src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`} className="w-4 h-4 drop-shadow-sm" alt="icon" />
                                     {elemBuff.label} — {elemBuff.dmgPerTick} dmg × {elemBuff.ticks} turns
                                 </span>
                                 <span className="text-[12px] opacity-80 leading-tight">{elemBuff.description}</span>
@@ -366,7 +365,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                                 <div className={`text-[14px] flex items-center gap-1 ${
                                     comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
                                 }`}>
-                                    <span>{comparison.diff > 0 ? '▲' : comparison.diff < 0 ? '▼' : '●'}</span>
+                                    <img src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`} className="w-3.5 h-3.5" alt="indicator" />
                                     <span>
                                         {comparison.stat === 'damage' ? 'Damage' : 'Armor'}:
                                         {' '}{comparison.current} → {comparison.next}

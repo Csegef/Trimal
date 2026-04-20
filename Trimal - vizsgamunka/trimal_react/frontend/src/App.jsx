@@ -16,6 +16,7 @@ import ShamanStation from './pages/ShamanStation';
 import ActiveQuestWaitView from './pages/ActiveQuestWaitView';
 import FightPlaceholder from './pages/FightPlaceholder';
 import DungeonStation from './pages/DungeonStation';
+import Leaderboard from './pages/Leaderboard';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
         <Route path="/active-quest" element={<ActiveQuestWaitView />} />
         <Route path="/fight" element={<FightPlaceholder />} />
         <Route path="/dungeons" element={<DungeonStation />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/Terms" element={<TermsAndConditions />} />
         <Route path="/Privacy" element={<PrivacyPolicy />} />
         <Route path="/About" element={<About />} />

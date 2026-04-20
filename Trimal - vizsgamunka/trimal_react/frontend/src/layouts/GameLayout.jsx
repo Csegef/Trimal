@@ -7,12 +7,17 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
   const location = useLocation();
   const [activeQuest, setActiveQuest] = React.useState(null);
   const [shamanOpen, setShamanOpen] = React.useState(false);
+  const [caveOpen, setCaveOpen] = React.useState(false);
   const shamanRef = useRef(null);
+  const caveRef = useRef(null);
 
   React.useEffect(() => {
     const handleClick = (e) => {
       if (shamanRef.current && !shamanRef.current.contains(e.target)) {
         setShamanOpen(false);
+      }
+      if (caveRef.current && !caveRef.current.contains(e.target)) {
+        setCaveOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClick);
@@ -121,8 +126,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
               [
                 { name: 'Inventory', path: '/inventory' },
                 { name: 'Tinkerer', path: '/shop/tinkerer' },
-                { name: 'Herbalist', path: '/shop/herbalist' },
-                { name: 'Mysterious cave', path: '/mysterious-cave' }
+                { name: 'Herbalist', path: '/shop/herbalist' }
               ].map((station) => (
                 <Link
                   key={station.name}
@@ -132,7 +136,43 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                   {station.name}
                   <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
                 </Link>
-              )).concat(
+              )).concat([
+                /* Cave dropdown */
+                <div key="cave-dropdown" className="relative group" ref={caveRef}>
+                  <button
+                    onClick={() => setCaveOpen(o => !o)}
+                    className="text-stone-300 hover:text-amber-400 font-bold uppercase tracking-wider text-sm transition-colors relative flex items-center gap-1 cursor-pointer bg-transparent border-0 p-0"
+                  >
+                    Mysterious cave
+                    <svg
+                      className={`w-3 h-3 transition-transform duration-200 ${caveOpen ? 'rotate-180' : ''}`}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-amber-500 transition-all group-hover:w-full"></span>
+                  </button>
+
+                  {caveOpen && (
+                    <div className="absolute top-full left-0 mt-2 w-40 bg-stone-950/95 border border-amber-900/40 rounded-xl shadow-2xl backdrop-blur-md z-50 overflow-hidden">
+                      <Link
+                        to="/mysterious-cave"
+                        onClick={() => setCaveOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-stone-300 hover:text-amber-400 hover:bg-amber-900/20 text-xs font-bold uppercase tracking-widest transition-all"
+                      >
+                        <span className="text-amber-600"></span> Ancient book
+                      </Link>
+                      <div className="border-t border-stone-800/60" />
+                      <Link
+                        to="/leaderboard"
+                        onClick={() => setCaveOpen(false)}
+                        className="flex items-center gap-2 px-4 py-3 text-stone-300 hover:text-amber-400 hover:bg-amber-900/20 text-xs font-bold uppercase tracking-widest transition-all"
+                      >
+                        <span className="text-red-500"></span> Leaderboard
+                      </Link>
+                    </div>
+                  )}
+                </div>,
                 /* Shaman dropdown */
                 <div key="shaman-dropdown" className="relative" ref={shamanRef}>
                   <button
@@ -169,7 +209,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                     </div>
                   )}
                 </div>
-              )
+              ])
             )}
           </nav>
 
