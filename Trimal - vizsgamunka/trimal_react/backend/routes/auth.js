@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
     const existingUser = await userModel.findByEmail(email);
     if (existingUser) {
       logError('User exists');
-      return res.status(400).json({ success: false, message: 'Email már használatban van' });
+      return res.status(400).json({ success: false, message: 'Email already in use' });
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
@@ -72,6 +72,26 @@ router.post('/register', async (req, res) => {
         armor_chest: null,
         armor_legs: null,
         armor_feet: null
+      },
+      stamina: {
+        current: 100,
+        max: 100,
+        last_reset: Math.floor(Date.now() / 1000)
+      },
+      active_quest: null,
+      active_buffs: [],
+      achievements: {
+        enemiesEnc: [],
+        weaponsEnc: [],
+        armorsEnc: [],
+        foodsEnc: [],
+        maxCrits: 0,
+        flawlessWins: 0,
+        deaths: 0,
+        spentNormal: 0,
+        foundLegendary: false,
+        hoarderAchieved: false,
+        claimedRewards: []
       }
     };
 
@@ -110,7 +130,7 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error(err);
     logError('EXCEPTION: ' + err.stack); // Log full stack trace
-    res.status(500).json({ success: false, message: 'Hiba a regisztráció során: ' + err.message });
+    res.status(500).json({ success: false, message: 'Error during registration: ' + err.message });
   }
 });
 
@@ -146,7 +166,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'Hiányzó adatok' });
+    return res.status(400).json({ success: false, message: 'Missing data' });
   }
 
   const userModel = new User(pool);
@@ -155,7 +175,7 @@ router.post('/login', async (req, res) => {
   try {
     const user = await userModel.findByEmail(email);
     if (!user) {
-      return res.status(400).json({ success: false, message: 'Felhasználó nem található' });
+      return res.status(400).json({ success: false, message: 'User not found' });
     }
 
     if (user.is_verified === 0) {
@@ -164,7 +184,7 @@ router.post('/login', async (req, res) => {
 
     const valid = await userModel.checkPassword(user, password);
     if (!valid) {
-      return res.status(400).json({ success: false, message: 'Hibás jelszó' });
+      return res.status(400).json({ success: false, message: 'Invalid password' });
     }
 
     const characters = await charModel.findByUserId(user.id);
@@ -180,7 +200,7 @@ router.post('/login', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a belépés során' });
+    res.status(500).json({ success: false, message: 'Error during login' });
   }
 });
 
@@ -203,17 +223,84 @@ router.post('/logout', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Sikeres kijelentkezés'
+      message: 'Successfully logged out'
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({
       success: false,
-      message: 'Hiba a kijelentkezés során'
+      message: 'Error during logout'
     });
   }
 });
 
+// POST /api/auth/forgot-password
+router.post('/forgot-password', async (req, res) => {
+  const pool = req.pool;
+  const { email } = req.body;
+  const crypto = require('crypto');
 
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'Email required' });
+  }
+
+  try {
+    const userModel = new User(pool);
+    const user = await userModel.findByEmail(email);
+
+    if (!user) {
+      // Return success even if user not found for security reasons
+      return res.json({ success: true, message: 'If the email exists, a reset link was sent.' });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    // Token expires in 1 hour
+    const expires = new Date(Date.now() + 3600000);
+
+    await userModel.setResetToken(email, resetToken, expires);
+
+    const { sendPasswordResetEmail } = require('../utils/mailer');
+    const sent = await sendPasswordResetEmail(email, user.nickname, resetToken);
+
+    if (sent) {
+      res.json({ success: true, message: 'If the email exists, a reset link was sent.' });
+    } else {
+      res.status(500).json({ success: false, message: 'Error sending email' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'An error occurred' });
+  }
+});
+
+// POST /api/auth/reset-password
+router.post('/reset-password', async (req, res) => {
+  const pool = req.pool;
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ success: false, message: 'Missing token or new password' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+  }
+
+  try {
+    const userModel = new User(pool);
+    const user = await userModel.findByResetToken(token);
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired token' });
+    }
+
+    await userModel.updatePassword(user.id, newPassword);
+
+    res.json({ success: true, message: 'Password successfully reset' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: 'An error occurred' });
+  }
+});
 
 module.exports = router;

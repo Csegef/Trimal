@@ -175,8 +175,8 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
               </span>
             ) : null}
             {shopItem.buy_price_spec > 0 ? (
-              <span className="text-blue-400 flex items-center gap-1">
-                {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Shell" className="w-5 h-5 drop-shadow" />}
+              <span className="text-purple-300 flex items-center gap-1">
+                {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Little Clam" className="w-5 h-5 drop-shadow" />}
               </span>
             ) : null}
           </div>
@@ -314,8 +314,8 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
                 </span>
               ) : null}
               {shopItem.buy_price_spec > 0 ? (
-                <span className="text-blue-400 flex items-center gap-1">
-                  {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Shell" className="w-5 h-5 drop-shadow" />}
+                <span className="text-purple-300 flex items-center gap-1">
+                  {shopItem.buy_price_spec} {<img src="/src/assets/design/currency/currency-spec.png" alt="Little Clam" className="w-5 h-5 drop-shadow" />}
                 </span>
               ) : null}
             </div>
@@ -486,12 +486,12 @@ const Shop = () => {
                 Available Wares
               </h2>
               <div className="flex items-center gap-4">
-                <button 
+                <button
                   onClick={handleReroll}
                   disabled={busy}
                   className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-stone-800 hover:bg-stone-700 active:bg-stone-600 transition-colors border border-stone-600 rounded text-purple-400 uppercase tracking-widest text-xs font-bold shadow-lg"
                 >
-                  <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-4 h-4" />
+                  <img src="/src/assets/design/currency/currency-spec.png" alt="Little Clam" className="w-4 h-4" />
                   Reroll Wares (10)
                 </button>
                 <div className="hidden md:flex gap-2 text-stone-500 uppercase tracking-widest text-xs">

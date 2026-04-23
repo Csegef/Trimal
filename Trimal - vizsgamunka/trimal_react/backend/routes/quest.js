@@ -13,7 +13,7 @@ router.get('/:specieId', authenticateToken, async (req, res) => {
       [req.params.specieId]
     );
     if (!specie || specie.user_id !== userId) {
-      return res.status(403).json({ success: false, message: 'Hozzáférés megtagadva' });
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const [rows] = await pool.execute(
@@ -24,7 +24,7 @@ router.get('/:specieId', authenticateToken, async (req, res) => {
     res.json({ success: true, quests: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a questek lekérdezésekor' });
+    res.status(500).json({ success: false, message: 'Error querying quests' });
   }
 });
 
@@ -40,7 +40,7 @@ router.put('/:questId', authenticateToken, async (req, res) => {
       [req.params.questId]
     );
     if (!quest || quest.user_id !== userId) {
-      return res.status(403).json({ success: false, message: 'Hozzáférés megtagadva' });
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     await pool.execute(
@@ -48,10 +48,10 @@ router.put('/:questId', authenticateToken, async (req, res) => {
       [currency, spec_currency, xp, req.params.questId]
     );
 
-    res.json({ success: true, message: 'Quest frissítve' });
+    res.json({ success: true, message: 'Quest updated' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a quest frissítésekor' });
+    res.status(500).json({ success: false, message: 'Error updating quest' });
   }
 });
 

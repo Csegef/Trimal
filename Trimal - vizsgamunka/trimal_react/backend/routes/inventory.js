@@ -9,8 +9,8 @@ const authMiddleware = require('../middleware/authMiddleware');
 // ─── Elemental Buff Definitions ───────────────────────────────────────────────
 const ELEMENTAL_BUFFS = [
   { type: 'poison', label: 'Poison', color: '#4ade80', dmgPerTick: 3, ticks: 3, description: 'Deals poison damage over 3 turns' },
-  { type: 'cold',   label: 'Frost',  color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
-  { type: 'bleed',  label: 'Bleed',  color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
+  { type: 'cold', label: 'Frost', color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
+  { type: 'bleed', label: 'Bleed', color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
 ];
 
 function rollElementalBuffRandom(playerLevel) {
@@ -34,7 +34,7 @@ function rollElementalBuffRandom(playerLevel) {
 async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
   let lvl = currentLvl;
   let xp = currentXp + xpToAdd;
-  
+
   let levelsGained = 0;
   while (xp >= lvl * 100) {
     xp -= (lvl * 100);
@@ -45,17 +45,17 @@ async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
   if (levelsGained > 0) {
     // Stat increase: +1 to all, every 5 levels the increase increases by 1
     // 1-5: +1, 6-10: +2, 11-15: +3, etc.
-    const statIncrease = 1 + Math.floor((lvl - 1 - levelsGained) / 5); 
+    const statIncrease = 1 + Math.floor((lvl - 1 - levelsGained) / 5);
     // Wait, the requirement says "1-5ig +1, majd 6-10-ig +2". 
     // This means at level 6 transition (from 5 to 6), the increase should be +2? 
     // Or does it mean while being level 6-10?
     // Let's use: for each level gained, calculate its specific increase.
-    
+
     let totalStatInc = 0;
     let tempLvl = currentLvl;
     for (let i = 0; i < levelsGained; i++) {
-        totalStatInc += (1 + Math.floor((tempLvl - 1) / 5));
-        tempLvl++;
+      totalStatInc += (1 + Math.floor((tempLvl - 1) / 5));
+      tempLvl++;
     }
 
     await pool.execute(
@@ -161,7 +161,7 @@ async function loadInventory(pool, specieId) {
     inv.stamina.last_reset = nowStr;
     changed = true;
   }
-  
+
   const validBuffs = inv.active_buffs.filter(b => b.expires_at > nowStr);
   if (validBuffs.length !== inv.active_buffs.length) {
     inv.active_buffs = validBuffs;
@@ -293,7 +293,7 @@ router.post('/stats/upgrade', async (req, res) => {
 
     const currentVal = rows[0][statCol] || 0;
     // Scaled cost: base 10 + (stat * 10) + (level * 20)
-    const cost = Math.max(10, (currentVal * 10) + (playerLevel * 20)); 
+    const cost = Math.max(10, (currentVal * 10) + (playerLevel * 20));
 
     // Deduct cost
     const inv = await loadInventory(pool, req.user.specieId);
@@ -527,18 +527,18 @@ router.post('/use', async (req, res) => {
     const item = inv.items[idx];
     const category = item.category || 'health';
     const rarity = (item.rarity || 'common').toLowerCase();
-    
+
     // Check buffs stack count limit (max 2)
     if (inv.active_buffs.length >= 2 && !inv.active_buffs.find(b => b.category === category)) {
-      return res.status(400).json({ success: false, message: 'Maximálisan 2 buff lehet egyszerre aktív!' });
+      return res.status(400).json({ success: false, message: 'Maximum 2 buff can be active at the same time!' });
     }
 
     const existingIdx = inv.active_buffs.findIndex(b => b.category === category);
     if (existingIdx !== -1 && !confirmOverwrite) {
-      return res.json({ 
-        success: false, 
-        requireConfirmation: true, 
-        message: `Már van egy aktív ${category} buffod! Biztosan felülírod?` 
+      return res.json({
+        success: false,
+        requireConfirmation: true,
+        message: `There's already an active ${category} buff! Do you want to overwrite it?`
       });
     }
 
@@ -546,23 +546,23 @@ router.post('/use', async (req, res) => {
     let durationSeconds = 1800; // Rare (30m)
     let percentIncrease = 5;    // Rare
     if (rarity === 'epic') {
-        durationSeconds = 7200; // 2h
-        percentIncrease = 8;
+      durationSeconds = 7200; // 2h
+      percentIncrease = 8;
     } else if (rarity === 'legendary') {
-        durationSeconds = 14400; // 4h
-        percentIncrease = 10;
+      durationSeconds = 14400; // 4h
+      percentIncrease = 10;
     }
 
     if (existingIdx !== -1) {
-        inv.active_buffs.splice(existingIdx, 1);
+      inv.active_buffs.splice(existingIdx, 1);
     }
-    
+
     inv.active_buffs.push({
-        category: category,
-        percent: percentIncrease,
-        expires_at: Math.floor(Date.now() / 1000) + durationSeconds,
-        iconPath: item.iconPath,
-        rarity: rarity
+      category: category,
+      percent: percentIncrease,
+      expires_at: Math.floor(Date.now() / 1000) + durationSeconds,
+      iconPath: item.iconPath,
+      rarity: rarity
     });
 
     // Consume item
@@ -784,13 +784,13 @@ router.post('/quest/start', async (req, res) => {
     const agility = statsRows[0]?.base_agility || 10;
     const luck = statsRows[0]?.base_luck || 10;
     const combinedStats = agility + luck;
-    
+
     let discount = 0;
     // Base 15% chance to find a shortcut, increased by luck
-    const chance = 0.15 + Math.min(0.25, (luck / 100)); 
+    const chance = 0.15 + Math.min(0.25, (luck / 100));
     if (Math.random() < chance) {
-        // Very minimal reduction: 1% per 10 combined points, max 25%
-        discount = Math.min(0.25, (combinedStats / 10) * 0.01);
+      // Very minimal reduction: 1% per 10 combined points, max 25%
+      discount = Math.min(0.25, (combinedStats / 10) * 0.01);
     }
 
     const originalDuration = durationSeconds;
@@ -848,14 +848,14 @@ router.post('/quest/claim', async (req, res) => {
     // BEGINNER BOOST: Level 1-3 players receive 2x XP
     const isBeginner = sLvlOriginal <= 3;
     if (isBeginner) {
-        questXP = Math.floor(questXP * 2);
+      questXP = Math.floor(questXP * 2);
     }
 
     if (specRows[0]) {
       const result = await handleLevelUp(req.pool, req.user.specieId, specRows[0].lvl, specRows[0].xp, questXP);
       if (result.leveledUp) {
-          levelMsg = ` Level up! Reached level ${result.lvl}. All stats +${result.increase}!`;
-          sLvl = result.lvl;
+        levelMsg = ` Level up! Reached level ${result.lvl}. All stats +${result.increase}!`;
+        sLvl = result.lvl;
       }
     }
 
@@ -866,120 +866,120 @@ router.post('/quest/claim', async (req, res) => {
     let allowEpicLeg = false;
 
     if (isBeginner) {
-       // BEGINNER BOOST: Always 2 drops, better chance for useful items
-       numDrops = 2;
-       allowEpicLeg = true;
+      // BEGINNER BOOST: Always 2 drops, better chance for useful items
+      numDrops = 2;
+      allowEpicLeg = true;
     } else if (diff === 'easy') {
-       if (roll < 0.40) numDrops = 1; // 40% chance
+      if (roll < 0.40) numDrops = 1; // 40% chance
     } else if (diff === 'medium') {
-       if (roll < 0.70) numDrops = 1; // 70% chance
-       allowEpicLeg = true;
+      if (roll < 0.70) numDrops = 1; // 70% chance
+      allowEpicLeg = true;
     } else if (diff === 'hard') {
-       numDrops = roll < 0.40 ? 2 : 1; // 100% chance for 1, 40% for 2
-       allowEpicLeg = true;
+      numDrops = roll < 0.40 ? 2 : 1; // 100% chance for 1, 40% for 2
+      allowEpicLeg = true;
     } else if (diff === 'dungeon') {
-       numDrops = 2; // Always 2 drops in dungeons
-       allowEpicLeg = true;
+      numDrops = 2; // Always 2 drops in dungeons
+      allowEpicLeg = true;
     }
 
     // Set quest to null after calculating XP and modifiers
     inv.active_quest = null;
 
     if (numDrops > 0 && inv.used < inv.capacity) {
-        // Fetch arrays of items
-        const [miscRows] = await req.pool.execute('SELECT * FROM item_misc');
-        const [weapRows] = await req.pool.execute('SELECT * FROM item_weapon WHERE rarity IN ("Common", "Rare", "common", "rare")');
-        
-        for (let i=0; i<numDrops; i++) {
-            // Mostly drop misc (80%), sometimes weapon (20%)
-            const isWeap = Math.random() < 0.20 && weapRows.length > 0;
-            const itemsSource = isWeap ? weapRows : miscRows;
-            
-            // Filter misc by rarity if hard
-            let possibleItems = itemsSource;
-            if (!isWeap && itemsSource.length > 0) {
-               // Define a custom roll for rarity if we are dropping misc
-               const rRoll = Math.random();
-               let targetRarity = 'common';
-               if (diff === 'easy') {
-                   targetRarity = rRoll < 0.1 ? 'rare' : 'common';
-               } else if (diff === 'medium') {
-                   targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
-               } else if (diff === 'hard') {
-                   targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
-               } else if (diff === 'dungeon') {
-                   // Dungeons: much better loot
-                   targetRarity = rRoll < 0.4 ? 'rare' : (rRoll < 0.7 ? 'epic' : (rRoll < 0.9 ? 'legendary' : 'common'));
-               }
-               
-               const filtered = itemsSource
-                 .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
-                 // Exclude dungeon_script from random drops — it's a special unlock item
-                 .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
-               if (filtered.length > 0) possibleItems = filtered;
-               else {
-                 // Fallback: still exclude dungeon_script
-                 possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
-               }
-            }
-            
-            if (possibleItems.length > 0) {
-                const dbItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
-                const invSize = dbItem.inventory_size || 10;
-                
-                if (inv.used + invSize <= inv.capacity) {
-                    const existing = inv.items.find(x => x.id == dbItem.item_id && x.type === (isWeap ? 'weapon' : 'misc'));
-                    if (existing) {
-                        existing.quantity += 1;
-                    } else {
-                        const newItem = {
-                            id: dbItem.item_id,
-                            type: isWeap ? 'weapon' : 'misc',
-                            name: dbItem.name || 'Unknown Item',
-                            rarity: (dbItem.rarity || 'common').toLowerCase(),
-                            quantity: 1,
-                            description: dbItem.description || '',
-                            sell_price: dbItem.sell_price || Math.round((dbItem.normal_currency_cost || 10) * 0.4),
-                            iconPath: dbItem.iconPath || null,
-                            inventory_size: invSize,
-                        };
-                        if (isWeap) {
-                            if (!inv.achievements.weaponsEnc.includes(dbItem.item_id)) inv.achievements.weaponsEnc.push(dbItem.item_id);
-                            const bDmg = dbItem.base_damage || 10;
-                            newItem.base_damage = bDmg;
-                            const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
-                            newItem.weapon_damage = bDmg + offset + (sLvl * 2);
-                            // Roll for elemental buff
-                            const elemBuff = rollElementalBuffRandom(sLvl);
-                            if (elemBuff) {
-                              const reduction = 0.15 + (Math.random() * 0.15);
-                              newItem.weapon_damage = Math.max(1, Math.floor(newItem.weapon_damage * (1 - reduction)));
-                              newItem.elemental_buff = elemBuff;
-                            }
-                        } else {
-                            if (!inv.achievements.foodsEnc.includes(dbItem.item_id)) inv.achievements.foodsEnc.push(dbItem.item_id);
-                            newItem.category = dbItem.category || '';
-                        }
-                        if (dbItem.rarity && dbItem.rarity.toLowerCase() === 'legendary') inv.achievements.foundLegendary = true;
-                        
-                        inv.items.push(newItem);
-                    }
-                    inv.used += invSize;
-                    if (inv.used >= inv.capacity) inv.achievements.hoarderAchieved = true;
-                    drops.push(dbItem.name);
-                }
-            }
+      // Fetch arrays of items
+      const [miscRows] = await req.pool.execute('SELECT * FROM item_misc');
+      const [weapRows] = await req.pool.execute('SELECT * FROM item_weapon WHERE rarity IN ("Common", "Rare", "common", "rare")');
+
+      for (let i = 0; i < numDrops; i++) {
+        // Mostly drop misc (80%), sometimes weapon (20%)
+        const isWeap = Math.random() < 0.20 && weapRows.length > 0;
+        const itemsSource = isWeap ? weapRows : miscRows;
+
+        // Filter misc by rarity if hard
+        let possibleItems = itemsSource;
+        if (!isWeap && itemsSource.length > 0) {
+          // Define a custom roll for rarity if we are dropping misc
+          const rRoll = Math.random();
+          let targetRarity = 'common';
+          if (diff === 'easy') {
+            targetRarity = rRoll < 0.1 ? 'rare' : 'common';
+          } else if (diff === 'medium') {
+            targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
+          } else if (diff === 'hard') {
+            targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
+          } else if (diff === 'dungeon') {
+            // Dungeons: much better loot
+            targetRarity = rRoll < 0.4 ? 'rare' : (rRoll < 0.7 ? 'epic' : (rRoll < 0.9 ? 'legendary' : 'common'));
+          }
+
+          const filtered = itemsSource
+            .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
+            // Exclude dungeon_script from random drops — it's a special unlock item
+            .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+          if (filtered.length > 0) possibleItems = filtered;
+          else {
+            // Fallback: still exclude dungeon_script
+            possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+          }
         }
+
+        if (possibleItems.length > 0) {
+          const dbItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+          const invSize = dbItem.inventory_size || 10;
+
+          if (inv.used + invSize <= inv.capacity) {
+            const existing = inv.items.find(x => x.id == dbItem.item_id && x.type === (isWeap ? 'weapon' : 'misc'));
+            if (existing) {
+              existing.quantity += 1;
+            } else {
+              const newItem = {
+                id: dbItem.item_id,
+                type: isWeap ? 'weapon' : 'misc',
+                name: dbItem.name || 'Unknown Item',
+                rarity: (dbItem.rarity || 'common').toLowerCase(),
+                quantity: 1,
+                description: dbItem.description || '',
+                sell_price: dbItem.sell_price || Math.round((dbItem.normal_currency_cost || 10) * 0.4),
+                iconPath: dbItem.iconPath || null,
+                inventory_size: invSize,
+              };
+              if (isWeap) {
+                if (!inv.achievements.weaponsEnc.includes(dbItem.item_id)) inv.achievements.weaponsEnc.push(dbItem.item_id);
+                const bDmg = dbItem.base_damage || 10;
+                newItem.base_damage = bDmg;
+                const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
+                newItem.weapon_damage = bDmg + offset + (sLvl * 2);
+                // Roll for elemental buff
+                const elemBuff = rollElementalBuffRandom(sLvl);
+                if (elemBuff) {
+                  const reduction = 0.15 + (Math.random() * 0.15);
+                  newItem.weapon_damage = Math.max(1, Math.floor(newItem.weapon_damage * (1 - reduction)));
+                  newItem.elemental_buff = elemBuff;
+                }
+              } else {
+                if (!inv.achievements.foodsEnc.includes(dbItem.item_id)) inv.achievements.foodsEnc.push(dbItem.item_id);
+                newItem.category = dbItem.category || '';
+              }
+              if (dbItem.rarity && dbItem.rarity.toLowerCase() === 'legendary') inv.achievements.foundLegendary = true;
+
+              inv.items.push(newItem);
+            }
+            inv.used += invSize;
+            if (inv.used >= inv.capacity) inv.achievements.hoarderAchieved = true;
+            drops.push(dbItem.name);
+          }
+        }
+      }
     }
 
     await saveInventory(req.pool, req.user.specieId, inv);
-    
+
     let dropMsg = drops.length > 0 ? ` Found items: ${drops.join(', ')}!` : '';
 
-    res.json({ 
-        success: true, 
-        message: `Quest claimed! +${q.reward_normal} pebbles, +${questXP} XP.${levelMsg}${dropMsg}`,
-        rewards: { normal: q.reward_normal, spec: q.reward_spec, xp: questXP, drops } 
+    res.json({
+      success: true,
+      message: `Quest claimed! +${q.reward_normal} pebbles, +${questXP} XP.${levelMsg}${dropMsg}`,
+      rewards: { normal: q.reward_normal, spec: q.reward_spec, xp: questXP, drops }
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -1008,18 +1008,24 @@ router.post('/dungeon/start', async (req, res) => {
 
     const DUNGEON_DATA = [
       null, // 0-index padding
-      { id: 1, name: 'Neanderthal Valley', enemyName: 'Squab Warrior', enemyPrefix: 'n',
+      {
+        id: 1, name: 'Neanderthal Valley', enemyName: 'Squab Warrior', enemyPrefix: 'n',
         bg: '/src/assets/design/backgrounds/dungeon/dungeon_level1.png',
         minLevel: 5, staminaCost: 40,
-        getRewards: (lvl) => ({ normal: lvl * 15, spec: Math.floor(lvl / 2), xp: 60 }) },
-      { id: 2, name: 'Standing Stone Circle', enemyName: 'Lean Scout', enemyPrefix: 'hs',
+        getRewards: (lvl) => ({ normal: lvl * 15, spec: Math.floor(lvl / 2), xp: 60 })
+      },
+      {
+        id: 2, name: 'Standing Stone Circle', enemyName: 'Lean Scout', enemyPrefix: 'hs',
         bg: '/src/assets/design/backgrounds/dungeon/dungeon_level2.png',
         minLevel: 15, staminaCost: 40,
-        getRewards: (lvl) => ({ normal: lvl * 25, spec: lvl, xp: 80 }) },
-      { id: 3, name: 'The Hidden Lagoon', enemyName: 'Tiny Stalker', enemyPrefix: 'f',
+        getRewards: (lvl) => ({ normal: lvl * 25, spec: lvl, xp: 80 })
+      },
+      {
+        id: 3, name: 'The Hidden Lagoon', enemyName: 'Tiny Stalker', enemyPrefix: 'f',
         bg: '/src/assets/design/backgrounds/dungeon/dungeon_level3.png',
         minLevel: 30, staminaCost: 40,
-        getRewards: (lvl) => ({ normal: lvl * 40, spec: lvl * 2, xp: 120 }) },
+        getRewards: (lvl) => ({ normal: lvl * 40, spec: lvl * 2, xp: 120 })
+      },
     ];
 
     const dungeon = DUNGEON_DATA[dungeonId];

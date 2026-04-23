@@ -151,16 +151,16 @@ const CaveStation = () => {
               <div key={a.title} className={`p-5 rounded-xl border ${isDone ? 'bg-amber-900/20 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' : 'bg-black/50 border-stone-800 hover:border-stone-700'} transition-colors`}>
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className={`text-lg uppercase tracking-wider font-bold ${isDone ? 'text-amber-400' : 'text-stone-300'}`}>{a.title}</h3>
+                    <h3 className={`text-lg uppercase tracking-wider ${isDone ? 'text-amber-400' : 'text-stone-300'}`}>{a.title}</h3>
                     <p className="text-stone-500 text-[10px] sm:text-xs tracking-widest uppercase">{a.desc}</p>
-                    <p className="text-amber-700 text-[10px] sm:text-xs tracking-widest uppercase mt-1">Reward: {reward.norm} pebbles, {reward.spec} spec</p>
+                    <p className="text-amber-700 text-[10px] sm:text-xs tracking-widest uppercase mt-1">Reward: {reward.norm} pebbles, {reward.spec} Little clams</p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className={`text-sm tabular-nums tracking-widest font-black ${isDone ? 'text-amber-500' : 'text-stone-400'}`}>
+                    <div className={`text-sm tabular-nums tracking-widest ${isDone ? 'text-amber-500' : 'text-stone-400'}`}>
                       {a.curr} / {a.max}
                     </div>
                     {isDone && !isClaimed && (
-                      <button 
+                      <button
                         onClick={() => handleClaimReward(a.id)}
                         className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-black text-[10px] font-black uppercase tracking-widest rounded transition-colors"
                       >

@@ -7,7 +7,7 @@ const Character = require('../models/Character');
 // GET karakterek egy felhasználóhoz
 router.get('/:userId', authenticateToken, async (req, res) => {
   if (parseInt(req.params.userId) !== req.user.userId) {
-    return res.status(403).json({ success: false, message: 'Hozzáférés megtagadva' });
+    return res.status(403).json({ success: false, message: 'Access denied' });
   }
 
   const pool = req.pool;
@@ -17,7 +17,7 @@ router.get('/:userId', authenticateToken, async (req, res) => {
     res.json({ success: true, characters: chars });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a karakterek lekérdezésekor' });
+    res.status(500).json({ success: false, message: 'Error getting characters' });
   }
 });
 
@@ -27,7 +27,7 @@ router.put('/:charId', authenticateToken, async (req, res) => {
   const { lvl, xp, hair_style, beard_style, stamina, userId } = req.body;
 
   if (parseInt(userId) !== req.user.userId) {
-    return res.status(403).json({ success: false, message: 'Hozzáférés megtagadva' });
+    return res.status(403).json({ success: false, message: 'Access denied' });
   }
 
   try {
@@ -35,10 +35,10 @@ router.put('/:charId', authenticateToken, async (req, res) => {
       `UPDATE specie SET lvl = ?, xp = ?, hair_style = ?, beard_style = ?, stamina = ?, updated_at = NOW() WHERE id = ?`,
       [lvl, xp, hair_style, beard_style, stamina, req.params.charId]
     );
-    res.json({ success: true, message: 'Karakter frissítve' });
+    res.json({ success: true, message: 'Character updated' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a karakter frissítésekor' });
+    res.status(500).json({ success: false, message: 'Error updating character' });
   }
 });
 

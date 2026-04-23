@@ -21,7 +21,7 @@ const Leaderboard = () => {
                     fetch('/api/inventory', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json()),
                     fetch('/api/arena/leaderboard', { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json())
                 ]);
-                
+
                 if (invRes.success && invRes.data?.currency) {
                     setCurrency(invRes.data.currency);
                 }
@@ -76,7 +76,7 @@ const Leaderboard = () => {
             <div className="flex flex-col md:flex-row w-full h-[90vh] gap-6 p-4 md:p-8">
 
                 {/* Left side: Players List */}
-                <div className="w-full md:w-[300px] flex-1 md:flex-none md:shrink-0 bg-black/60 border border-amber-900/40 rounded-2xl flex flex-col backdrop-blur-sm overflow-hidden shadow-2xl min-h-[300px] md:min-h-0">
+                <div className="w-full md:w-1/4 flex-none flex-none shrink-0 bg-black/60 border border-amber-900/40 rounded-2xl flex flex-col backdrop-blur-sm overflow-hidden shadow-2xl min-h-[300px] md:min-h-0">
                     <div className="bg-amber-900/60 p-3 shadow-md border-b border-amber-800 flex justify-between items-center text-amber-100 tracking-widest uppercase">
                         <span>Rankings</span>
                     </div>
@@ -104,7 +104,7 @@ const Leaderboard = () => {
                 {selectedPlayer && (
                     <div
                         key={selectedPlayer.specieId}
-                        className="flex-[2] bg-black/70 border border-stone-700/50 rounded-2xl flex flex-col backdrop-blur-md shadow-2xl relative overflow-hidden"
+                        className="w-full md:flex-[2] bg-black/70 border border-stone-700/50 rounded-2xl flex flex-col backdrop-blur-md shadow-2xl relative overflow-hidden"
                         style={{ animation: 'lbCardIn 0.22s ease both' }}
                     >
                         <div className="absolute -top-10 -right-10 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none" />
@@ -180,6 +180,9 @@ const Leaderboard = () => {
                         </div>
                     </div>
                 )}
+
+                {/* Empty Space for layout balance (1/4) */}
+                <div className="hidden md:block md:flex-1 shrink-0"></div>
             </div>
             <style>{`
                 @keyframes lbCardIn {

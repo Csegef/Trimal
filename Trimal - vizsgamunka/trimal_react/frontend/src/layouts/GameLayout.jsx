@@ -103,12 +103,12 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
 
             {/* Currency */}
             <div className="flex flex-col gap-1 bg-stone-900/40 p-1.5 rounded-lg border border-stone-700/50">
-              <div className="flex items-center gap-2" title="Normal Currency">
+              <div className="flex items-center gap-2" title="Pebbles">
                 <img src="/src/assets/design/currency/currency-normal.png" alt="Gold" className="w-5 h-5" />
                 <span className="text-amber-300 font-bold text-sm">{currency?.normal ?? 0}</span>
               </div>
-              <div className="flex items-center gap-2" title="Special Currency">
-                <img src="/src/assets/design/currency/currency-spec.png" alt="Gem" className="w-5 h-5" />
+              <div className="flex items-center gap-2" title="Little Clams">
+                <img src="/src/assets/design/currency/currency-spec.png" alt="Little Clam" className="w-5 h-5" />
                 <span className="text-purple-300 font-bold text-sm">{currency?.spec ?? 0}</span>
               </div>
             </div>

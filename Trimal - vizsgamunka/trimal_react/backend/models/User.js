@@ -43,6 +43,30 @@ class User {
   async setSpecieId(userId, specieId) {
     await this.pool.execute(`UPDATE user SET specie_id = ? WHERE id = ?`, [specieId, userId]);
   }
+
+  async setResetToken(email, token, expires) {
+    await this.pool.execute(
+      `UPDATE user SET reset_token = ?, reset_token_expires = ? WHERE email = ?`,
+      [token, expires, email]
+    );
+  }
+
+  async findByResetToken(token) {
+    const [rows] = await this.pool.execute(
+      `SELECT * FROM user WHERE reset_token = ? AND reset_token_expires > NOW()`,
+      [token]
+    );
+    return rows[0];
+  }
+
+  async updatePassword(id, newPassword) {
+    const salt = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(newPassword, salt);
+    await this.pool.execute(
+      `UPDATE user SET password = ?, salt = ?, reset_token = NULL, reset_token_expires = NULL WHERE id = ?`,
+      [hashed, salt, id]
+    );
+  }
 }
 
 module.exports = User;

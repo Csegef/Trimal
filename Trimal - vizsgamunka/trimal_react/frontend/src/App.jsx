@@ -8,6 +8,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import MainGame from './pages/MainGame'
 import About from './pages/About';
 import CharacterSignIn from './pages/CharacterSignIn';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import EmailVerification from './pages/EmailVerification';
 import Inventory from './pages/Inventory';
 import Shop from './pages/Shop';
@@ -23,6 +25,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<CharacterSignIn />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/class-selection" element={<ClassSelection />} />
         <Route path="/create" element={<CharacterCreator />} />
         <Route path="/registration" element={<CharacterRegistration />} />

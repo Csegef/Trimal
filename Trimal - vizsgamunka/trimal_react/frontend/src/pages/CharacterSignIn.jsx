@@ -114,33 +114,18 @@ const CharacterSignIn = () => {
                     </button>
                 </form>
 
-                <div className="mt-6 text-center text-stone-400 text-sm">
+                <div className="mt-6 flex flex-col gap-2 text-center text-stone-400 text-sm">
+                    <p>
+                        <Link to="/forgot-password" className="text-stone-400 hover:text-stone-300 underline decoration-1 underline-offset-2">
+                            Forgot your password?
+                        </Link>
+                    </p>
                     <p>
                         Don't have a character yet?{" "}
-                        <Link to="/class-selection" className="text-amber-400 hover:text-amber-300  underline decoration-2 underline-offset-2">
+                        <Link to="/class-selection" className="text-amber-400 hover:text-amber-300 underline decoration-2 underline-offset-2">
                             Create one here!
                         </Link>
                     </p>
-                </div>
-
-                <div className="mt-8 pt-4 border-t border-stone-700 text-center">
-                    <p className="text-stone-500 text-xs italic mb-2">Development Tools</p>
-                    <button
-                        onClick={() => {
-                            const data = localStorage.getItem('userData');
-                            if (data) {
-                                const parsed = JSON.parse(data);
-                                parsed.isVerified = true;
-                                localStorage.setItem('userData', JSON.stringify(parsed));
-                                alert("User manually verified for testing!");
-                            } else {
-                                alert("No user to verify!");
-                            }
-                        }}
-                        className="text-xs text-stone-400 hover:text-stone-200 underline"
-                    >
-                        [Dev] Force Verify Current User
-                    </button>
                 </div>
             </div>
         </MainLayout>

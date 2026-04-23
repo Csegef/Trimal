@@ -310,3 +310,50 @@
 2026-04-20T21:35:59.563Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-04-20T21:36:53.350Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
 2026-04-20T21:46:16.414Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T06:12:52.983Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T06:55:16.206Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T06:59:26.807Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T06:59:28.739Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T08:41:55.144Z - Attempting registration for: teszttaszi@gmail.com, johndoe
+2026-04-23T08:41:55.145Z - Checking existing user
+2026-04-23T08:41:55.150Z - Creating user...
+2026-04-23T08:41:55.220Z - User created with ID: 16
+2026-04-23T08:41:55.220Z - Creating character...
+2026-04-23T08:41:55.227Z - Character created
+2026-04-23T08:41:55.227Z - Generating initial shop items...
+2026-04-23T08:41:55.255Z - Initial shop items generated
+2026-04-23T08:41:55.259Z - User linked to character
+2026-04-23T08:41:55.259Z - Sending email...
+2026-04-23T08:41:57.244Z - MAILER: Verification email sent: 250 2.0.0 OK  1776933732 5b1f17b1804b1-488fc1393f5sm473432005e9.9 - gsmtp
+2026-04-23T08:43:25.428Z - MAILER: Password reset email sent: 250 2.0.0 OK  1776933820 5b1f17b1804b1-488fc0f8193sm462126635e9.1 - gsmtp
+2026-04-23T09:08:48.730Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:08:55.620Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:06.282Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:14.607Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:17.032Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:21.839Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:25.208Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:45.538Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:48.015Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:09:55.508Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:21:43.722Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:21:45.531Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:21:48.195Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:21:51.112Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:22:00.103Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:22:03.648Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:22:54.813Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:23:17.062Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:23:53.516Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:24:09.162Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:24:13.762Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:24:16.321Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:24:18.739Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:24:20.512Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T09:59:28.915Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:41:13.763Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:46:49.658Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:47:11.433Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:51:05.788Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:52:23.873Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-23T10:52:50.970Z - MAILER: Password reset email sent: 250 2.0.0 OK  1776941585 ffacd0b85a97d-43fe4cb13a0sm52568030f8f.8 - gsmtp

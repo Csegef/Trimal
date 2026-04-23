@@ -13,7 +13,7 @@ router.get('/:specieId', authenticateToken, async (req, res) => {
       [req.params.specieId]
     );
     if (!specie || specie.user_id !== userId) {
-      return res.status(403).json({ success: false, message: 'Hozzáférés megtagadva' });
+      return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const [rows] = await pool.execute(
@@ -28,7 +28,7 @@ router.get('/:specieId', authenticateToken, async (req, res) => {
     res.json({ success: true, effects: rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba az effectek lekérdezésekor' });
+    res.status(500).json({ success: false, message: 'Error getting effects' });
   }
 });
 

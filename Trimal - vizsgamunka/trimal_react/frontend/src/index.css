@@ -29,6 +29,7 @@ body {
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeSpeed;
+  background-color: #1c1917; /* tailwind stone-900 to prevent white flash during navigation */
 }
 
 h1, h2, h3, h4, h5, h6, .font-title {

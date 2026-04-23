@@ -81,6 +81,8 @@ const CharacterRegistration = () => {
       newErrors.password = "You have to sign a password!";
     } else if (password.length < 8) {
       newErrors.password = "The password have to be atleast 8 character long!";
+    } else if (!/[A-Z]/.test(password) || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      newErrors.password = "The password must contain at least one uppercase letter, one number, and one special character!";
     }
 
     // Jelszó megerősítés validáció

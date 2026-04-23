@@ -39,4 +39,32 @@ const sendVerificationEmail = async (to, nickname, token) => {
   }
 };
 
-module.exports = { sendVerificationEmail };
+const sendPasswordResetEmail = async (to, nickname, token) => {
+  const resetLink = `http://localhost:5173/reset-password?token=${token}`;
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: to,
+    subject: 'Trimal RPG - Password Reset',
+    text: `Hello ${nickname},\n\nYou requested a password reset. Click the link below to set a new password:\n${resetLink}\n\nIf you did not request this, please ignore this email.\n\nBest regards,\nThe Trimal Team`,
+    html: `<h1>Hello ${nickname}!</h1><p>You requested a password reset. Click the link below to set a new password:</p><p><a href="${resetLink}">Reset Password</a></p><p>If you did not request this, please ignore this email.</p><p>Best regards,<br>The Trimal Team</p>`
+  };
+
+  const fs = require('fs');
+  const logError = (msg) => {
+    fs.appendFileSync('error.log', new Date().toISOString() + ' - MAILER: ' + msg + '\n');
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    logError('Password reset email sent: ' + info.response);
+    console.log('Password reset email sent: ' + info.response);
+    return true;
+  } catch (error) {
+    logError('Error sending reset email: ' + error.message);
+    console.error('Error sending reset email:', error);
+    return false;
+  }
+};
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail };
