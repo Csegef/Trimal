@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import GameLayout from "../layouts/GameLayout";
 import {
   loadInventoryPage,
@@ -340,6 +341,15 @@ const Inventory = () => {
   const [actionMenu, setActionMenu] = useState(null);
   const [toast, setToast] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const prevLevelRef = useRef(null);
+
+
+  // TESZTELÉSHEZ: Vedd ki a kommentből az alábbi useEffect-et, hogy lásd a szintlépés animációt betöltéskor
+  // useEffect(() => {
+  //   setShowLevelUp(true); setTimeout(() => setShowLevelUp(false), 4000);
+  // }, []);
+
 
   const showToast = useCallback((msg, type = "success") => {
     setToast({ msg, type });
@@ -352,6 +362,18 @@ const Inventory = () => {
       const { inventory, playerInfo } = await loadInventoryPage();
       setInventory(inventory);
       setPlayerInfo(playerInfo);
+
+      // Update local storage so next reload starts with correct level
+      const stored = localStorage.getItem("userData");
+      if (stored) {
+        try {
+          const ud = JSON.parse(stored);
+          if (ud.character) {
+            ud.character = { ...ud.character, ...playerInfo };
+            localStorage.setItem("userData", JSON.stringify(ud));
+          }
+        } catch (e) { }
+      }
     } catch (err) {
       if (err instanceof AuthError) {
         showToast("Not logged in!", "error");
@@ -374,14 +396,26 @@ const Inventory = () => {
             class: ud.character.specie_name || "Neanderthal",
             hairStyle: ud.character.hair_style || 0,
             beardStyle: ud.character.beard_style || 0,
-            lvl: 1, xp: 0, xpForNext: 100,
-            stats: { strength: 5, agility: 5, intelligence: 5, endurance: 5 },
+            lvl: ud.character.lvl || 1,
+            xp: ud.character.xp || 0,
+            xpForNext: ud.character.xpForNext || 100,
+            stats: ud.character.stats || { strength: 5, agility: 5, luck: 5, resistance: 5 },
           });
         }
       } catch { }
     }
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (playerInfo?.lvl) {
+      if (prevLevelRef.current !== null && playerInfo.lvl > prevLevelRef.current) {
+        setShowLevelUp(true);
+        setTimeout(() => setShowLevelUp(false), 4000);
+      }
+      prevLevelRef.current = playerInfo.lvl;
+    }
+  }, [playerInfo?.lvl]);
 
   const openActionMenu = useCallback((item, actions, slot, e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -432,7 +466,7 @@ const Inventory = () => {
     try {
       const res = await upgradeStat(statKey);
       showToast(res.message);
-      await load(); // Reload to get updated stats and currency
+      await load();
     } catch (err) {
       showToast(err.message || "An error occurred", "error");
     } finally {
@@ -442,20 +476,11 @@ const Inventory = () => {
 
   const getEquippedItem = (slotKey) => {
     const eqItem = inventory?.equipped?.[slotKey];
-    // With the new PHP logic, equipped slots store the full item object instead of an integer ID.
-    // If it's a legacy INT ID, fallback to finding it in items (though our items won't contain it anymore).
     if (eqItem && typeof eqItem === "object") {
       return eqItem;
     }
     return eqItem ? (inventory.items.find((i) => i.id === eqItem) ?? null) : null;
   };
-
-  // Build the set of equipped item IDs to exclude from the grid
-  // Note: Backend already reduces quantity or removes equipped items, so we don't need to filter by ID heavily,
-  // but it's safe to keep.
-  const equippedItemIds = new Set(
-    Object.values(inventory?.equipped || {}).filter(Boolean).map(e => e?.id).filter(Boolean)
-  );
 
   const displayCap = Math.floor((inventory?.capacity || 200) / 10);
 
@@ -479,6 +504,22 @@ const Inventory = () => {
 
   return (
     <GameLayout currency={inventory?.currency} contentAlign="start">
+      <AnimatePresence>
+        {showLevelUp && (
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.5 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -100, scale: 1.5 }}
+            transition={{ type: "spring", stiffness: 200, damping: 12 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
+          >
+            <span className="text-amber-500 font-title text-8xl uppercase tracking-[0.1em]">
+              Level Up!
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="h-fit min-h-full w-full relative flex flex-col items-center">
 
         <Toast toast={toast} />
@@ -617,7 +658,7 @@ const Inventory = () => {
                         const equippedArmor = Object.values(inventory?.equipped || {}).filter(item => item && item.type === 'armor');
                         currentVal = equippedArmor.reduce((sum, item) => sum + (item.armor_point || 0), 0);
                       }
-                      const cost = Math.max(10, (currentVal * 10) + (playerInfo?.lvl || 1) * 20);
+                      const cost = Math.max(10, Math.floor(currentVal * currentVal * 0.16 + (playerInfo?.lvl || 1) * 2));
                       const canUpgrade = key !== 'armor';
                       return (
                         <div key={key} className="flex items-center gap-3">

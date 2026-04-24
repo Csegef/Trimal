@@ -28,7 +28,7 @@ const formatDuration = (totalSeconds) => {
 };
 
 const generateQuest = (level, difficultyIndex, idSuffix) => {
-  const baseReward = 10 * level;
+  const baseReward = 5 * level;
 
   const randomPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const randomVariance = (val, pct) => Math.max(0, Math.floor(val * (1 + (Math.random() * pct * 2 - pct))));
@@ -55,9 +55,9 @@ const generateQuest = (level, difficultyIndex, idSuffix) => {
       durationLabel: dur.label,
       durationStr: dur.str,
       description: "A simple task around the village outskirts.",
-      rewardNormal: randomVariance(Math.floor(baseReward * 1.5), 0.2),
+      rewardNormal: randomVariance(Math.floor(baseReward * 1.2), 0.2),
       rewardSpec: 0,
-      rewardXP: Math.max(5, Math.floor(15 / (1 + (level - 1) * 0.05))),
+      rewardXP: Math.floor(12 + Math.pow(level, 0.6) * 5),
       background
     };
   } else if (difficultyIndex === 1) {
@@ -70,9 +70,9 @@ const generateQuest = (level, difficultyIndex, idSuffix) => {
       durationLabel: dur.label,
       durationStr: dur.str,
       description: "A more dangerous task beyond the safe zone.",
-      rewardNormal: randomVariance(Math.floor(baseReward * 3), 0.2),
+      rewardNormal: randomVariance(Math.floor(baseReward * 2.2), 0.2),
       rewardSpec: Math.random() > 0.5 ? randomVariance(Math.floor(level * 0.5) || 1, 0.2) : 0,
-      rewardXP: Math.max(8, Math.floor(25 / (1 + (level - 1) * 0.05))),
+      rewardXP: Math.floor(20 + Math.pow(level, 0.6) * 8),
       background
     };
   } else {
@@ -85,9 +85,9 @@ const generateQuest = (level, difficultyIndex, idSuffix) => {
       durationLabel: dur.label,
       durationStr: dur.str,
       description: "A task that requires immense effort and bravery.",
-      rewardNormal: randomVariance(Math.floor(baseReward * 8), 0.2),
+      rewardNormal: randomVariance(Math.floor(baseReward * 4.0), 0.2),
       rewardSpec: randomVariance(level + 2, 0.2),
-      rewardXP: Math.max(12, Math.floor(45 / (1 + (level - 1) * 0.05))),
+      rewardXP: Math.floor(35 + Math.pow(level, 0.6) * 15),
       background
     };
   }

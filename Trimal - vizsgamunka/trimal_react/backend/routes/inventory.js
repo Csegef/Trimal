@@ -292,8 +292,8 @@ router.post('/stats/upgrade', async (req, res) => {
     const playerLevel = lvlRows[0]?.lvl || 1;
 
     const currentVal = rows[0][statCol] || 0;
-    // Scaled cost: base 10 + (stat * 10) + (level * 20)
-    const cost = Math.max(10, (currentVal * 10) + (playerLevel * 20));
+    // Scaled cost: quadratic growth based on stat + linear growth based on level
+    const cost = Math.max(10, Math.floor(currentVal * currentVal * 0.16 + playerLevel * 2));
 
     // Deduct cost
     const inv = await loadInventory(pool, req.user.specieId);
@@ -891,40 +891,54 @@ router.post('/quest/claim', async (req, res) => {
       const [weapRows] = await req.pool.execute('SELECT * FROM item_weapon WHERE rarity IN ("Common", "Rare", "common", "rare")');
 
       for (let i = 0; i < numDrops; i++) {
-        // Mostly drop misc (80%), sometimes weapon (20%)
-        const isWeap = Math.random() < 0.20 && weapRows.length > 0;
-        const itemsSource = isWeap ? weapRows : miscRows;
+        let dbItem = null;
+        let isWeap = false;
 
-        // Filter misc by rarity if hard
-        let possibleItems = itemsSource;
-        if (!isWeap && itemsSource.length > 0) {
-          // Define a custom roll for rarity if we are dropping misc
-          const rRoll = Math.random();
-          let targetRarity = 'common';
-          if (diff === 'easy') {
-            targetRarity = rRoll < 0.1 ? 'rare' : 'common';
-          } else if (diff === 'medium') {
-            targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
-          } else if (diff === 'hard') {
-            targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
-          } else if (diff === 'dungeon') {
-            // Dungeons: much better loot
-            targetRarity = rRoll < 0.4 ? 'rare' : (rRoll < 0.7 ? 'epic' : (rRoll < 0.9 ? 'legendary' : 'common'));
-          }
-
-          const filtered = itemsSource
-            .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
-            // Exclude dungeon_script from random drops — it's a special unlock item
-            .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
-          if (filtered.length > 0) possibleItems = filtered;
-          else {
-            // Fallback: still exclude dungeon_script
-            possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+        // 10% chance for a Dungeon Script on non-dungeon quests
+        if (diff !== 'dungeon' && Math.random() < 0.10) {
+          const script = miscRows.find(x => (x.name || '').toLowerCase().includes('dungeon'));
+          if (script) {
+            dbItem = script;
+            isWeap = false;
           }
         }
 
-        if (possibleItems.length > 0) {
-          const dbItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+        if (!dbItem) {
+          // Mostly drop misc (80%), sometimes weapon (20%)
+          isWeap = Math.random() < 0.20 && weapRows.length > 0;
+          const itemsSource = isWeap ? weapRows : miscRows;
+
+          // Filter items by rarity based on difficulty
+          let possibleItems = itemsSource;
+          if (!isWeap && itemsSource.length > 0) {
+            const rRoll = Math.random();
+            let targetRarity = 'common';
+            if (diff === 'easy') {
+              targetRarity = rRoll < 0.1 ? 'rare' : 'common';
+            } else if (diff === 'medium') {
+              targetRarity = rRoll < 0.2 ? 'rare' : (rRoll < 0.25 ? 'epic' : 'common');
+            } else if (diff === 'hard') {
+              targetRarity = rRoll < 0.3 ? 'rare' : (rRoll < 0.4 ? 'epic' : (rRoll < 0.45 ? 'legendary' : 'common'));
+            } else if (diff === 'dungeon') {
+              targetRarity = rRoll < 0.4 ? 'rare' : (rRoll < 0.7 ? 'epic' : (rRoll < 0.9 ? 'legendary' : 'common'));
+            }
+
+            const filtered = itemsSource
+              .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
+              .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+            
+            if (filtered.length > 0) possibleItems = filtered;
+            else {
+              possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
+            }
+          }
+
+          if (possibleItems.length > 0) {
+            dbItem = possibleItems[Math.floor(Math.random() * possibleItems.length)];
+          }
+        }
+
+        if (dbItem) {
           const invSize = dbItem.inventory_size || 10;
 
           if (inv.used + invSize <= inv.capacity) {

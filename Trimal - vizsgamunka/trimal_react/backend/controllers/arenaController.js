@@ -101,6 +101,18 @@ const startArenaFight = async (req, res) => {
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
     if (inv.active_quest !== null) return res.status(400).json({ success: false, message: 'You are already in a quest or combat' });
 
+    // Cooldown check: 12 hours (43200 seconds) after a successful victory
+    const now = Math.floor(Date.now() / 1000);
+    const lastPvp = inv.last_pvp_at || 0;
+    const cooldownSeconds = 12 * 60 * 60; // 43200
+    if (now - lastPvp < cooldownSeconds) {
+      const remainingSec = cooldownSeconds - (now - lastPvp);
+      const hours = Math.floor(remainingSec / 3600);
+      const minutes = Math.ceil((remainingSec % 3600) / 60);
+      const timeStr = hours > 0 ? `${hours} hours and ${minutes} minutes` : `${minutes} minutes`;
+      return res.status(400).json({ success: false, message: `Arena is on cooldown! You can fight again in ${timeStr}.` });
+    }
+
     // Load target stats
     const [rows] = await pool.execute(`
       SELECT 
@@ -199,8 +211,11 @@ const claimArenaVictory = async (req, res) => {
     let stolenItem = null;
 
     if (isWin) {
-      // 40% chance to steal an item
-      if (Math.random() < 0.40) {
+      // Set cooldown timestamp
+      inv.last_pvp_at = Math.floor(Date.now() / 1000);
+
+      // 15% chance to steal an item (reduced from 40%)
+      if (Math.random() < 0.15) {
         const targetInv = await loadInventory(pool, targetSpecieId);
         if (targetInv && targetInv.items && targetInv.items.length > 0) {
           // Weight logic: 1% Legendary, 4% Epic, 25% Rare, 70% Common

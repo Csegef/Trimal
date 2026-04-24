@@ -153,7 +153,7 @@ const FightPlaceholder = () => {
         if (isArena) {
           eObj = inventory.active_quest.enemyObj;
           combatState.current.turn = pObj.stats.agility >= eObj.stats.agility ? 'player' : 'enemy';
-          
+
           const prefixMap = { 'Neanderthal': 'n', 'Sapiens': 'hs', 'Floresiensis': 'f' };
           combatState.current.enemyPrefix = prefixMap[eObj.class] || 'n';
         } else if (isDungeon) {
@@ -167,11 +167,11 @@ const FightPlaceholder = () => {
           // Stat bases scale by dungeon tier
           const tierMults = { 1: 1.0, 2: 1.25, 3: 1.55 };
           const tier = tierMults[dungeonId] || 1.0;
-          const baseStr  = Math.ceil(10 * statMult * tier);
-          const baseAgi  = Math.ceil(10 * statMult * tier);
-          const baseLuck = Math.ceil(8  * statMult * tier);
-          const baseRes  = Math.ceil(8  * statMult * tier);
-          const eMaxHp   = Math.ceil(12 * 20 * statMult * tier);
+          const baseStr = Math.ceil(10 * statMult * tier);
+          const baseAgi = Math.ceil(10 * statMult * tier);
+          const baseLuck = Math.ceil(8 * statMult * tier);
+          const baseRes = Math.ceil(8 * statMult * tier);
+          const eMaxHp = Math.ceil(12 * 20 * statMult * tier);
 
           eObj = {
             name: eName,
@@ -215,9 +215,11 @@ const FightPlaceholder = () => {
           const rndEnemyData = possibleEnemies[Math.floor(Math.random() * possibleEnemies.length)];
 
           let eLvl = playerInfo?.lvl || 1;
-          if (qDifficulty === 'medium') eLvl += 0.2;
+          if (qDifficulty === 'easy') eLvl -= 0.6; // -= 0.4 volt
+          if (qDifficulty === 'medium') eLvl -= 0.5; // += 0.2 volt
+          if (qDifficulty === 'hard') eLvl -= 0.2; // += 0.8 volt, -= 0.5 volt
 
-          let statMult = 1 + ((eLvl - 1) * 0.35);
+          let statMult = 1 + ((eLvl - 1) * 0.25);
           if (playerInfo?.lvl <= 3) statMult *= 0.5; // Beginner boost for levels 1-3
           const eMaxHp = rndEnemyData.base_health * 20 * statMult;
 
@@ -440,7 +442,7 @@ const FightPlaceholder = () => {
         let autoEvade = false;
         let isReflex = false;
         const playerDodgeChance = Math.min(10, pObj.stats.agility * 0.2);
-        
+
         if (Math.random() * 100 < playerDodgeChance) {
           autoEvade = true;
         }
@@ -490,89 +492,89 @@ const FightPlaceholder = () => {
             setEnemyAnim(null);
             // skip to next turn without hitting the player
           } else {
-          let isCrit = Math.random() * 100 < eObj.stats.luck;
-          if (eObj.category === 'Heavy') {
-            isCrit = Math.random() * 100 < Math.min(25, eObj.stats.luck * 0.3); // Hard cap at 25%
-          }
-
-          // Homo Sapiens enemy: +25% on first hit
-          let enemyIncomingDmg = (eObj.stats.strength * 2.5 + 10) * (0.9 + Math.random() * 0.2);
-          if (ePrefix === 'hs' && !state.enemySapiensFirstHitUsed) {
-            enemyIncomingDmg *= 1.25;
-            state.enemySapiensFirstHitUsed = true;
-            addLog(`${eObj.name} exploits their superior intellect! First strike +25%`);
-          }
-
-          // Neanderthal enemy rage boost
-          const enemyRageActive = state.enemyRageTurns > 0;
-          if (enemyRageActive) {
-            enemyIncomingDmg *= 1.50;
-            isCrit = isCrit || Math.random() * 100 < 40;
-            state.enemyRageTurns -= 1;
-          }
-
-          if (isCrit) enemyIncomingDmg *= 2;
-
-          const effectiveArmor = pObj.stats.armor + (pObj.lvl * 3);
-
-          // Logarithmic scaling for armor reduction
-          const armorReductionMult = 100 / (100 + effectiveArmor);
-          let reducedDmg = enemyIncomingDmg * armorReductionMult;
-
-          const defReduction = Math.min(0.75, pObj.stats.resistance / 100);
-
-          let dmg = Math.floor(reducedDmg * (1 - defReduction));
-          dmg = Math.max(1, dmg); // At least 1 damage taken
-
-          let newlyApplied = false;
-          if (eObj.type !== 'none' && Math.random() < 0.12) {
-            if (!state.playerDebuffs.includes(eObj.type)) {
-              state.playerDebuffs.push(eObj.type);
-              setPlayerDebuffs([...state.playerDebuffs]);
-              addLog(`You have been inflicted with ${eObj.type.toUpperCase()}!`);
-              newlyApplied = true;
+            let isCrit = Math.random() * 100 < eObj.stats.luck;
+            if (eObj.category === 'Heavy') {
+              isCrit = Math.random() * 100 < Math.min(25, eObj.stats.luck * 0.3); // Hard cap at 25%
             }
-          }
 
-          state.playerHp -= dmg;
-          addLog(`${eObj.name} hits you for ${dmg} damage${isCrit ? ' (CRIT)!' : '.'}`);
-          setPlayerDmgText({ val: `-${dmg}`, color: isCrit ? 'text-yellow-400' : 'text-red-500' });
+            // Homo Sapiens enemy: +25% on first hit
+            let enemyIncomingDmg = (eObj.stats.strength * 2.5 + 10) * (0.9 + Math.random() * 0.2);
+            if (ePrefix === 'hs' && !state.enemySapiensFirstHitUsed) {
+              enemyIncomingDmg *= 1.25;
+              state.enemySapiensFirstHitUsed = true;
+              addLog(`${eObj.name} exploits their superior intellect! First strike +25%`);
+            }
 
-          if (state.playerDebuffs.includes('poison') || (newlyApplied && eObj.type === 'poison')) {
-            const pDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
-            state.playerHp -= pDmg;
-            addLog(`You suffer ${pDmg} poison damage.`);
-          }
-          if (state.playerDebuffs.includes('bleed') || (newlyApplied && eObj.type === 'bleed')) {
-            const bDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
-            state.playerHp -= bDmg;
-            addLog(`You suffer ${bDmg} bleeding damage.`);
-          }
-          if (state.playerDebuffs.includes('freeze') || (newlyApplied && eObj.type === 'freeze')) {
-            const fDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
-            state.playerHp -= fDmg;
-            addLog(`You suffer ${fDmg} freeze damage.`);
-          }
+            // Neanderthal enemy rage boost
+            const enemyRageActive = state.enemyRageTurns > 0;
+            if (enemyRageActive) {
+              enemyIncomingDmg *= 1.50;
+              isCrit = isCrit || Math.random() * 100 < 40;
+              state.enemyRageTurns -= 1;
+            }
 
-          // Neanderthal: háborgás
-          if (pObj.class === 'Neanderthal' && state.rageTurns === 0 && !state.rageTriggered) {
-            if ((state.playerHp / pObj.maxHp) < 0.30) {
-              if (Math.random() < 0.40) {
-                state.rageTurns = 2;
-                state.rageTriggered = true;
-                addLog(`Neanderthal rage kicks in for 2 attacks (+50% DMG, +40% CRIT)`);
+            if (isCrit) enemyIncomingDmg *= 2;
+
+            const effectiveArmor = pObj.stats.armor + (pObj.lvl * 3);
+
+            // Logarithmic scaling for armor reduction
+            const armorReductionMult = 100 / (100 + effectiveArmor);
+            let reducedDmg = enemyIncomingDmg * armorReductionMult;
+
+            const defReduction = Math.min(0.75, pObj.stats.resistance / 100);
+
+            let dmg = Math.floor(reducedDmg * (1 - defReduction));
+            dmg = Math.max(1, dmg); // At least 1 damage taken
+
+            let newlyApplied = false;
+            if (eObj.type !== 'none' && Math.random() < 0.12) {
+              if (!state.playerDebuffs.includes(eObj.type)) {
+                state.playerDebuffs.push(eObj.type);
+                setPlayerDebuffs([...state.playerDebuffs]);
+                addLog(`You have been inflicted with ${eObj.type.toUpperCase()}!`);
+                newlyApplied = true;
               }
             }
-          }
 
-          state.playerHp = Math.max(0, state.playerHp);
-          setPlayer(prev => ({ ...prev, hp: state.playerHp }));
-          setPlayerAnim('hit');
-          setEnemyAnim(null);
+            state.playerHp -= dmg;
+            addLog(`${eObj.name} hits you for ${dmg} damage${isCrit ? ' (CRIT)!' : '.'}`);
+            setPlayerDmgText({ val: `-${dmg}`, color: isCrit ? 'text-yellow-400' : 'text-red-500' });
 
-          await delay(400);
-          setPlayerAnim(null);
-          setPlayerDmgText(null);
+            if (state.playerDebuffs.includes('poison') || (newlyApplied && eObj.type === 'poison')) {
+              const pDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
+              state.playerHp -= pDmg;
+              addLog(`You suffer ${pDmg} poison damage.`);
+            }
+            if (state.playerDebuffs.includes('bleed') || (newlyApplied && eObj.type === 'bleed')) {
+              const bDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
+              state.playerHp -= bDmg;
+              addLog(`You suffer ${bDmg} bleeding damage.`);
+            }
+            if (state.playerDebuffs.includes('freeze') || (newlyApplied && eObj.type === 'freeze')) {
+              const fDmg = Math.max(1, Math.floor(pObj.maxHp * 0.013));
+              state.playerHp -= fDmg;
+              addLog(`You suffer ${fDmg} freeze damage.`);
+            }
+
+            // Neanderthal: háborgás
+            if (pObj.class === 'Neanderthal' && state.rageTurns === 0 && !state.rageTriggered) {
+              if ((state.playerHp / pObj.maxHp) < 0.30) {
+                if (Math.random() < 0.40) {
+                  state.rageTurns = 2;
+                  state.rageTriggered = true;
+                  addLog(`Neanderthal rage kicks in for 2 attacks (+50% DMG, +40% CRIT)`);
+                }
+              }
+            }
+
+            state.playerHp = Math.max(0, state.playerHp);
+            setPlayer(prev => ({ ...prev, hp: state.playerHp }));
+            setPlayerAnim('hit');
+            setEnemyAnim(null);
+
+            await delay(400);
+            setPlayerAnim(null);
+            setPlayerDmgText(null);
           } // end enemyAutoEvade else
         }
 
@@ -593,14 +595,14 @@ const FightPlaceholder = () => {
   const handleQuestEnd = async (token, isWin) => {
     try {
       let endpoint = isWin ? '/api/inventory/quest/claim' : '/api/inventory/quest/fail';
-      const achData = { 
+      const achData = {
         maxCrits: combatState.current.maxConsecutiveCrits || 0,
         flawlessWin: isWin && combatState.current.playerHp === combatState.current.playerObj.maxHp,
         enemyEncountered: combatState.current.isArena ? null : combatState.current.enemyObj?.name
       };
-      
+
       let payload = { achievementsData: achData };
-      
+
       if (combatState.current.isArena) {
         endpoint = '/api/arena/claim';
         payload.isWin = isWin;
@@ -608,7 +610,7 @@ const FightPlaceholder = () => {
 
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },

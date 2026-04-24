@@ -10,6 +10,8 @@ const Leaderboard = () => {
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [currency, setCurrency] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [lastPvpAt, setLastPvpAt] = useState(0);
+    const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
     useEffect(() => {
         const fetchLeaderboard = async () => {
@@ -24,6 +26,9 @@ const Leaderboard = () => {
 
                 if (invRes.success && invRes.data?.currency) {
                     setCurrency(invRes.data.currency);
+                    if (invRes.data.last_pvp_at) {
+                        setLastPvpAt(invRes.data.last_pvp_at);
+                    }
                 }
                 if (lbRes.success) {
                     setPlayers(lbRes.data);
@@ -36,6 +41,24 @@ const Leaderboard = () => {
         };
         fetchLeaderboard();
     }, [navigate]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            if (!lastPvpAt) return;
+            const now = Math.floor(Date.now() / 1000);
+            const cooldownSeconds = 12 * 60 * 60; // 12 hours
+            const remaining = Math.max(0, (lastPvpAt + cooldownSeconds) - now);
+            setCooldownRemaining(remaining);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [lastPvpAt]);
+
+    const formatCooldown = (totalSeconds) => {
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return `${h}H ${m}M ${s}S`;
+    };
 
     const handleFight = async () => {
         if (!selectedPlayer) return;
@@ -169,13 +192,22 @@ const Leaderboard = () => {
                             </div>
                         </div>
 
-                        {/* Fight Button */}
                         <div className="bg-black/80 border-t border-amber-900/50 p-4 shrink-0 flex justify-center">
                             <button
                                 onClick={handleFight}
-                                className="px-20 py-4 bg-red-900/90 hover:bg-red-800 text-red-100 text-2xl font-black uppercase tracking-[0.25em] rounded-xl border border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(220,38,38,0.7)]"
+                                disabled={cooldownRemaining > 0}
+                                className={`px-16 py-4 text-2xl font-black uppercase tracking-[0.25em] rounded-xl border transition-all shadow-2xl
+                                    ${cooldownRemaining > 0 
+                                        ? 'bg-stone-800 border-stone-700 text-stone-500 cursor-not-allowed scale-95' 
+                                        : 'bg-red-900/90 hover:bg-red-800 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(220,38,38,0.7)]'
+                                    }`}
                             >
-                                FIGHT
+                                {cooldownRemaining > 0 ? (
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-xs tracking-widest mb-1 opacity-70 text-red-400">Cooldown Active</span>
+                                        {formatCooldown(cooldownRemaining)}
+                                    </div>
+                                ) : "FIGHT"}
                             </button>
                         </div>
                     </div>

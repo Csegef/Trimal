@@ -1,0 +1,17 @@
+2026-04-24T08:27:49.429Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-24T08:50:02.312Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-24T09:03:00.830Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-24T09:27:03.186Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-24T09:27:47.655Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
+2026-04-24T09:32:09.820Z - Attempting registration for: feketecsegeistvan-40257@taszi.hu, joska
+2026-04-24T09:32:09.820Z - Checking existing user
+2026-04-24T09:32:09.823Z - Creating user...
+2026-04-24T09:32:09.889Z - User created with ID: 17
+2026-04-24T09:32:09.889Z - Creating character...
+2026-04-24T09:32:09.896Z - Character created
+2026-04-24T09:32:09.896Z - Generating initial shop items...
+2026-04-24T09:32:09.925Z - Initial shop items generated
+2026-04-24T09:32:09.927Z - User linked to character
+2026-04-24T09:32:09.928Z - Sending email...
+2026-04-24T09:32:11.221Z - MAILER: Verification email sent: 250 2.0.0 OK  1777023146 ffacd0b85a97d-43fe4e4d5b1sm62781369f8f.30 - gsmtp
+2026-04-24T09:42:37.895Z - MAILER LOAD: User=info.trimal.rpg@gmail.com, PassLength=19
