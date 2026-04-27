@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Dungeon Állomás (Dungeon Station)
+// Cél: A kifejezetten erős, nagy kihívást nyújtó labirintusok kezelése.
+//
+// Ehhez általában külön engedély vagy 'Dungeon Script' tárgy szükséges.
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
@@ -56,13 +62,13 @@ const DungeonStation = () => {
   const [stamina, setStamina] = useState(null);
   const [playerLevel, setPlayerLevel] = useState(1);
   const [hasScript, setHasScript] = useState(false);
-  const [hasUnlocked, setHasUnlocked] = useState(null); // null = loading
+  const [hasUnlocked, setHasUnlocked] = useState(null); // null = betöltés
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [currentIdx, setCurrentIdx] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [direction, setDirection] = useState(1); // 1 right, -1 left
+  const [direction, setDirection] = useState(1); // 1 jobbra, -1 balra
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -78,7 +84,7 @@ const DungeonStation = () => {
           if (invRes.data.currency) setCurrency(invRes.data.currency);
           if (invRes.data.stamina) setStamina(invRes.data.stamina);
 
-          // Check for dungeon_script in items
+          // Keresd meg a dungeon scriptet a tárgyak között
           const items = invRes.data.items || [];
           const scriptFound = items.some(
             i => i.type === 'misc' && i.name && i.name.toLowerCase().includes('dungeon')
@@ -158,7 +164,7 @@ const DungeonStation = () => {
     setStarting(false);
   };
 
-  // ─── Loading ────────────────────────────────────────────────────────────────
+  // ─── Betöltés ────────────────────────────────────────────────────────────────
   if (loading || hasUnlocked === null) {
     return (
       <GameLayout>
@@ -169,7 +175,7 @@ const DungeonStation = () => {
     );
   }
 
-  // ─── No Script ──────────────────────────────────────────────────────────────
+  // ─── Nincs script ──────────────────────────────────────────────────────────────
   if (!hasUnlocked) {
     return (
       <GameLayout currency={currency}>
@@ -204,19 +210,19 @@ const DungeonStation = () => {
 
   return (
     <GameLayout currency={currency} customBg={dungeon.bg} bgOpacity={0} fullBleed>
-      {/* Full-bleed background with gradient overlays */}
+      {/* Full-bleed háttér gradiens átfedésekkel */}
       <div className="relative w-full h-full flex items-stretch overflow-hidden">
 
-        {/* Dark gradient – bottom heavy for text legibility */}
+        {/* Dark gradiens – alul nehezebb a szöveg olvashatóságáért */}
         <div
           className="absolute inset-0 z-[1] pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.55) 45%, rgba(0,0,0,0.2) 100%)' }}
         />
-        {/* Side fades for arrow contrast */}
+        {/* Oldalsó átfedések a nyíl kontrasztjához */}
         <div className="absolute inset-y-0 left-0 w-32 z-[1] pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.7), transparent)' }} />
         <div className="absolute inset-y-0 right-0 w-32 z-[1] pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,0.7), transparent)' }} />
 
-        {/* ── LEFT ARROW ── */}
+        {/* ── BALRA NYÍL ── */}
         <button
           onClick={() => changeDungeon(-1)}
           disabled={transitioning}
@@ -226,7 +232,7 @@ const DungeonStation = () => {
           ‹
         </button>
 
-        {/* ── RIGHT ARROW ── */}
+        {/* ── JOBBRA NYÍL ── */}
         <button
           onClick={() => changeDungeon(1)}
           disabled={transitioning}
@@ -236,14 +242,14 @@ const DungeonStation = () => {
           ›
         </button>
 
-        {/* ── TITLE (top-left) ── */}
+        {/* ── CÍM (bal-fölső) ── */}
         <div className="absolute top-4 left-6 z-10 pointer-events-none">
           <h1 className="text-3xl md:text-4xl lg:text-5xl text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
             Dungeons
           </h1>
         </div>
 
-        {/* ── CAROUSEL DOT INDICATORS ── */}
+        {/* ── CAROUSEL pont indicatorok ── */}
         <div className="absolute top-6 right-8 z-10 flex gap-2 items-center">
           {DUNGEONS.map((_, i) => (
             <button
@@ -254,7 +260,7 @@ const DungeonStation = () => {
           ))}
         </div>
 
-        {/* ── CONTENT PANEL (bottom) ── */}
+        {/* ── TARTALOM PANEL (alsó) ── */}
         <div
           className="absolute bottom-0 left-0 right-0 z-10 flex flex-col items-center pb-8 pt-6 px-8"
           style={{
@@ -265,17 +271,14 @@ const DungeonStation = () => {
         >
           <div className="w-full max-w-2xl flex flex-col items-center gap-4">
 
-            {/* Dungeon name + difficulty */}
+            {/* Dungeon neve + nehézsége */}
             <div className="flex items-center gap-4">
               <h2 className="text-3xl md:text-4xl uppercase tracking-widest text-stone-100 drop-shadow-[0_2px_10px_rgba(0,0,0,1)]">
                 {dungeon.name}
               </h2>
-              {/* <span className={`px-3 py-1 border rounded-full text-xs uppercase tracking-widest ${DIFF_COLORS[dungeon.difficulty]}`}>
-                {dungeon.difficulty}
-              </span> */}
             </div>
 
-            {/* Level requirement */}
+            {/* Szint követelmény */}
             <div className={`flex items-center gap-2 text-sm font-bold uppercase tracking-widest ${locked ? 'text-red-400' : 'text-green-400'}`}>
               {locked
                 ? <> Requires Level {dungeon.minLevel} — You are Level {playerLevel}</>
@@ -283,12 +286,12 @@ const DungeonStation = () => {
               }
             </div>
 
-            {/* Description */}
+            {/* Leírás */}
             <p className="text-stone-300 text-sm md:text-base leading-relaxed text-center max-w-xl drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
               {dungeon.description}
             </p>
 
-            {/* Stamina info + enemy preview */}
+            {/* Stamina info + ellenfél előnézet */}
             <div className="flex items-center gap-6 text-xs font-bold uppercase tracking-widest text-stone-400">
               <span>Enemy: <span className="text-stone-200">{dungeon.enemyName}</span></span>
               <span className="w-px h-4 bg-stone-700" />
@@ -298,14 +301,14 @@ const DungeonStation = () => {
               </span>
             </div>
 
-            {/* Error */}
+            {/* Hibaüzenet */}
             {errorMsg && (
               <div className="text-red-400 text-sm font-bold bg-red-900/30 border border-red-800/50 rounded-lg px-4 py-2">
                 {errorMsg}
               </div>
             )}
 
-            {/* Fight button */}
+            {/* Fight gomb */}
             <button
               onClick={handleEnterDungeon}
               disabled={locked || noStamina || !hasScript || starting}

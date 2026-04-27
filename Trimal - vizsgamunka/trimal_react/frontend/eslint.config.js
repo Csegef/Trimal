@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: ESLint Konfiguráció
+// Cél: A kódminőség és formázási szabályok leírása a frontend kódhoz.
+// ==========================================
 import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'

@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Fő Applikáció (App)
+// Cél: A React router és a globális útvonalak (route) definíciója.
+//
+// Ez fűzi össze az összes komponenst, és mondja meg, melyik link melyik oldalt töltse be.
+// ==========================================
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import ClassSelection from './pages/ClassSelection';

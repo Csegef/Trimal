@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Email Hitelesítés
+// Cél: A regisztráció után kiküldött email kód megerősítése.
+// ==========================================
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';

@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Vite Konfiguráció
+// Cél: A frontend fordítójának beállítása (dev server port, proxy, build opciók).
+// ==========================================
 // vite.config.js
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'

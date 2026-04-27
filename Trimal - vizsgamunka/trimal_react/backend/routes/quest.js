@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Küldetés Útvonalak (Quest Routes)
+// Cél: A kalandok generálása vagy az azzal kapcsolatos logikák.
+//
+// Főként a küldetések adatait szolgáltatja a játékosnak.
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authMiddleware');

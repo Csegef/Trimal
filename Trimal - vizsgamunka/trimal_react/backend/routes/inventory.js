@@ -1,12 +1,11 @@
 // backend/routes/inventory.js
-// Direct MySQL implementation – no PHP proxy needed.
-// Inventory is stored as JSON in specie.inventory_json
+
 
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 
-// ─── Elemental Buff Definitions ───────────────────────────────────────────────
+// ─── Elemental Buff Definíciók ───────────────────────────────────────────────
 const ELEMENTAL_BUFFS = [
   { type: 'poison', label: 'Poison', color: '#4ade80', dmgPerTick: 3, ticks: 3, description: 'Deals poison damage over 3 turns' },
   { type: 'cold', label: 'Frost', color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
@@ -28,9 +27,9 @@ function rollElementalBuffRandom(playerLevel) {
   };
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Segédfüggvények ──────────────────────────────────────────────────────────────────
 
-/** Handle level-up logic: increase stats and XP threshold */
+/** Level-up kezelés: növeli a statokat és az XP küszöböt */
 async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
   let lvl = currentLvl;
   let xp = currentXp + xpToAdd;
@@ -43,13 +42,9 @@ async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
   }
 
   if (levelsGained > 0) {
-    // Stat increase: +1 to all, every 5 levels the increase increases by 1
-    // 1-5: +1, 6-10: +2, 11-15: +3, etc.
+    // Stat növelés: +1 mindegyiknek, minden 5. szinten a növekedés nő 1-gyel
+    // 1-5: +1, 6-10: +2, 11-15: +3, stb.
     const statIncrease = 1 + Math.floor((lvl - 1 - levelsGained) / 5);
-    // Wait, the requirement says "1-5ig +1, majd 6-10-ig +2". 
-    // This means at level 6 transition (from 5 to 6), the increase should be +2? 
-    // Or does it mean while being level 6-10?
-    // Let's use: for each level gained, calculate its specific increase.
 
     let totalStatInc = 0;
     let tempLvl = currentLvl;
@@ -76,7 +71,7 @@ async function handleLevelUp(pool, specieId, currentLvl, currentXp, xpToAdd) {
   }
 }
 
-/** Load inventory JSON for a given specie (character) id */
+/** Inventory JSON betöltése egy adott specie (character) id alapján */
 async function loadInventory(pool, specieId) {
   const [rows] = await pool.execute(
     'SELECT inventory_json, stamina FROM specie WHERE id = ?',
@@ -84,7 +79,7 @@ async function loadInventory(pool, specieId) {
   );
   if (!rows[0]) return null;
 
-  // Default structure
+  // Default struktúra
   let inv = {
     capacity: 200,
     used: 0,
@@ -126,12 +121,12 @@ async function loadInventory(pool, specieId) {
 
       inv = { ...inv, ...parsed };
 
-      // Migrate existing players: preserve nested achievements fields
+      // Migálja a meglévő játékosokat: tartsa meg a beágyazott achievements mezőket
       if (parsed.achievements) {
         inv.achievements = { ...inv.achievements, ...parsed.achievements };
       }
 
-      // Deep merge stamina so we don't drop fields. Prioritize the DB specie.stamina column if it exists.
+      // Deep merge stamina, hogy ne dobjunk ki mezőket. Priorizáljuk a DB specie.stamina oszlopát, ha létezik.
       inv.stamina = {
         current: rows[0].stamina !== null && rows[0].stamina !== undefined ? Number(rows[0].stamina) :
           (parsedStamina.current !== undefined ? Number(parsedStamina.current) : 100),
@@ -144,11 +139,11 @@ async function loadInventory(pool, specieId) {
     } catch { }
   }
 
-  // Handle stamina refresh and trim expired buffs
+  // Kezeli a stamina frissítését és a lejárt buffok eltávolítását
   const nowStr = Math.floor(Date.now() / 1000);
   let changed = false;
 
-  // Midnight-based daily reset: compare calendar dates (server local time)
+  // Éjféli alapú napi reset: naptári dátumok összehasonlítása (szerver helyi ideje)
   const lastResetDate = new Date(inv.stamina.last_reset * 1000);
   const nowDate = new Date();
   const isSameDay =
@@ -168,7 +163,7 @@ async function loadInventory(pool, specieId) {
     changed = true;
   }
 
-  // Handle dungeon unlock persistence
+  // Kezeli a dungeon unlock perzisztenciát
   if (!inv.dungeons_unlocked) {
     const hasScript = (inv.items || []).some(
       i => i.type === 'misc' && (i.name || '').toLowerCase().includes('dungeon')
@@ -186,9 +181,9 @@ async function loadInventory(pool, specieId) {
   return inv;
 }
 
-/** Persist inventory JSON back to the database */
+/** Inventory JSON mentése */
 async function saveInventory(pool, specieId, inventory) {
-  // Sync stamina column
+  // Sync stamina oszlop
   const staminaVal = inventory.stamina && inventory.stamina.current !== undefined ? inventory.stamina.current : 100;
 
   await pool.execute(
@@ -197,9 +192,9 @@ async function saveInventory(pool, specieId, inventory) {
   );
 }
 
-/** Recalculate the `used` field (1 slot per unique stack) */
+/** Újra számolja a `used` mezőt (1 slot per egyedi stack) */
 function recalcUsed(inventory) {
-  // Each stack takes exactly its inventory_size, regardless of quantity within the stack
+  // Minden stack pontosan az inventory_size-t foglalja, a stack-en belüli mennyiségtől függetlenül
   inventory.used = inventory.items.reduce((sum, item) => sum + (item.inventory_size || 10), 0);
 }
 
@@ -279,7 +274,7 @@ router.post('/stats/upgrade', async (req, res) => {
 
     const pool = req.pool;
 
-    // Fetch current stat value
+    // Lekéri a current stat értéket
     const statCol = `base_${statKey}`;
     const [rows] = await pool.execute(
       `SELECT ${statCol} FROM specie WHERE id = ?`,
@@ -292,10 +287,10 @@ router.post('/stats/upgrade', async (req, res) => {
     const playerLevel = lvlRows[0]?.lvl || 1;
 
     const currentVal = rows[0][statCol] || 0;
-    // Scaled cost: quadratic growth based on stat + linear growth based on level
+    // Skalázott költség: kvadratikus növekedés a stat szerint + lineáris növekedés a szint szerint
     const cost = Math.max(10, Math.floor(currentVal * currentVal * 0.16 + playerLevel * 2));
 
-    // Deduct cost
+    // Deduct ár
     const inv = await loadInventory(pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
@@ -342,7 +337,7 @@ router.post('/equip', async (req, res) => {
 
     let itemIdx = inv.items.findIndex(i => i.id == itemId && (expectedType ? i.type === expectedType : true));
 
-    // Fallback if not found by type natively, just in case (e.g. capitalized legacy types)
+    // Ha nem található a típus szerint, akkor keress rá (pl. nagybetűs legacy type-ok miatt)
     if (itemIdx === -1) {
       itemIdx = inv.items.findIndex(i => i.id == itemId && (expectedType ? (i.type || '').toLowerCase() === expectedType : true));
     }
@@ -363,7 +358,7 @@ router.post('/equip', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Item is not armor' });
     }
 
-    // If something is already in this slot, push it back to items first
+    // Ha valami már ebben a slotban van, először tedd vissza a tételeket
     const currentlyEquipped = inv.equipped[slot];
     if (currentlyEquipped && typeof currentlyEquipped === 'object') {
       const existing = inv.items.find(i => i.id == currentlyEquipped.id && i.type === currentlyEquipped.type);
@@ -374,13 +369,12 @@ router.post('/equip', async (req, res) => {
       }
     }
 
-    // Move item from items[] into the equipped slot
+    // Tárgy mozgatása az items[] tömbből az equipped slotba
     if (item.quantity > 1) {
       inv.items[itemIdx].quantity -= 1;
       const equippedObj = { ...item, quantity: 1 };
       inv.equipped[slot] = equippedObj;
     } else {
-      // Remove from items array entirely
       inv.items.splice(itemIdx, 1);
       inv.equipped[slot] = { ...item, quantity: 1 };
     }
@@ -408,7 +402,7 @@ router.post('/unequip', async (req, res) => {
     if (!equippedItem)
       return res.status(400).json({ success: false, message: 'Slot is already empty' });
 
-    // Put the item back into the bag
+    // Tedd vissza a tárgyat a bagbe
     if (typeof equippedItem === 'object') {
       const existing = inv.items.find(i => i.id == equippedItem.id && i.type === equippedItem.type);
       if (existing) {
@@ -444,7 +438,7 @@ router.post('/sell', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Item not found' });
 
     const item = inv.items[idx];
-    // Check if item is equipped (now stored as objects), taking type into account to prevent legacy ID collisions
+    // Ellenőrizze, hogy a tárgy fel van-e szerelve (ez most objektumként van tárolva), figyelembe véve a típust az örökölt ID-ütközések megelőzése érdekében
     const isEquipped = Object.values(inv.equipped || {}).some(
       e => e && typeof e === 'object' && e.id == item.id && (e.type || '').toLowerCase() === (item.type || '').toLowerCase()
     );
@@ -453,7 +447,7 @@ router.post('/sell', async (req, res) => {
 
     const sellQty = Math.min(quantity, item.quantity);
 
-    // Look up costs from the DB for dynamic pricing
+    // Keresd meg a költségeket az adatbázisban az dinamikus árazáshoz
     let sellPrice = 0;
     const lookupId = item.item_id != null ? item.item_id : item.id;
     const normalizedType = (item.type || '').toLowerCase();
@@ -462,7 +456,7 @@ router.post('/sell', async (req, res) => {
       const tableMap = { weapon: 'item_weapon', armor: 'item_armor', food: 'item_food', misc: 'item_misc' };
       const table = tableMap[normalizedType];
       if (table) {
-        // None of the tables have 'sell_price'. Everything uses 'normal_currency_cost'.
+        // Az egyik táblának sincs 'sell_price'. Mindenhol 'normal_currency_cost' használatos.
         const [dbRows] = await req.pool.execute(
           `SELECT normal_currency_cost FROM ${table} WHERE item_id = ?`,
           [lookupId]
@@ -475,10 +469,10 @@ router.post('/sell', async (req, res) => {
           const baseCost = row.normal_currency_cost || 0;
 
           if (normalizedType === 'misc') {
-            // Misc items scale directly from the DB base cost
+            // A misc tételek közvetlenül a DB alapárról skálázódnak
             sellPrice = Math.round(baseCost * (1 + playerLevel * 0.04));
           } else {
-            // Equipment and food resell for 40% of their generated shop price
+            // A felszerelés és az étel a generált bolti ár 40%-ért kerül értékesítésre
             const dynamicBuyPrice = Math.round(baseCost * (1 + playerLevel * 0.04));
             sellPrice = Math.round(dynamicBuyPrice * 0.40);
           }
@@ -486,11 +480,11 @@ router.post('/sell', async (req, res) => {
       }
     }
 
-    // Fallback if DB lookup failed or calculated 0
+    // Visszatérési érték, ha az adatbázis lekérdezése sikertelen vagy 0-t számított ki
     if (sellPrice === 0) {
       sellPrice = item.sell_price || 0;
     }
-    // Hard fallback so players don't get 0 for selling
+    // Hard fallback, így a játékosok nem kapnak 0-t az eladáshoz
     if (sellPrice === 0) {
       sellPrice = 1;
     }
@@ -528,7 +522,7 @@ router.post('/use', async (req, res) => {
     const category = item.category || 'health';
     const rarity = (item.rarity || 'common').toLowerCase();
 
-    // Check buffs stack count limit (max 2)
+    // Ellenőrizze a buffok maximális számát (max 2)
     if (inv.active_buffs.length >= 2 && !inv.active_buffs.find(b => b.category === category)) {
       return res.status(400).json({ success: false, message: 'Maximum 2 buff can be active at the same time!' });
     }
@@ -543,8 +537,8 @@ router.post('/use', async (req, res) => {
     }
 
     // Rarity mappings
-    let durationSeconds = 1800; // Rare (30m)
-    let percentIncrease = 5;    // Rare
+    let durationSeconds = 1800; // Ritka (30m)
+    let percentIncrease = 5;    // Ritka
     if (rarity === 'epic') {
       durationSeconds = 7200; // 2h
       percentIncrease = 8;
@@ -565,20 +559,20 @@ router.post('/use', async (req, res) => {
       rarity: rarity
     });
 
-    // Consume item
+    // Item fogyasztás
     item.quantity -= 1;
     if (item.quantity <= 0) inv.items.splice(idx, 1);
     recalcUsed(inv);
     await saveInventory(req.pool, req.user.specieId, inv);
 
-    // Provide the old DB table insert just in case legacy systems check it (optional)
+    // A régi DB tábla beszúrása abban az esetben, ha a régi rendszerek ellenőrzik azt (opcionális)
     if (item.buff_id) {
       await req.pool.execute(
         `INSERT INTO active_effect (specie_id, buff_id, start_date) 
          VALUES (?, ?, CURRENT_TIMESTAMP) 
          ON DUPLICATE KEY UPDATE start_date = CURRENT_TIMESTAMP`,
         [req.user.specieId, item.buff_id]
-      ).catch(e => console.error(e)); // Ignore any error
+      ).catch(e => console.error(e)); // Error ignorálás
     }
 
     res.json({ success: true, message: `Used ${item.name}`, active_buffs: inv.active_buffs });
@@ -598,7 +592,7 @@ router.post('/addItem', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
 
-    // Get Specie Level for weapon damage calculation
+    // A fegyver sebességének kiszámításához a faj szintjének megszerzése
     const [lvlRows] = await req.pool.execute('SELECT lvl FROM specie WHERE id = ?', [req.user.specieId]);
     const sLvl = lvlRows[0]?.lvl || 1;
 
@@ -614,15 +608,15 @@ router.post('/addItem', async (req, res) => {
         const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
         weapon_damage = itemData?.weapon_damage || (bDmg + offset + (sLvl * 2));
 
-        // Roll for elemental buff with damage trade-off
+        //Elemantal buff dobás sebesség csökkentéssel
         elemental_buff = rollElementalBuffRandom(sLvl);
         if (elemental_buff) {
-          const reduction = 0.15 + (Math.random() * 0.15); // 15-30% reduction
+          const reduction = 0.15 + (Math.random() * 0.15); // 15-30% reduktálás
           weapon_damage = Math.max(1, Math.floor(weapon_damage * (1 - reduction)));
         }
       } else if (itemType === 'armor') {
         const bArm = itemData?.armor_point || 18;
-        const offset = Math.floor(Math.random() * 11) - 4; // -4 to +6
+        const offset = Math.floor(Math.random() * 11) - 4; // -4-től +6-ig
         armor_point = itemData?.armor_point || (bArm + offset);
       }
 
@@ -734,7 +728,7 @@ router.post('/quest/complete', async (req, res) => {
     if (!quest)
       return res.status(404).json({ success: false, message: 'Quest not found' });
 
-    // Add currency to inventory
+    // Pénz hozzáadása a készlethez
     const inv = await loadInventory(pool, req.user.specieId);
     if (inv) {
       inv.currency.normal = (inv.currency.normal || 0) + (quest.currency || 0);
@@ -742,7 +736,7 @@ router.post('/quest/complete', async (req, res) => {
       await saveInventory(pool, req.user.specieId, inv);
     }
 
-    // Add XP and handle level up
+    // XP hozzáadása és szintlépés kezelése
     const xpToAdd = quest.xp || 0;
     if (xpToAdd > 0) {
       const [specRows] = await pool.execute(
@@ -786,10 +780,10 @@ router.post('/quest/start', async (req, res) => {
     const combinedStats = agility + luck;
 
     let discount = 0;
-    // Base 15% chance to find a shortcut, increased by luck
+    // 15% esély egy gyorsítószer megtalálására, növeli a szerencse
     const chance = 0.15 + Math.min(0.25, (luck / 100));
     if (Math.random() < chance) {
-      // Very minimal reduction: 1% per 10 combined points, max 25%
+      // Minimal csökkentés: 1% 10 kombinált pontonként, max 25%
       discount = Math.min(0.25, (combinedStats / 10) * 0.01);
     }
 
@@ -822,7 +816,7 @@ router.post('/quest/claim', async (req, res) => {
     const inv = await loadInventory(req.pool, req.user.specieId);
     if (!inv || !inv.active_quest) return res.status(400).json({ success: false, message: 'No active quest' });
 
-    // Track combat achievements from request body
+    // Harci eredmények nyomon követése a kéréstörzséből
     const achData = req.body.achievementsData || {};
     if (achData.maxCrits > inv.achievements.maxCrits) inv.achievements.maxCrits = achData.maxCrits;
     if (achData.flawlessWin) inv.achievements.flawlessWins += 1;
@@ -833,19 +827,19 @@ router.post('/quest/claim', async (req, res) => {
     const q = inv.active_quest;
     const diff = (q.difficulty || 'medium').toLowerCase();
     const now = Math.floor(Date.now() / 1000);
-    // Dungeons skip the time check (they go straight to fight, duration=1)
+    // A börtönök átugorják az idő ellenőrzést (egyenesen a harcba mennek, időtartam = 1)
     if (!q.isDungeon && now < q.start_time + q.duration) return res.status(400).json({ success: false, message: 'Quest not finished yet' });
 
     inv.currency.normal = (inv.currency.normal || 0) + q.reward_normal;
     inv.currency.spec = (inv.currency.spec || 0) + q.reward_spec;
-    // Award XP and handle level up
+    // XP hozzáadása és szintlépés kezelése
     const [specRows] = await req.pool.execute('SELECT lvl, xp FROM specie WHERE id = ?', [req.user.specieId]);
     let levelMsg = "";
     let sLvlOriginal = specRows[0] ? specRows[0].lvl : 1;
     let sLvl = sLvlOriginal;
     let questXP = q.reward_xp || 0;
 
-    // BEGINNER BOOST: Level 1-3 players receive 2x XP
+    // KEZDŐ BÓNSZ: az 1-3. szintű játékosok 2x XP-t kapnak
     const isBeginner = sLvlOriginal <= 3;
     if (isBeginner) {
       questXP = Math.floor(questXP * 2);
@@ -859,34 +853,34 @@ router.post('/quest/claim', async (req, res) => {
       }
     }
 
-    // Drop system logic
+    // Dobási rendszer logikája
     const drops = [];
     const roll = Math.random();
     let numDrops = 0;
     let allowEpicLeg = false;
 
     if (isBeginner) {
-      // BEGINNER BOOST: Always 2 drops, better chance for useful items
+      // KEZDŐ BÓNSZ: Mindig 2 dobás, jobb esély a hasznos elemekre
       numDrops = 2;
       allowEpicLeg = true;
     } else if (diff === 'easy') {
-      if (roll < 0.40) numDrops = 1; // 40% chance
+      if (roll < 0.40) numDrops = 1; // 40% esély
     } else if (diff === 'medium') {
-      if (roll < 0.70) numDrops = 1; // 70% chance
+      if (roll < 0.70) numDrops = 1; // 70% esély
       allowEpicLeg = true;
     } else if (diff === 'hard') {
-      numDrops = roll < 0.40 ? 2 : 1; // 100% chance for 1, 40% for 2
+      numDrops = roll < 0.40 ? 2 : 1; // 100% esély 1-re, 40% 2-re
       allowEpicLeg = true;
     } else if (diff === 'dungeon') {
-      numDrops = 2; // Always 2 drops in dungeons
+      numDrops = 2; // Mindig 2 dobás a börtönökben
       allowEpicLeg = true;
     }
 
-    // Set quest to null after calculating XP and modifiers
+    // A küldetés null-ra állítása az XP és a módosítók kiszámítása után
     inv.active_quest = null;
 
     if (numDrops > 0 && inv.used < inv.capacity) {
-      // Fetch arrays of items
+      // Elemek tömbjeinek betöltése
       const [miscRows] = await req.pool.execute('SELECT * FROM item_misc');
       const [weapRows] = await req.pool.execute('SELECT * FROM item_weapon WHERE rarity IN ("Common", "Rare", "common", "rare")');
 
@@ -894,7 +888,7 @@ router.post('/quest/claim', async (req, res) => {
         let dbItem = null;
         let isWeap = false;
 
-        // 10% chance for a Dungeon Script on non-dungeon quests
+        // Nem dungeon küldetéseknél 10% esély egy Dungeon szkriptre
         if (diff !== 'dungeon' && Math.random() < 0.10) {
           const script = miscRows.find(x => (x.name || '').toLowerCase().includes('dungeon'));
           if (script) {
@@ -904,11 +898,11 @@ router.post('/quest/claim', async (req, res) => {
         }
 
         if (!dbItem) {
-          // Mostly drop misc (80%), sometimes weapon (20%)
+          // 80% esélly misc, 20% esélly weapon
           isWeap = Math.random() < 0.20 && weapRows.length > 0;
           const itemsSource = isWeap ? weapRows : miscRows;
 
-          // Filter items by rarity based on difficulty
+          // Ritkaság szerinti szűrés a nehézség alapján
           let possibleItems = itemsSource;
           if (!isWeap && itemsSource.length > 0) {
             const rRoll = Math.random();
@@ -926,7 +920,7 @@ router.post('/quest/claim', async (req, res) => {
             const filtered = itemsSource
               .filter(x => (x.rarity || 'common').toLowerCase() === targetRarity)
               .filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
-            
+
             if (filtered.length > 0) possibleItems = filtered;
             else {
               possibleItems = itemsSource.filter(x => !(x.name || '').toLowerCase().includes('dungeon'));
@@ -963,7 +957,7 @@ router.post('/quest/claim', async (req, res) => {
                 newItem.base_damage = bDmg;
                 const offset = Math.floor(Math.random() * 14) - 5; // -5 to +8
                 newItem.weapon_damage = bDmg + offset + (sLvl * 2);
-                // Roll for elemental buff
+                // Elem buff dobása
                 const elemBuff = rollElementalBuffRandom(sLvl);
                 if (elemBuff) {
                   const reduction = 0.15 + (Math.random() * 0.15);
@@ -1054,20 +1048,20 @@ router.post('/dungeon/start', async (req, res) => {
     if (inv.stamina.current < dungeon.staminaCost)
       return res.status(400).json({ success: false, message: 'Not enough stamina' });
 
-    // Check player level
+    // A játékos szintjének ellenőrzése
     const [lvlRows] = await req.pool.execute('SELECT lvl FROM specie WHERE id = ?', [req.user.specieId]);
     const playerLevel = lvlRows[0]?.lvl || 1;
     if (playerLevel < dungeon.minLevel)
       return res.status(400).json({ success: false, message: `Requires level ${dungeon.minLevel}` });
 
-    // Check dungeon_script in inventory
+    // Dungeon script ellenőrzése a készletben
     const scriptIndex = (inv.items || []).findIndex(
       i => i.type === 'misc' && (i.name || '').toLowerCase().includes('dungeon')
     );
     if (scriptIndex === -1)
       return res.status(400).json({ success: false, message: 'You need a Dungeon Script to access dungeons' });
 
-    // Consume the dungeon_script
+    // dungeon_script használás
     const scriptItem = inv.items[scriptIndex];
     scriptItem.quantity -= 1;
     if (scriptItem.quantity <= 0) {
@@ -1084,7 +1078,7 @@ router.post('/dungeon/start', async (req, res) => {
       difficulty: 'dungeon',
       description: '',
       start_time: Math.floor(Date.now() / 1000),
-      duration: 1, // immediate — dungeon goes straight to fight
+      duration: 1,
       original_duration: 1,
       reward_normal: rewards.normal,
       reward_spec: rewards.spec,

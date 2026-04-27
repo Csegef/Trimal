@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Fő Szerver (Server)
+// Cél: A NodeJS / Express háttérrendszer belépési pontja.
+//
+// Itt indul el az API, itt állítjuk be a CORS szabályokat, az adatbázis kapcsolatot,
+// és csatoljuk be a különböző útvonalakat (routes).
+// ==========================================
 // backend/server.js
 require('dotenv').config();
 const express = require('express');
@@ -24,13 +31,13 @@ const pool = mysql.createPool({
   queueLimit: 0
 });
 
-// Make pool accessible in routes
+// Pool hozzáférése a route-ok számára
 app.use((req, res, next) => {
   req.pool = pool;
   next();
 });
 
-// Routes
+// Routok
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/character', require('./routes/character'));
 app.use('/api/inventory', require('./routes/inventory'));
@@ -43,9 +50,9 @@ app.use('/api/arena', require('./routes/arena'));
 app.get('/', (req, res) => {
   res.send('Trimal RPG Backend Running with MySQL');
 });
-// Forced restart for env quoting fix
 
-// Start Server
+
+// Start Szerver
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

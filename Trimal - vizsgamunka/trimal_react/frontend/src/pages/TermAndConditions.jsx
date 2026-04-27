@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Felhasználási Feltételek (TOS)
+// Cél: Szabályzat a játék eléréséhez és használatához.
+// ==========================================
 import React from "react";
 import MainLayout from "../layouts/MainLayout";
 

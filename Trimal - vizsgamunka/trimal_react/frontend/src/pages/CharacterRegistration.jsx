@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Karakter Regisztráció
+// Cél: Új fiók létrehozására szolgáló űrlap.
+// ==========================================
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
@@ -43,7 +47,7 @@ const CharacterRegistration = () => {
   const passStrength = calculatePasswordStrength(password);
   const strengthInfo = getStrengthLabel(passStrength);
 
-  // Dynamic Password Match Validation
+  // Dynamic jelszó egyezés validáció
   useEffect(() => {
     if (confirmPassword && password === confirmPassword) {
       setErrors(prev => {
@@ -96,33 +100,6 @@ const CharacterRegistration = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  //   // Regisztráció kezelése
-  //   const handleRegister = async () => {
-  //     if (!validateForm()) {
-  //       return;
-  //     }
-
-  //     // BACKEND INTEGRÁCIÓS PONT
-  //     // Itt kell majd meghívni a backend API-t
-  //     const registrationData = {
-  //       username,
-  //       email,
-  //       password,
-  //       character: {
-  //         class: selectedClass.id,
-  //         className: selectedClass.name,
-  //         hairStyle: hairIndex,
-  //         beardStyle: beardIndex,
-  //       },
-  //     };
-
-  //     console.log("Registration Data:", registrationData);
-
-  //     // PLACEHOLDER - Backend hívás után majd ide jön a navigáció
-  //     alert("Sikeres regisztráció! (Backend integráció függőben)");
-  //     // navigate("/game"); // Később ez lesz a játék főképernyő
-  //   };
-
   const handleRegister = async () => {
     if (!validateForm()) {
       return;
@@ -152,7 +129,7 @@ const CharacterRegistration = () => {
 
       if (data.success) {
         alert(data.message);
-        navigate("/"); // Redirect to Login
+        navigate("/"); // Loginhoz való átirányítás
       } else {
         alert(data.message);
       }

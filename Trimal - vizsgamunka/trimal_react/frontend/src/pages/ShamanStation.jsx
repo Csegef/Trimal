@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Sámán Állomás (Shaman Station)
+// Cél: Általában itt lehet küldetéseket, történet alapú futamokat felvenni.
+//
+// A sámán adja azokat a feladatokat, melyekkel farmolni lehet a pénzt és tapasztalatot.
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
@@ -99,7 +105,7 @@ const ShamanStation = () => {
   const [stamina, setStamina] = useState(null);
   const [quests, setQuests] = useState([]);
   const [currentQuestIndex, setCurrentQuestIndex] = useState(0);
-  const [loading, setLoading] = useState(true); // Default to true initially
+  const [loading, setLoading] = useState(true);
   const [playerLevel, setPlayerLevel] = useState(1);
 
   useEffect(() => {
@@ -117,13 +123,13 @@ const ShamanStation = () => {
           if (invRes.data.stamina) setStamina(invRes.data.stamina);
 
           if (invRes.data.active_quest) {
-            // Already doing a quest? redirect
+            // Már csinál egy küldetést? átirányítás
             navigate('/active-quest');
             return;
           }
         }
 
-        // load user level
+        // Betöltjük a player szintet
         const storedData = localStorage.getItem('userData');
         let level = 1;
         if (storedData) {
@@ -134,7 +140,7 @@ const ShamanStation = () => {
         }
         setPlayerLevel(level);
 
-        // load generated quests from localStorage or create new
+        // Betöltjük a localStorage-ból a generált küldetéseket, vagy újakat hozunk létre
         const savedQstr = localStorage.getItem('shamanQuests');
         const savedLevel = parseInt(localStorage.getItem('shamanQuestsLevel'), 10) || 0;
         let loadedQuests = [];
@@ -144,7 +150,7 @@ const ShamanStation = () => {
           } catch (e) { }
         }
 
-        // Regenerate if no quests, wrong count, or level changed
+        // Újragenerálja ha nincs küldetés, rossz a száma vagy megváltozott a szint
         if (!loadedQuests || loadedQuests.length !== 3 || savedLevel !== level) {
           loadedQuests = [
             generateQuest(level, 0, 1),
@@ -192,7 +198,7 @@ const ShamanStation = () => {
 
       const data = await res.json();
       if (data.success) {
-        // Replace ONLY this specific quest with a new one
+        // Csak ez a specifikus küldetés cserélődik egy új küldetésre
         const updatedQuests = [...quests];
         updatedQuests[index] = generateQuest(playerLevel, index, Date.now());
         localStorage.setItem('shamanQuests', JSON.stringify(updatedQuests));
@@ -244,7 +250,7 @@ const ShamanStation = () => {
       <div className="relative z-10 w-full h-full flex flex-col md:flex-row items-stretch justify-between overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.04] pointer-events-none z-[5] mix-blend-screen" />
 
-        {/* Left Side: Title and Stamina */}
+        {/* Bal oldal: Cím és Stamina */}
         <div className="relative z-20 flex-1 p-4 md:p-6 flex flex-col justify-between pointer-events-none shrink-0 min-h-0">
           <div className="pointer-events-auto mb-4 md:mb-0 max-w-sm md:max-w-xl">
             <h1 className="text-3xl md:text-4xl lg:text-5xl text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
@@ -255,41 +261,41 @@ const ShamanStation = () => {
             </p>
           </div>
 
-        {/* Stamina Display specifically for Shaman - Wide Bottom Left */}
-        {stamina && (
-          <div className="pointer-events-auto w-full md:max-w-4xl md:pr-8 mt-auto md:mb-0 mb-4 flex-shrink-0">
-            <div className="flex justify-between items-center mb-2 drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
-              <span className="text-stone-300 text-[11px] font-bold uppercase tracking-widest">Stamina</span>
-              <span className="text-stone-400 text-[11px] font-bold tabular-nums">{stamina.current} / {stamina.max}</span>
-            </div>
+          {/* Stamina Display Shamanhoz - Széles, alsó bal oldalon */}
+          {stamina && (
+            <div className="pointer-events-auto w-full md:max-w-4xl md:pr-8 mt-auto md:mb-0 mb-4 flex-shrink-0">
+              <div className="flex justify-between items-center mb-2 drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
+                <span className="text-stone-300 text-[11px] font-bold uppercase tracking-widest">Stamina</span>
+                <span className="text-stone-400 text-[11px] font-bold tabular-nums">{stamina.current} / {stamina.max}</span>
+              </div>
 
-            <div className="relative h-4 bg-stone-950/80 rounded-lg overflow-hidden mb-3 border-[2px] border-stone-800 shadow-2xl">
-              <div
-                className="h-full rounded-sm transition-all duration-300 shadow-[0_0_10px_currentColor]"
-                style={{
-                  width: `${(stamina.current / stamina.max) * 100}%`,
-                  background: stamina.current / stamina.max > 0.5 ? '#16a34a'
-                    : stamina.current / stamina.max > 0.25 ? '#ca8a04'
-                      : '#dc2626',
-                  color: stamina.current / stamina.max > 0.5 ? '#16a34a'
-                    : stamina.current / stamina.max > 0.25 ? '#ca8a04'
-                      : '#dc2626'
-                }}
-              />
-              {Array.from({ length: 9 }).map((_, i) => (
-                <div key={i} className="absolute top-0 bottom-0 w-px bg-stone-900/60" style={{ left: `${(i + 1) * 10}%` }} />
-              ))}
+              <div className="relative h-4 bg-stone-950/80 rounded-lg overflow-hidden mb-3 border-[2px] border-stone-800 shadow-2xl">
+                <div
+                  className="h-full rounded-sm transition-all duration-300 shadow-[0_0_10px_currentColor]"
+                  style={{
+                    width: `${(stamina.current / stamina.max) * 100}%`,
+                    background: stamina.current / stamina.max > 0.5 ? '#16a34a'
+                      : stamina.current / stamina.max > 0.25 ? '#ca8a04'
+                        : '#dc2626',
+                    color: stamina.current / stamina.max > 0.5 ? '#16a34a'
+                      : stamina.current / stamina.max > 0.25 ? '#ca8a04'
+                        : '#dc2626'
+                  }}
+                />
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <div key={i} className="absolute top-0 bottom-0 w-px bg-stone-900/60" style={{ left: `${(i + 1) * 10}%` }} />
+                ))}
+              </div>
+              <button
+                onClick={handleRestoreStamina}
+                className="w-full py-4 bg-stone-900/80 border-[2px] border-amber-900/30 hover:bg-stone-800 transition-all text-stone-400 hover:text-amber-500 rounded-xl text-sm font-black tracking-widest uppercase shadow-2xl"
+              >
+                [DEV] Restore Stamina
+              </button>
             </div>
-            <button
-              onClick={handleRestoreStamina}
-              className="w-full py-4 bg-stone-900/80 border-[2px] border-amber-900/30 hover:bg-stone-800 transition-all text-stone-400 hover:text-amber-500 rounded-xl text-sm font-black tracking-widest uppercase shadow-2xl"
-            >
-              [DEV] Restore Stamina
-            </button>
-          </div>
-        )}
+          )}
         </div>
-        {/* Right Side: Quest Carousel Panel */}
+        {/* Jobboldali rész: Elérhető küldetések */}
         <div className="relative z-10 w-full md:w-[350px] lg:w-[400px] xl:w-[450px] bg-stone-950/80 backdrop-blur-xl border-l-[3px] border-amber-900/30 p-4 md:p-6 flex flex-col shrink-0 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-amber-900/50 ml-auto">
           <h2 className="text-2xl text-stone-200 tracking-widest uppercase mb-8 text-center border-b-[2px] border-stone-800 pb-4 shrink-0">
             Available Quests
@@ -298,11 +304,11 @@ const ShamanStation = () => {
           {quests.length > 0 && currentQuest && (
             <div className="flex-1 flex flex-col relative justify-center">
 
-              {/* Navigation Arrows */}
+              {/* Navigációs nyilak */}
               <button onClick={prevQuest} className="absolute left-[-20px] z-30 text-5xl text-amber-600/40 hover:text-amber-400 hover:scale-110 transition-all font-black">&lsaquo;</button>
               <button onClick={nextQuest} className="absolute right-[-20px] z-30 text-5xl text-amber-600/40 hover:text-amber-400 hover:scale-110 transition-all font-black">&rsaquo;</button>
 
-              {/* Current Quest Card */}
+              {/* Küldetés panel */}
               <div className="bg-stone-900 border-2 border-stone-700 rounded-3xl p-8 flex flex-col gap-6 shadow-2xl relative overflow-hidden mx-4 h-[420px]">
                 <div className="absolute top-0 right-0 w-40 h-40 bg-amber-900/10 rounded-full blur-3xl pointer-events-none" />
 

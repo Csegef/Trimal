@@ -1,9 +1,10 @@
-// src/models/Item.jsx
-// Item model definitions matching the 4 DB tables:
-//   item_weapon, item_armor, item_food, item_misc
+// ==========================================
+// Fájl: Tárgy Komponens (Item Model)
+// Cél: Egyetlen tárgy csempéjének (kártyájának) megjelenítése.
 //
-// The inventory_json in `specie` stores items as plain objects.
-// These helpers normalise, display and reason about those objects.
+// Kezeli a ritkaság (rarity) alapján történő színezést, a tooltip-et (felugró információs ablakot),
+// és a kattintási vagy húzási eseményeket.
+// ==========================================
 
 import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
@@ -27,8 +28,8 @@ export const RARITY_GLOW = {
 // ─── Item type metadata ───────────────────────────────────────────────────────
 
 /**
- * Returns the fallback emoji icon for an item when no iconPath is set.
- * Matches item_weapon / item_armor / item_food / item_misc.
+ * Visszaadja a fallback emoji ikont a tételhez, ha nincs beállítva iconPath.
+ * item_weapon / item_armor / item_food / item_misc.
  */
 export function getItemIcon(item) {
     switch (item?.type) {
@@ -41,15 +42,15 @@ export function getItemIcon(item) {
 }
 
 /**
- * Returns true if this item can be equipped (weapon or armor).
+ * Ez a funkció visszaadja, hogy a tárgy felölthető-e (fegyver vagy páncél).
  */
 export function isEquippable(item) {
     return item?.type === "weapon" || item?.type === "armor";
 }
 
 /**
- * Determines the equipment slot for an item based on its type and category.
- * Mirrors the logic in inventoryApi.js resolveEquipSlot().
+ * Ez a funkció megállapítja a tárgy felszerelési helyét a típusa és kategóriája alapján.
+ * Egyezik a inventoryApi.js resolveEquipSlot() logikájával.
  *
  * item_weapon  → "weapon"
  * item_armor   → "armor_head" | "armor_chest" | "armor_legs" | "armor_feet"
@@ -88,8 +89,8 @@ export function resolveEquipSlot(item) {
 // ─── Image path resolver ──────────────────────────────────────────────────────
 
 /**
- * Builds the correct image src path based on item type, rarity and category,
- * matching the folder structure under /assets/design/items/.
+ * Ez a funkció elkészíti a helyes kép src útvonalat a tárgy típusa, ritkasága és kategóriája alapján,
+ * megegyezik a /assets/design/items/ alatti mappaszerkezettel.
  *
  * weapon  → items/weapon/{rarity}/{iconPath}
  * armor   → items/armor/{rarity}/{iconPath}
@@ -103,10 +104,9 @@ export function resolveItemImagePath(item) {
     if (!item?.iconPath) return null;
 
     const rarity = (item.rarity || "common").toLowerCase();
-    // Normalise legacy typo: 'resistence' → 'resistance'
+    // Legacy typo normalizálása: 'resistence' → 'resistance'
     const rawCategory = (item.category || "").toLowerCase();
     const category = rawCategory === "resistence" ? "resistance" : rawCategory;
-    // Vite serves src/ assets via /src/... in dev mode (symlink: src/assets/design -> Graphics)
     const base = "/src/assets/design/items";
 
     const type = (item.type || "").toLowerCase();
@@ -119,11 +119,11 @@ export function resolveItemImagePath(item) {
             return `${base}/armor/${rarity}/${item.iconPath}`;
 
         case "food":
-            // food sub-folder is the buff category (heal, agility, strength, luck, resistance)
+            // A food al mappa a buff kategória (heal, agility, strength, luck, resistance)
             return `${base}/food/${category}/${item.iconPath}`;
 
         case "misc":
-            // misc has no rarity sub-folder
+            // a misc-nek nincs rarity al-mappája
             return `${base}/misc/${item.iconPath}`;
 
         default:
@@ -135,7 +135,7 @@ export function resolveItemImagePath(item) {
 // ─── Per-type stat lines ──────────────────────────────────────────────────────
 
 /**
- * Returns an array of { label, value } pairs for the item's type-specific stats.
+ * Visszaad egy tömböt { label, value } párokkal a tárgy típus-specifikus statisztikáihoz.
  *
  * item_weapon:  base_damage, normal_currency_cost, spec_currency_cost, inventory_size
  * item_armor:   armor_point, normal_currency_cost, spec_currency_cost, inventory_size
@@ -187,7 +187,7 @@ export function getItemStats(item) {
 }
 
 // ─── ItemSlotTile ─────────────────────────────────────────────────────────────
-// A single square tile used in the bag grid.
+// Ez az ItemSlotTile az inventoryban használt tile.
 
 export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity = false }) {
     const [hoverRect, setHoverRect] = useState(null);
@@ -206,12 +206,12 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
     const imageSrc = resolveItemImagePath(item);
     const [imgError, setImgError] = useState(false);
 
-    // Reset image error state when item prop changes (e.g., slot re-rendered with new item)
+    // Ez a sor reset-eli a kép hiba állapotát, amikor az item prop megváltozik (pl. a slot újjárenderel egy új item-mel)
     useEffect(() => {
         setImgError(false);
     }, [item]);
 
-    // Comparison logic
+    // Ez a Comparison logic összehasonlítja a két tárgyat.
     const getComparison = () => {
         if (!equipped || !item) return null;
         if (item.type === 'weapon' && equipped.type === 'weapon') {
@@ -230,9 +230,9 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
     };
     const comparison = getComparison();
 
-    // Has elemental buff?
+    // Van elemental buff?
     const elemBuff = item.elemental_buff;
-    // Has elemental on equipped?
+    // Van elemental buff a felszerelt itemen?
     const eqElemBuff = equipped?.elemental_buff;
 
     return (
@@ -264,7 +264,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                         x{item.quantity}
                     </span>
                 )}
-                {/* Elemental buff indicator (Top-Left) */}
+                {/* Ez az Elemental buff indicator a bal felső sarokban jelenik meg. */}
                 {elemBuff && (
                     <img
                         src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`}
@@ -273,7 +273,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                         className="absolute top-1 left-1 w-4 h-4 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] z-10"
                     />
                 )}
-                {/* Comparison arrow indicator (Top-Right) */}
+                {/* Ez a Comparison arrow indicator a jobb felső sarokban jelenik meg. */}
                 {comparison && (
                     <img
                         src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`}
@@ -283,7 +283,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                 )}
             </button>
 
-            {/* Hover description tooltip using Portal to avoid clipping */}
+            {/* A hover description tooltip a Portal-t használja, hogy elkerülje a levágást. */}
             {hoverRect && createPortal(
                 <div
                     className="fixed z-[99999] pointer-events-none"
@@ -302,7 +302,7 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                             borderColor: RARITY_COLOR[rarity] + "55",
                         }}
                     >
-                        {/* Name */}
+                        {/* Név */}
                         <div
                             className="text-[18px] font-title leading-tight mb-0.5"
                             style={{ color: RARITY_COLOR[rarity] }}
@@ -342,29 +342,28 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                                 <span className="text-[12px] opacity-80 leading-tight">{elemBuff.description}</span>
                             </div>
                         )}
-                        {/* Armor Stats */}
+                        {/* Armor Statok */}
                         {item.type === "armor" && item.armor_point != null && (
                             <div className="text-[14px] text-blue-400 mb-1 flex flex-col gap-0.5">
                                 <span>Item Armor: {item.armor_point}</span>
                                 <span className="text-stone-400 font-medium">Combat Defense: {item.armor_point + ((playerInfo?.lvl ?? 1) * 3)}</span>
                             </div>
                         )}
-                        {/* Food Stats */}
+                        {/* Food Statok */}
                         {item.type === "food" && item.category && (
                             <div className="text-[14px] text-green-400 mb-1 flex flex-col gap-0.5">
                                 <span>+{rarity === "legendary" ? "10" : rarity === "epic" ? "8" : "5"}% to {item.category}</span>
                                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
                             </div>
                         )}
-                        {/* Comparison Section */}
+                        {/* Összehasonlítási Szakasz */}
                         {comparison && (
                             <div className="mt-0.5 pt-0.5 border-t border-stone-800">
                                 <div className="text-[12px] uppercase tracking-widest text-stone-500 mb-0.5">
                                     vs. Equipped
                                 </div>
-                                <div className={`text-[14px] flex items-center gap-1 ${
-                                    comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
-                                }`}>
+                                <div className={`text-[14px] flex items-center gap-1 ${comparison.diff > 0 ? 'text-green-400' : comparison.diff < 0 ? 'text-red-400' : 'text-stone-400'
+                                    }`}>
                                     <img src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`} className="w-3.5 h-3.5" alt="indicator" />
                                     <span>
                                         {comparison.stat === 'damage' ? 'Damage' : 'Armor'}:
@@ -381,26 +380,22 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
                                 {comparison.diff < 0 && !elemBuff && (
                                     <div className="text-[12px] text-red-500/80 mt-0.5">⬇ Downgrade</div>
                                 )}
-                                {/* Show if equipped has elemental but this doesn't */}
                                 {eqElemBuff && !elemBuff && (
                                     <div className="text-[12px] text-amber-400/80 mt-0.5">⚠ Equipped has {eqElemBuff.label} — you'll lose it!</div>
                                 )}
                             </div>
                         )}
-                        {/* No equipped item for comparison */}
                         {!comparison && equipped === null && (item.type === 'weapon' || item.type === 'armor') && (
                             <div className="mt-1 pt-1 border-t border-stone-800">
                                 <div className="text-[12px] text-green-400/80">No item equipped in this slot — direct upgrade!</div>
                             </div>
                         )}
-                        {/* Description */}
                         {item.description && (
                             <div className="text-stone-400 text-[13px] leading-tight pt-0.5 border-t border-stone-800">
                                 {item.description}
                             </div>
                         )}
                     </div>
-                    {/* Arrow */}
                     <div
                         className="mx-auto w-2 h-2 rotate-45 -mt-1 relative z-[99999]"
                         style={{ background: "rgba(12,7,2,0.98)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
@@ -411,6 +406,3 @@ export function ItemSlotTile({ item, onClick, playerInfo, equipped, hideQuantity
         </div>
     );
 }
-
-// ItemDetailRow has been removed.
-// Item descriptions are now shown as hover tooltips on ItemSlotTile.

@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Osztály/Faj Választó (Class Selection)
+// Cél: Az új karakter létrehozásának első lépése.
+//
+// A játékos itt dönti el, hogy milyen fajú karakterrel (pl. ember, tünde, neander-völgyi) játszik.
+// ==========================================
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

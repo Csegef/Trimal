@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Levelező (Mailer) Segédfüggvény
+// Cél: Email üzenetek kiküldése (pl. jelszó visszaállításnál).
+//
+// Az Nodemailer csomagot használja a hitelesítő kódok kézbesítésére.
+// ==========================================
 const nodemailer = require('nodemailer');
 
 const fs = require('fs');

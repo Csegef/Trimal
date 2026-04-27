@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Effektek Útvonalak (Effects Routes)
+// Cél: Az aktív hatások (buffok) lekérdezése az adatbázisból.
+//
+// Nem sűrűn használt, főleg információs vagy kompatibilitási okokból maradt meg.
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authMiddleware');

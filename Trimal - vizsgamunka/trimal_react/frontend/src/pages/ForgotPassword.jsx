@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Elfelejtett Jelszó
+// Cél: Segít a játékosnak jelszót cserélni, ha elfelejtette.
+// ==========================================
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";

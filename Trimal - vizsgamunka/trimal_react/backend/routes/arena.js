@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Aréna Útvonalak (Arena Routes)
+// Cél: Az arénával kapcsolatos API végpontok (harc indítása, ranglista).
+//
+// Ezeket a végpontokat hívja meg a frontend, amikor a játékos meg akar
+// támadni egy másikat, vagy be akarja tölteni a toplistát.
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');

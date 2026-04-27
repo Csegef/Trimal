@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Bolt Oldal (Shop)
+// Cél: A játékbeli boltok (Tinkerer, Herbalist) frontend megjelenítése.
+//
+// A játékos ezen a felületen tud vásárolni, itt jelennek meg a felkínált portékák.
+// ==========================================
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
@@ -105,7 +111,7 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
     );
   }
 
-  // Comparison against equipped item
+  // Összehasonlítás a felszerelt elemmel
   const getShopComparison = () => {
     if (!inventory?.equipped || !shopItem) return null;
     if (shopItem.type === 'weapon') {
@@ -116,7 +122,7 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
       return { stat: 'damage', diff: itemDmg - eqDmg, current: eqDmg, next: itemDmg, eqElemBuff: eq.elemental_buff };
     }
     if (shopItem.type === 'armor') {
-      // Find which armor slot this goes into
+      // Melyik armor slotba illik
       const icon = (shopItem.iconPath || "").toLowerCase();
       const cat = (shopItem.category || "").toLowerCase();
       let slotKey = 'armor_plate';
@@ -181,7 +187,7 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
             ) : null}
           </div>
         )}
-        {/* Elemental indicator (Top-Left) */}
+        {/* Elemental indikátor (Top-Left) */}
         {!isPurchased && elemBuff && (
           <img
             src={`/src/assets/design/status_effects/status_indicators/status_${elemBuff.type || 'poison'}.png`}
@@ -190,7 +196,7 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
             className="absolute top-1.5 left-1.5 w-5 h-5 drop-shadow-[0_0_2px_rgba(0,0,0,0.8)] z-10"
           />
         )}
-        {/* Comparison arrow (Top-Right) */}
+        {/* Comparison nyil  */}
         {!isPurchased && comparison && !comparison.noEquipped && (
           <img
             src={`/src/assets/design/status_effects/status_indicators/status_${comparison.diff > 0 ? 'up' : comparison.diff < 0 ? 'down' : 'neutral'}.png`}
@@ -268,7 +274,6 @@ function ShopItemTile({ item, onClick, playerInfo, inventory }) {
                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
               </div>
             )}
-            {/* Comparison vs equipped */}
             {comparison && (
               <div className="mt-0.5 pt-0.5 border-t border-stone-800">
                 <div className="text-[12px] uppercase tracking-widest text-stone-500 mb-0.5">
@@ -466,7 +471,7 @@ const Shop = () => {
       <div className="relative z-10 w-full h-full flex flex-col justify-between overflow-hidden">
         <div className="absolute inset-0 bg-white/[0.04] pointer-events-none z-[5] mix-blend-screen" />
 
-        {/* Header - Corner aligned (Absolute top left to avoid flex flows affecting it) */}
+        {/* Cím - Jobbra rendezve */}
         <div className="absolute top-4 left-6 pointer-events-auto max-w-sm md:max-w-xl z-20">
           <h1 className="text-3xl md:text-4xl lg:text-5xl  text-amber-500 tracking-widest uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)]">
             {shopType === 'tinkerer' ? "Tinkerer's Workshop" : "Herbalist's Garden"}
@@ -478,7 +483,7 @@ const Shop = () => {
           </p>
         </div>
 
-        {/* Bottom Wares Panel */}
+        {/* Lenti Wares Panel */}
         <div className="pointer-events-auto mt-auto mb-6 w-full max-w-7xl mx-auto shrink-0 px-4 md:px-8 z-10">
           <div className="bg-stone-900/90 backdrop-blur-xl border-2 border-amber-900/30 rounded-3xl p-4 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
             <div className="flex justify-between items-center mb-6 border-b border-stone-800 pb-4">

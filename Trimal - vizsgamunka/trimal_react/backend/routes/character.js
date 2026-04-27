@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Karakter Útvonalak (Character Routes)
+// Cél: Karakter létrehozására, lekérdezésére szolgáló API.
+//
+// Amikor a játékos kiválasztja a faját és kinézetét, ez az útvonal menti el az adatokat.
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authMiddleware');

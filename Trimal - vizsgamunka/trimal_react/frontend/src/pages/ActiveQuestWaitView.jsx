@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Aktív Küldetés / Várakozó Képernyő
+// Cél: A küldetések és harcok folyamatának (timer) vizuális megjelenítése.
+//
+// Ide irányít át a rendszer, amíg egy többperces küldetés tart, és
+// itt dől el a végeredmény (győzelem vagy vereség).
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
@@ -60,7 +67,6 @@ const ActiveQuestWaitView = () => {
       return Math.max(0, activeQuest.start_time + activeQuest.duration - now);
     };
 
-    // Set initial value from clock
     setTimeLeft(computeTimeLeft());
 
     const timer = setInterval(() => {
@@ -78,8 +84,6 @@ const ActiveQuestWaitView = () => {
       const res = await fetch('/api/inventory/quest/skip', { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
       const data = await res.json();
       if (data.success) {
-        // Update activeQuest state so the timer effect re-computes with the new start_time
-        // The server set start_time to now - duration - 10, so replicate that here
         setActiveQuest(prev => prev ? {
           ...prev,
           start_time: Math.floor(Date.now() / 1000) - (prev.duration || 0) - 10
@@ -100,14 +104,12 @@ const ActiveQuestWaitView = () => {
 
   const progressPct = Math.max(0, Math.min(100, ((maxTime - timeLeft) / maxTime) * 100));
 
-  // Background: quest's own environment image, fallback to map gif
   const bgImage = activeQuest?.background || '/src/assets/design/backgrounds/map/map-gif.gif';
 
   return (
     <GameLayout currency={currency} customBg={bgImage} bgOpacity={0} fullBleed>
       <div className="relative w-full h-full flex items-stretch overflow-hidden">
 
-        {/* Gradient overlays – like DungeonStation */}
         <div
           className="absolute inset-0 z-[1] pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.15) 100%)' }}
@@ -115,12 +117,10 @@ const ActiveQuestWaitView = () => {
         <div className="absolute inset-y-0 left-0 w-24 z-[1] pointer-events-none" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.6), transparent)' }} />
         <div className="absolute inset-y-0 right-0 w-24 z-[1] pointer-events-none" style={{ background: 'linear-gradient(to left, rgba(0,0,0,0.6), transparent)' }} />
 
-        {/* Content – pinned bottom like DungeonStation */}
         {activeQuest && (
           <div className="absolute bottom-0 left-0 right-0 z-10 flex flex-col items-center pb-6 pt-4 px-8 gap-3">
             <div className="w-full max-w-2xl flex flex-col items-center gap-3">
 
-              {/* Title */}
               <h1 className="text-3xl md:text-4xl font-black text-amber-500 tracking-[0.15em] uppercase drop-shadow-[0_0_15px_rgba(0,0,0,1)] leading-tight text-center">
                 {activeQuest.name}
               </h1>
@@ -132,7 +132,6 @@ const ActiveQuestWaitView = () => {
                 }>{activeQuest.difficulty}</span>
               </p>
 
-              {/* Description */}
               {activeQuest.description && (
                 <p className="text-stone-300 text-xs italic opacity-90 text-center max-w-xl leading-snug drop-shadow-[0_2px_6px_rgba(0,0,0,1)]">
                   "{activeQuest.description}"
@@ -144,14 +143,12 @@ const ActiveQuestWaitView = () => {
                 </div>
               )}
 
-              {/* "You've arrived" overlay text */}
               {timeLeft === 0 && (
                 <span className="text-green-400 font-black text-xl tracking-widest uppercase animate-pulse drop-shadow-[0_0_10px_rgba(0,0,0,1)]">
                   You've arrived!
                 </span>
               )}
 
-              {/* Progress bar */}
               <div className="w-full flex flex-col gap-0.5">
                 <div className="flex justify-between items-center px-0.5">
                   <span className="text-amber-500 font-bold uppercase tracking-widest text-[10px]">Quest Progress</span>
@@ -171,7 +168,6 @@ const ActiveQuestWaitView = () => {
                 </div>
               </div>
 
-              {/* Rewards + buttons row */}
               <div className="w-full flex justify-between items-center">
                 <div className="bg-stone-900/80 px-3 py-1.5 rounded-lg border border-stone-700">
                   <span className="text-stone-500 text-[9px] font-black uppercase tracking-widest block mb-0.5">Expected Rewards</span>

@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Karakter Modell (Character Model)
+// Cél: A játékbeli karakterek (fajok, osztályok) felépítésének definíciója.
+//
+// Bár a projekt jelenleg főleg közvetlen adatbázis lekérdezéseket (SQL) használ,
+// ez a modell a struktúrát írja le az Mongoose/ORM alapú megközelítéshez.
+// ==========================================
 // backend/models/Character.js
 
 class Character {

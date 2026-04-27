@@ -1,18 +1,24 @@
+// ==========================================
+// Fájl: Játékos Portré (Player Portrait)
+// Cél: A karakter grafikus megjelenítése a kiválasztott faj, haj és szakáll alapján.
+//
+// A képrétegeket helyezi egymásra, így dinamikusan állítja össze a játékos avatárját.
+// ==========================================
 import React from 'react';
 
 /**
- * Parses style ID from string forms (e.g. "hair_2" -> 2) or returns the number.
+ * A stílus ID-t a string formumból parses (pl. "hair_2" -> 2) vagy visszaadja a számot.
  */
 export const parseStyleId = (val) => {
     if (val == null) return 0;
     if (typeof val === "number") return val;
-    // Extract the first sequence of digits found in the string
+    // A stringben talált első számot kinyeri
     const m = String(val).match(/\d+/);
     return m ? parseInt(m[0], 10) : 0;
 };
 
 /**
- * Gets the correct species prefix for cosmetic assets
+ * A faj prefix-ét lekéri a kozmetikai asszettekhez.
  */
 export const getSpeciesPrefix = (className) => {
     const c = (className || '').toLowerCase();

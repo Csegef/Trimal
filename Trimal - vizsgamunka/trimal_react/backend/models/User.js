@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Felhasználó Modell (User Model)
+// Cél: A játékosok (felhasználók) fiókjainak sémája.
+//
+// Tartalmazza az emailt, jelszavakat és az azonosításhoz szükséges adatokat.
+// ==========================================
 // backend/models/User.js
 // This model is a helper for queries, not an ORM
 
@@ -9,9 +15,9 @@ class User {
   }
 
   async create({ nickname, email, password, verification_token }) {
-    // Generate salt
+    // só generálása
     const salt = await bcrypt.genSalt(10);
-    // Hash password with salt
+    // jelszó hashelése sóval
     const hashed = await bcrypt.hash(password, salt);
 
     const [result] = await this.pool.execute(
@@ -35,7 +41,7 @@ class User {
   async checkPassword(user, password) {
     const match = await bcrypt.compare(password, user.password);
     if (match) {
-      // Update last_login
+      // Last_login updatelése
       await this.pool.execute(`UPDATE user SET last_login = NOW() WHERE id = ?`, [user.id]);
     }
     return match;

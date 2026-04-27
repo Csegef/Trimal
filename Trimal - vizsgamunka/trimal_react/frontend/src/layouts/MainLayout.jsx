@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Fő Elrendezés (Main Layout)
+// Cél: Az alapértelmezett, egyszerűbb weboldal váz.
+//
+// Leginkább a bejelentkezésnél, regisztrációnál használjuk, ahol még nincs
+// szükség a teljes játékbeli keretre, csak a háttérre és egy dobozra.
+// ==========================================
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
@@ -7,7 +14,7 @@ const MainLayout = ({ children }) => {
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden text-stone-100">
-      {/* Background Image */}
+      {/* A háttérkép */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
         style={{
@@ -15,14 +22,14 @@ const MainLayout = ({ children }) => {
         }}
       >
         <div className="absolute inset-0 bg-black/40" />{" "}
-        {/* Overlay for readability */}
+        {/* A háttér képét jobban olvashatóvá teszi. */}
       </div>
 
-      {/* Content Wrapper */}
+      {/* A tartalom tartója */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Header / Logo */}
+        {/* Fejléc / Logo */}
         <header className="relative flex justify-center py-3 md:py-4">
-          {/* Back to Home button — only shown on sub-pages (not on login/registration) */}
+          {/* Back to Home gomb - csak az oldalon jelenik meg (nem a login/registration oldalon) */}
           {!isHome && (
             <Link
               to="/"

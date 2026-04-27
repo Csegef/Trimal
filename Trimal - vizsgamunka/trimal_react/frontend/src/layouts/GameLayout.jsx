@@ -1,7 +1,14 @@
+// ==========================================
+// Fájl: Játék Elrendezés (Game Layout)
+// Cél: A fő játéktér vizuális váza.
+//
+// Felelős a menüsor (navbar), az aktuális pénz és stamina (energia) kijelzéséért,
+// valamint a tartalom megfelelő központosításáért a különböző aloldalakon.
+// ==========================================
 import React, { useRef } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 
-// TODO: BACKEND - This layout is specific for authenticated users.
+// Ez az elrendezés specifikus az autentikált felhasználók számára.
 const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'center', fullBleed = false }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,11 +48,11 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
   }, []);
   const handleLogout = async () => {
     try {
-      // Get token from localStorage
+      // A token-t lekérjük a localStorage-ból.
       const token = localStorage.getItem("token");
 
       if (token) {
-        // Call logout API endpoint
+        // A logout API endpointet meghívjuk.
         const response = await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
@@ -61,13 +68,13 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local storage regardless of API response
+      // A local storage-t tisztítjuk a válasz paraméterektől függetlenül
       localStorage.removeItem("token");
       localStorage.removeItem("userData");
       localStorage.removeItem("characterData");
       localStorage.removeItem("lastLogin");
 
-      // Redirect to login page
+      // A bejelentkezési oldalra irányítjuk át
       navigate("/", { replace: true });
     }
   };
@@ -76,7 +83,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
 
   return (
     <div className="relative min-h-screen h-screen w-full overflow-hidden text-stone-100">
-      {/* Main Background - Site Background */}
+      {/* A háttér */}
       <div
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{
@@ -115,10 +122,9 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
 
           </div>
 
-          {/* Center: Navigation Links (Stations) */}
+          {/* Center: Navigation Linkek (Stations) */}
           <nav className="flex w-full order-last mt-2 md:mt-0 md:w-auto md:order-none items-center justify-center md:justify-start gap-4 md:gap-6 overflow-x-auto md:overflow-visible scrollbar-hide pb-1 md:pb-0 px-2">
             {location.pathname === '/fight' ? (
-              /* Combat lock — disable all nav during fight */
               <span className="text-red-400/70 font-bold uppercase tracking-widest text-xs animate-pulse select-none">
                 In Combat — Navigation Locked
               </span>
@@ -143,7 +149,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                   </Link>
                 ))}
 
-                {/* Cave dropdown (Desktop only) */}
+                {/* Cave dropdown (Asztali) */}
                 <div className="relative hidden md:block" ref={caveRef}>
                   <button
                     onClick={() => setCaveOpen(o => !o)}
@@ -180,7 +186,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
                   )}
                 </div>
 
-                {/* Shaman dropdown (Desktop only) */}
+                {/* Shaman dropdown (Asztali) */}
                 <div className="relative hidden md:block" ref={shamanRef}>
                   <button
                     onClick={() => setShamanOpen(o => !o)}
@@ -220,7 +226,7 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
             )}
           </nav>
 
-          {/* Right: Logout */}
+          {/* Jobb: Logout gomb */}
           <button
             onClick={location.pathname !== '/fight' ? handleLogout : undefined}
             disabled={location.pathname === '/fight'}
@@ -233,13 +239,13 @@ const GameLayout = ({ children, currency, customBg, bgOpacity, contentAlign = 'c
           </button>
         </header>
 
-        {/* Main Game Content */}
+        {/* Main Game kontent */}
         <main className={`grow flex relative min-h-0 overflow-y-auto scrollbar-hide ${fullBleed ? 'w-full p-0' : `justify-center p-4 ${contentAlign === 'start' ? 'items-start' : 'items-center'}`}`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {children}
 
-          {/* Active Quest Interaction Blocker */}
+          {/* Active Quest Interakció  Blokkoló */}
           {activeQuest && location.pathname !== '/active-quest' && location.pathname !== '/fight' && (
             <div className="absolute inset-0 z-50 bg-black/10 backdrop-blur-[1px] flex flex-col items-center justify-start pt-10" style={{ pointerEvents: 'auto' }} onClickCapture={(e) => { e.stopPropagation(); navigate('/active-quest'); }}>
               {/* Click capture stops all interaction inside main, forces active-quest redirect on click */}

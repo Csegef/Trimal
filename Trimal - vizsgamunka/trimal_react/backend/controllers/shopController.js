@@ -1,27 +1,34 @@
-// ─── Elemental Buff System ────────────────────────────────────────────────────
-// ~15% of weapons get a random elemental buff (poison/cold/bleed).
-// When a weapon has an elemental buff, its raw damage is reduced by 15-30%
-// so the player must weigh raw damage vs. DoT utility.
+// ==========================================
+// Fájl: Bolt Vezérlő (Shop Controller)
+// Cél: A bolt (Tinkerer, Herbalist) napi tárgyainak generálása, lekérése,
+// megvásárlása és újragenerálása (reroll).
+//
+// A tárgyak ára játékos szint szerint skálázódik, és elem-buffokat is kaphatnak.
+// ==========================================
+
+// ─── Elemental Buff rendszer ────────────────────────────────────────────────────
+// ~15% eséllyel kap egy fegyver elemental buffot (méreg/fagy/vérzés).
+// Ha kap, a nyers sebzése 15-30%-kal csökken — nyers sebzés vs. DoT tradeoff.
 const ELEMENTAL_BUFFS = [
   { type: 'poison', label: 'Poison', color: '#4ade80', dmgPerTick: 3, ticks: 3, description: 'Deals poison damage over 3 turns' },
-  { type: 'cold',   label: 'Frost',  color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
-  { type: 'bleed',  label: 'Bleed',  color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
+  { type: 'cold', label: 'Frost', color: '#60a5fa', dmgPerTick: 2, ticks: 4, description: 'Deals frost damage over 4 turns' },
+  { type: 'bleed', label: 'Bleed', color: '#f87171', dmgPerTick: 4, ticks: 2, description: 'Causes bleeding for 2 turns' },
 ];
 
 /**
- * Roll for an elemental buff on a weapon. Returns null or a buff object.
- * @param {number} seed - deterministic seed (e.g. shopRow.id or Date.now())
- * @param {number} playerLevel
+ * Elemental buff dobása egy fegyverhez. Null-t vagy egy buff objektumot ad vissza.
+ * @param {number} seed - determinisztikus seed (pl. shopRow.id)
+ * @param {number} playerLevel - a játékos szintje
  */
 function rollElementalBuff(seed, playerLevel) {
-  // Use seeded pseudo-random for deterministic results in shop
+  // Determinisztikus pseudo-random a bolt konzisztens megjelenítéséhez
   const roll = Math.abs(Math.sin(seed * 13.37)) % 1;
-  if (roll > 0.15) return null; // 85% chance of NO buff
+  if (roll > 0.15) return null; // 85% esély NINCS buff
 
   const buffIdx = Math.floor(Math.abs(Math.sin(seed * 7.13)) * ELEMENTAL_BUFFS.length) % ELEMENTAL_BUFFS.length;
   const base = ELEMENTAL_BUFFS[buffIdx];
 
-  // Scale DoT damage slightly with level
+  // DoT sebzés enyhe skálázása szint szerint
   const scaledDmgPerTick = base.dmgPerTick + Math.floor(playerLevel / 5);
 
   return {
@@ -36,7 +43,7 @@ function rollElementalBuff(seed, playerLevel) {
 }
 
 /**
- * Roll for an elemental buff using true randomness (for quest drops, addItem, etc.)
+ * Elemental buff dobása valódi véletlenszerűséggel (küldetés dropokhoz, addItem-hez stb.)
  */
 function rollElementalBuffRandom(playerLevel) {
   if (Math.random() > 0.15) return null;
@@ -74,15 +81,15 @@ const generateShopItemsForDay = async (pool, specieId) => {
   const getWeightedItem = (arr) => {
     const roll = Math.random();
     let targetRarity;
-    if (roll < 0.01)       targetRarity = 'legendary';
-    else if (roll < 0.04)  targetRarity = 'epic';
-    else if (roll < 0.35)  targetRarity = 'rare';
-    else                   targetRarity = 'common';
+    if (roll < 0.01) targetRarity = 'legendary';
+    else if (roll < 0.04) targetRarity = 'epic';
+    else if (roll < 0.35) targetRarity = 'rare';
+    else targetRarity = 'common';
 
     let filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
     if (filtered.length === 0 && targetRarity === 'common') {
-       filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
-       if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
+      filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
+      if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
     }
     const pool_ = filtered.length > 0 ? filtered : arr;
     return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
@@ -118,7 +125,7 @@ const generateShopItemsForDay = async (pool, specieId) => {
   ];
 
   const insertShopItem = async (shopType, item) => {
-    if (!item.itemId) return; // Biztonsági ellenőrzés
+    if (!item.itemId) return; // Biztonsági check — üres slot kihagyása
     await pool.execute(
       `INSERT INTO shop (specie_id, shop_type, item_type, item_id, created_date, purchased) VALUES (?, ?, ?, ?, CURDATE(), 0)`,
       [specieId, shopType, item.type, item.itemId]
@@ -139,10 +146,10 @@ const getShopItems = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    // Felhasználó karakterének lekérése
+    // Karakter lekérése a user alapján
     const [species] = await pool.execute(`SELECT id, lvl FROM specie WHERE user_id = ? LIMIT 1`, [userId]);
     if (species.length === 0) {
-      return res.status(404).json({ success: false, message: 'Karakter nem található' });
+      return res.status(404).json({ success: false, message: 'Character not found' });
     }
     const specie = species[0];
     const specieId = specie.id;
@@ -185,21 +192,21 @@ const getShopItems = async (req, res) => {
           let elementalBuff = null;
 
           if (row.item_type === 'weapon') {
-             // More variance: -5 to +8 offset for unique feel
-             const offset = Math.floor((Math.sin(row.id * 3.14) * 0.5 + 0.5) * 14) - 5;
-             itemWeaponDmg = itemDetails.base_damage + offset + (playerLevel * 2);
+            // Variáció: -5-től +8-ig eltolás az egyedi érzetért
+            const offset = Math.floor((Math.sin(row.id * 3.14) * 0.5 + 0.5) * 14) - 5;
+            itemWeaponDmg = itemDetails.base_damage + offset + (playerLevel * 2);
 
-             // Roll elemental buff (deterministic based on shop row id)
-             elementalBuff = rollElementalBuff(row.id, playerLevel);
-             if (elementalBuff) {
-               // Reduce raw damage by 15-30% when weapon has a buff (trade-off)
-               const reduction = 0.15 + (Math.abs(Math.sin(row.id * 2.71)) * 0.15);
-               itemWeaponDmg = Math.max(1, Math.floor(itemWeaponDmg * (1 - reduction)));
-             }
+            // Elemental buff dobása (determinisztikus, shop sor id alapján)
+            elementalBuff = rollElementalBuff(row.id, playerLevel);
+            if (elementalBuff) {
+              // Nyers sebzés csökkentése 15-30%-kal buff esetén (trade-off)
+              const reduction = 0.15 + (Math.abs(Math.sin(row.id * 2.71)) * 0.15);
+              itemWeaponDmg = Math.max(1, Math.floor(itemWeaponDmg * (1 - reduction)));
+            }
           } else if (row.item_type === 'armor') {
-             // More variance: -4 to +6 offset
-             const offset = Math.floor((Math.sin(row.id * 2.71) * 0.5 + 0.5) * 11) - 4;
-             itemArmorPt = itemDetails.armor_point + offset;
+            // Variáció: -4-től +6-ig eltolás
+            const offset = Math.floor((Math.sin(row.id * 2.71) * 0.5 + 0.5) * 11) - 4;
+            itemArmorPt = itemDetails.armor_point + offset;
           }
 
           shopList.push({
@@ -207,7 +214,7 @@ const getShopItems = async (req, res) => {
             purchased: row.purchased,
             item: {
               ...itemDetails,
-              id: itemDetails.item_id, 
+              id: itemDetails.item_id,
               type: row.item_type,
               weapon_damage: itemWeaponDmg,
               armor_point: itemArmorPt,
@@ -223,7 +230,7 @@ const getShopItems = async (req, res) => {
     res.json({ success: true, shopItems: shopList });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a bolt lekérdezésekor' });
+    res.status(500).json({ success: false, message: 'Error fetching shop' });
   }
 };
 
@@ -233,10 +240,10 @@ const buyShopItem = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    // 1. Validáció: karakter lekérése
+    // 1. Karakter lekérése és validálása
     const [species] = await pool.execute(`SELECT id, lvl, inventory_json FROM specie WHERE user_id = ? LIMIT 1`, [userId]);
     if (species.length === 0) {
-      return res.status(404).json({ success: false, message: 'Karakter nem található' });
+      return res.status(404).json({ success: false, message: 'Character not found' });
     }
     const specie = species[0];
     const playerLevel = specie.lvl;
@@ -251,15 +258,15 @@ const buyShopItem = async (req, res) => {
     );
 
     if (shopRows.length === 0) {
-      return res.status(404).json({ success: false, message: 'A bolti tárgy nem található' });
+      return res.status(404).json({ success: false, message: 'Shop item not found' });
     }
 
     const shopItem = shopRows[0];
     if (shopItem.purchased) {
-      return res.status(400).json({ success: false, message: 'Ezt a tárgyat már megvetted' });
+      return res.status(400).json({ success: false, message: 'Item already purchased' });
     }
-    if (shopItem.created_date.toISOString().split('T')[0] !== new Date().toISOString().split('T')[0]) { // Basic date check, rely on CURDATE() generating right shop rows.
-      // Emlékeztetőül: a feladat éjféli váltást kér, a created_date-t ellenőrizhetjük, de ha látható a UI-n, valószínűleg mai.
+    if (shopItem.created_date.toISOString().split('T')[0] !== new Date().toISOString().split('T')[0]) {
+      // A bolt naponta éjfélkor frissül — ha a created_date eltér a mai naptól, a sor nem érvényes.
     }
 
     // 3. Tárgy adatok lekérése az árszámításhoz
@@ -272,11 +279,11 @@ const buyShopItem = async (req, res) => {
 
     const [items] = await pool.execute(itemQuery, [shopItem.item_id]);
     if (items.length === 0) {
-      return res.status(500).json({ success: false, message: 'Tárgy adatbázis hiba' });
+      return res.status(500).json({ success: false, message: 'Item database error' });
     }
     const itemDetails = items[0];
 
-    // Árszámítás — simple linear scaling: +4% per level
+    // Árszámítás — lineáris: +4% szintenként
     const calculatePrice = (baseCost) => {
       if (!baseCost) return 0;
       return Math.round(baseCost * (1 + playerLevel * 0.04));
@@ -285,13 +292,9 @@ const buyShopItem = async (req, res) => {
     const buyPriceNormal = calculatePrice(itemDetails.normal_currency_cost);
     const buyPriceSpec = calculatePrice(itemDetails.spec_currency_cost || 0);
 
-    // Pénz levonása
+    // Pénz levonása — mindkét devizából, amennyit az ár meghatároz
     if (!inventory.currency) inventory.currency = { normal: 0, spec: 0 };
-    
-    // Szabály: Ha spec_currency_cost > 0, akkor csak a spec_currency-ben kerül levonásra? (A korábbi logika alapján általában mindkettőt tartalmazhatja az ár, de ha a feladat nem tér ki rá kivehessük csak amiben van ára.)
-    // A feladat szerint "a 'spec_currency_cost' pedig speciális fizetőeszközt jelenti, ezt csak ritkán használd".
-    // Javasolt: levonjuk amilyen ár meg van határozva.
-    
+
     if (inventory.currency.normal < buyPriceNormal || inventory.currency.spec < buyPriceSpec) {
       return res.status(400).json({ success: false, message: 'You do not have enough currency' });
     }
@@ -299,29 +302,29 @@ const buyShopItem = async (req, res) => {
     inventory.currency.normal -= buyPriceNormal;
     inventory.currency.spec -= buyPriceSpec;
 
-    // Férőhely ellenőrzése
+    // Inventoryban szabad hely ellenőrzése
     inventory.used = inventory.used || 0;
     inventory.capacity = inventory.capacity || 200;
     const invSize = itemDetails.inventory_size || 10;
     if (inventory.used + invSize > inventory.capacity) {
-      return res.status(400).json({ success: false, message: 'Nincs elég hely az eszköztárban' });
+      return res.status(400).json({ success: false, message: 'Not enough space in inventory' });
     }
 
     // 4. Új item objektum létrehozása az inventory-ba
     const newItem = {
       ...itemDetails,
-      id: Date.now() + Math.floor(Math.random() * 1000), // Ideiglenes egyedi azonosító az inventoryban
+      id: Date.now() + Math.floor(Math.random() * 1000), // Egyedi azonosító az inventoryban
       item_id: itemDetails.item_id, // DB hivatkozás
       type: shopItem.item_type,
       quantity: 1
     };
-    
-    // Fegyver specifikus sebzés inicializálása
+
+    // Fegyver sebzés inicializálása
     if (shopItem.item_type === 'weapon') {
       const offset = Math.floor((Math.sin(shopItem.id * 3.14) * 0.5 + 0.5) * 14) - 5;
       newItem.weapon_damage = itemDetails.base_damage + offset + (playerLevel * 2);
 
-      // Roll elemental buff (deterministic based on shop row id)
+      // Elemental buff dobása (determinisztikus, shop sor id alapján)
       const elementalBuff = rollElementalBuff(shopItem.id, playerLevel);
       if (elementalBuff) {
         const reduction = 0.15 + (Math.abs(Math.sin(shopItem.id * 2.71)) * 0.15);
@@ -332,26 +335,26 @@ const buyShopItem = async (req, res) => {
       const offset = Math.floor((Math.sin(shopItem.id * 2.71) * 0.5 + 0.5) * 11) - 4;
       newItem.armor_point = itemDetails.armor_point + offset;
     }
-    
-    // Food bónusz info hozzáadása az inventoryhoz ha van buff_id
+
+    // Étel buff_id hozzáadása az inventory objektumhoz
     if (shopItem.item_type === 'food') {
-       newItem.buff_id = itemDetails.buff_id;
+      newItem.buff_id = itemDetails.buff_id;
     }
 
     inventory.items.push(newItem);
     inventory.used += invSize;
 
-    // Track achievements
+    // Achievement követése
     inventory.achievements.spentNormal += buyPriceNormal;
     if (inventory.used >= inventory.capacity) inventory.achievements.hoarderAchieved = true;
     if (itemDetails.rarity && itemDetails.rarity.toLowerCase() === 'legendary') inventory.achievements.foundLegendary = true;
-    
+
     if (shopItem.item_type === 'weapon' && !inventory.achievements.weaponsEnc.includes(itemDetails.item_id)) {
-       inventory.achievements.weaponsEnc.push(itemDetails.item_id);
+      inventory.achievements.weaponsEnc.push(itemDetails.item_id);
     } else if (shopItem.item_type === 'armor' && !inventory.achievements.armorsEnc.includes(itemDetails.item_id)) {
-       inventory.achievements.armorsEnc.push(itemDetails.item_id);
+      inventory.achievements.armorsEnc.push(itemDetails.item_id);
     } else if ((shopItem.item_type === 'food' || shopItem.item_type === 'misc') && !inventory.achievements.foodsEnc.includes(itemDetails.item_id)) {
-       inventory.achievements.foodsEnc.push(itemDetails.item_id);
+      inventory.achievements.foodsEnc.push(itemDetails.item_id);
     }
 
     // 5. Frissítés mentése
@@ -366,15 +369,15 @@ const buyShopItem = async (req, res) => {
       [shopId]
     );
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: 'Successful purchase!',
       currency: inventory.currency
     });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'Hiba a vásárlás során' });
+    res.status(500).json({ success: false, message: 'Error during purchase' });
   }
 };
 
@@ -392,12 +395,12 @@ const rerollShop = async (req, res) => {
     if (!inventory.currency || inventory.currency.spec < rerollCost) {
       return res.status(400).json({ success: false, message: 'Not enough special currency to reroll (Cost: 10)' });
     }
-    
+
     inventory.currency.spec -= rerollCost;
     await pool.execute(`UPDATE specie SET inventory_json = ? WHERE id = ?`, [JSON.stringify(inventory), specie.id]);
-    
+
     await pool.execute(`DELETE FROM shop WHERE specie_id = ? AND shop_type = ? AND created_date = CURDATE()`, [specie.id, shopType]);
-    
+
     const [weapons] = await pool.execute(`SELECT item_id, rarity FROM item_weapon`);
     const [armors] = await pool.execute(`SELECT item_id, rarity FROM item_armor`);
     const [foods] = await pool.execute(`SELECT item_id, rarity FROM item_food`);
@@ -406,20 +409,20 @@ const rerollShop = async (req, res) => {
       if (!arr.length) return undefined;
       const roll = Math.random();
       let targetRarity;
-      if (roll < 0.01)       targetRarity = 'legendary';
-      else if (roll < 0.04)  targetRarity = 'epic';
-      else if (roll < 0.35)  targetRarity = 'rare';
-      else                   targetRarity = 'common';
-      
+      if (roll < 0.01) targetRarity = 'legendary';
+      else if (roll < 0.04) targetRarity = 'epic';
+      else if (roll < 0.35) targetRarity = 'rare';
+      else targetRarity = 'common';
+
       let filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === targetRarity);
       if (filtered.length === 0 && targetRarity === 'common') {
-         filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
-         if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
+        filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'rare');
+        if (filtered.length === 0) filtered = arr.filter(x => (x.rarity || 'common').toLowerCase() === 'epic');
       }
       const pool_ = filtered.length > 0 ? filtered : arr;
       return pool_[Math.floor(Math.random() * pool_.length)]?.item_id;
     };
-    
+
     const insertShopItem = async (type, itemId) => {
       if (!itemId) return;
       await pool.execute(
@@ -427,7 +430,7 @@ const rerollShop = async (req, res) => {
         [specie.id, shopType, type, itemId]
       );
     };
-    
+
     const dungeonScripts = misc.filter(m => (m.name || '').toLowerCase().includes('dungeon'));
 
     if (shopType === 'tinkerer') {
@@ -436,18 +439,18 @@ const rerollShop = async (req, res) => {
       await insertShopItem('weapon', getWeightedItem(weapons));
       await insertShopItem('armor', getWeightedItem(armors));
       await insertShopItem('armor', getWeightedItem(armors));
-      
+
       if (dungeonScripts.length > 0 && Math.random() < 0.10) {
         await insertShopItem('misc', getWeightedItem(dungeonScripts));
       } else {
         await insertShopItem('armor', getWeightedItem(armors));
       }
     } else if (shopType === 'herbalist') {
-      for(let i=0; i<6; i++) {
+      for (let i = 0; i < 6; i++) {
         await insertShopItem('food', getWeightedItem(foods));
       }
     }
-    
+
     res.json({ success: true, message: 'Shop rerolled successfully!', currency: inventory.currency });
   } catch (err) {
     console.error(err);

@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Bevezető Videó Overlay (Intro Overlay)
+// Cél: A játék betöltésekor lejátszódó animáció/videó megjelenítése.
+//
+// Ha véget ér, automatikusan eltűnik és felfedi az amúgy már betöltött felhasználói felületet.
+// ==========================================
 // src/components/IntroOverlay.jsx
 import React, { useEffect, useState } from "react";
 
@@ -27,7 +33,7 @@ But the people then didn't know that. They only knew that when the earth sang, y
     >
       <div className="relative max-w-5xl w-full bg-stone-900/90 border-2 border-amber-900/40 rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.8)] overflow-hidden flex flex-col md:flex-row h-[85vh] md:h-[70vh]">
 
-        {/* Video Side */}
+        {/* Video oldal */}
         <div className="w-full md:w-1/2 bg-black flex items-center justify-center p-4">
           <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-stone-800 shadow-inner">
             <video
@@ -42,9 +48,9 @@ But the people then didn't know that. They only knew that when the earth sang, y
           </div>
         </div>
 
-        {/* Text Side */}
+        {/* Text oldal */}
         <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-between bg-stone-900/40 relative overflow-hidden">
-          {/* Decorative Elements */}
+          {/* Dekorációk */}
           <div className="absolute top-0 right-0 w-32 h-32 bg-amber-900/10 blur-3xl rounded-full -mr-16 -mt-16" />
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-amber-600/5 blur-3xl rounded-full -ml-16 -mb-16" />
 

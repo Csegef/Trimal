@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Eszköztár API kliens (Inventory API)
+// Cél: Közvetítő réteg a frontend és a backend között az inventoryhoz.
+//
+// Kiszervezett fetch hívások, hogy a komponensekben tisztább maradjon a kód.
+// ==========================================
 // src/api/inventoryApi.js
 // A frontend (Inventory.jsx) ezt a service-t használja.
 // JWT tokent küld az Express backendnek, ami továbbítja a PHP-nak.

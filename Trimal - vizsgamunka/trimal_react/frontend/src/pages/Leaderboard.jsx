@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Ranglista (Leaderboard)
+// Cél: A legjobb játékosok listázása szint és tapasztalati pont alapján.
+//
+// Itt lehet kihívni (PvP) egy-egy játékost az Arénában is.
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import PlayerPortrait from '../components/PlayerPortrait';
@@ -46,7 +52,7 @@ const Leaderboard = () => {
         const timer = setInterval(() => {
             if (!lastPvpAt) return;
             const now = Math.floor(Date.now() / 1000);
-            const cooldownSeconds = 12 * 60 * 60; // 12 hours
+            const cooldownSeconds = 12 * 60 * 60; // 12 óra
             const remaining = Math.max(0, (lastPvpAt + cooldownSeconds) - now);
             setCooldownRemaining(remaining);
         }, 1000);
@@ -76,11 +82,11 @@ const Leaderboard = () => {
             if (data.success) {
                 navigate('/fight');
             } else {
-                alert(data.message || 'Hiba történt!');
+                alert(data.message || 'Something went wrong!');
             }
         } catch (e) {
             console.error(e);
-            alert('Hiba történt a csata indításakor.');
+            alert('Something went wrong!');
         }
     };
 
@@ -98,7 +104,7 @@ const Leaderboard = () => {
         <GameLayout currency={currency} customBg="/src/assets/design/backgrounds/station_background/trimal_cave_station_leaderboard_background.png" fullBleed={true}>
             <div className="flex flex-col md:flex-row w-full h-[90vh] gap-6 p-4 md:p-8">
 
-                {/* Left side: Players List */}
+                {/* Baloldal: Játékos lista */}
                 <div className="w-full md:w-1/4 flex-none flex-none shrink-0 bg-black/60 border border-amber-900/40 rounded-2xl flex flex-col backdrop-blur-sm overflow-hidden shadow-2xl min-h-[300px] md:min-h-0">
                     <div className="bg-amber-900/60 p-3 shadow-md border-b border-amber-800 flex justify-between items-center text-amber-100 tracking-widest uppercase">
                         <span>Rankings</span>
@@ -123,7 +129,7 @@ const Leaderboard = () => {
                     </div>
                 </div>
 
-                {/* Right side: Selected Player Details */}
+                {/* Jobboldal: Selected Player Details */}
                 {selectedPlayer && (
                     <div
                         key={selectedPlayer.specieId}
@@ -142,17 +148,17 @@ const Leaderboard = () => {
                             </p>
                         </div>
 
-                        {/* Body: Portrait + Equip + Stats side by side */}
+                        {/* Body: Portré + Felszerelés + Statok side by side */}
                         <div className="flex-1 flex flex-row justify-center items-center gap-6 md:gap-10 px-8 py-6 min-h-0 overflow-hidden">
 
-                            {/* Left equip column */}
+                            {/* Bal felszerelés oszlop */}
                             <div className="flex flex-col justify-center gap-4 shrink-0 relative z-20">
                                 <EquippedSlot item={selectedPlayer.equipped.armor_cap} type="armor_cap" />
                                 <EquippedSlot item={selectedPlayer.equipped.armor_plate} type="armor_plate" />
                                 <EquippedSlot item={selectedPlayer.equipped.armor_leggings} type="armor_leggings" />
                             </div>
 
-                            {/* Portrait */}
+                            {/* Portré */}
                             <div className="w-[280px] h-[360px] md:w-[320px] md:h-[400px] border-2 border-stone-700/50 rounded-2xl bg-black/40 shadow-[0_0_40px_rgba(0,0,0,0.6),inset_0_0_20px_rgba(0,0,0,0.4)] flex justify-center items-end shrink-0 overflow-hidden relative z-10">
                                 <div className="w-[260px] h-[350px] md:w-[300px] md:h-[390px] relative overflow-visible">
                                     <PlayerPortrait
@@ -163,13 +169,13 @@ const Leaderboard = () => {
                                 </div>
                             </div>
 
-                            {/* Right equip column */}
+                            {/* Jobbik felszerelés oszlop */}
                             <div className="flex flex-col justify-center gap-4 shrink-0 relative z-20">
                                 <EquippedSlot item={selectedPlayer.equipped.weapon} type="weapon" />
                                 <EquippedSlot item={selectedPlayer.equipped.armor_boots} type="armor_boots" />
                             </div>
 
-                            {/* Stats grid */}
+                            {/* Statisztikák */}
                             <div className="flex-1 flex justify-center max-w-sm shrink-0">
                                 <div className="w-full bg-stone-900/60 border border-stone-800 p-6 rounded-2xl shadow-inner flex flex-col gap-3">
                                     <div className="text-stone-400 font-black tracking-widest uppercase border-b border-stone-800 pb-2 mb-2 text-sm text-center">Attributes</div>
@@ -197,8 +203,8 @@ const Leaderboard = () => {
                                 onClick={handleFight}
                                 disabled={cooldownRemaining > 0}
                                 className={`px-16 py-4 text-2xl font-black uppercase tracking-[0.25em] rounded-xl border transition-all shadow-2xl
-                                    ${cooldownRemaining > 0 
-                                        ? 'bg-stone-800 border-stone-700 text-stone-500 cursor-not-allowed scale-95' 
+                                    ${cooldownRemaining > 0
+                                        ? 'bg-stone-800 border-stone-700 text-stone-500 cursor-not-allowed scale-95'
                                         : 'bg-red-900/90 hover:bg-red-800 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.4)] hover:scale-[1.03] hover:shadow-[0_0_40px_rgba(220,38,38,0.7)]'
                                     }`}
                             >
@@ -213,7 +219,7 @@ const Leaderboard = () => {
                     </div>
                 )}
 
-                {/* Empty Space for layout balance (1/4) */}
+                {/* Üres hely a layout kiegyensúlyozásához (1/4) */}
                 <div className="hidden md:block md:flex-1 shrink-0"></div>
             </div>
             <style>{`
@@ -226,7 +232,7 @@ const Leaderboard = () => {
     );
 };
 
-// Mini internal component for item slots
+// Mini belső komponens a felszerelésnek
 function EquippedSlot({ item, type }) {
     if (!item) {
         return (
@@ -250,7 +256,7 @@ function EquippedSlot({ item, type }) {
             ) : (
                 <span className="text-3xl drop-shadow-md">{getItemIcon(item)}</span>
             )}
-            {/* Tooltip on hover */}
+            {/* Tooltip hoverkor */}
             <div className="absolute top-1/2 -translate-y-1/2 left-full ml-3 w-max bg-black/95 text-base shadow-xl text-stone-200 p-3 rounded-lg border border-stone-700 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
                 <span style={{ color: RARITY_COLOR[rarity] }} className="font-black text-lg block mb-1 drop-shadow-sm">{item.name}</span>
                 <div className="text-stone-300 font-medium">

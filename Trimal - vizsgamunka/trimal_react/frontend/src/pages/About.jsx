@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Rólunk Oldal (About)
+// Cél: Információ a készítőkről és a játékról.
+//
+// Egyszerű bemutatkozó felület, amit a bejelentkezés előtti menüből érhetünk el.
+// ==========================================
 import React from "react";
 import MainLayout from "../layouts/MainLayout";
 

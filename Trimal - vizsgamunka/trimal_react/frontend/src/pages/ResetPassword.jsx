@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Jelszó Visszaállítás
+// Cél: A kiküldött token segítségével véglegesíti az új jelszót.
+// ==========================================
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";

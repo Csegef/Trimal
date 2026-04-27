@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Karakter Készítő (Character Creator)
+// Cél: A haj, szakáll és egyéb vizuális elemek testreszabása az új karaktereknek.
+//
+// Interaktív felület a portré összeállítására.
+// ==========================================
 import React, { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
@@ -7,27 +13,19 @@ const CharacterCreator = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
-  // Default to Neanderthal if no state provided (e.g. direct access)
+  //Default az neanderthal, ha nem adunk meg semmit
   const selectedClass = state?.selectedClass || {
     id: "neanderthal",
     name: "Neanderthal",
     prefix: "n",
   };
 
-  const [hairIndex, setHairIndex] = useState(0); // 0 = Bald/None
-  const [beardIndex, setBeardIndex] = useState(0); // 0 = Shaved/None
-  const maxOptions = 5; // 5 hairs + 1 none = 6 options total? User said "5 haj es 5 szakall". Assuming 1-5 files exist. Index 0 is "None".
+  const [hairIndex, setHairIndex] = useState(0); // 0 = Kopasz
+  const [beardIndex, setBeardIndex] = useState(0); // 0 = Borosta nélküli
+  const maxOptions = 5; // 5 haj és 5 szakál
 
   const prefix = selectedClass.prefix;
 
-  // const handleSave = () => {
-  //   console.log("Character Saved:", {
-  //     class: selectedClass.id,
-  //     hair: hairIndex,
-  //     beard: beardIndex,
-  //   });
-  //   alert("Character Created! (Backend integration pending)");
-  // };
   const handleSave = () => {
     // Navigáció a regisztrációs oldalra az adatokkal
     navigate("/registration", {
@@ -42,10 +40,8 @@ const CharacterCreator = () => {
   return (
     <MainLayout>
       <div className="w-full max-w-5xl flex flex-col md:flex-row gap-4 md:gap-6 items-center justify-center p-3 md:p-4">
-        {/* Left Column: Character Preview - kisebb */}
-        {/* Square with aspect-ratio */}
+        {/* Left Column: karakter preview - kisebb */}
         <div className="relative w-70 md:w-100 aspect-square bg-stone-900/50 rounded-xl md:rounded-2xl border-3 md:border-4 border-stone-700 shadow-xl shrink-0 backdrop-blur-sm overflow-hidden">
-          {/* Character Layers Container - Centered */}
           <div className="absolute inset-0 flex items-center justify-center">
             <PlayerPortrait
               className={selectedClass.name}
@@ -61,7 +57,7 @@ const CharacterCreator = () => {
             Customize
           </h2>
 
-          {/* Hair Control */}
+          {/* Haj stílus Control */}
           <div className="space-y-2">
             <label className="text-stone-300  uppercase tracking-wider text-sm md:text-base">
               Hair Style
@@ -89,7 +85,7 @@ const CharacterCreator = () => {
             </div>
           </div>
 
-          {/* Beard Control */}
+          {/* Szakáll stílus Control */}
           <div className="space-y-2">
             <label className="text-stone-300 uppercase tracking-wider text-sm md:text-base">
               Beard Style

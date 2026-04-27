@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Entitások Útvonalak (Entities Routes)
+// Cél: Az összes generált tárgy, ellenfél és páncél adatainak lekérése.
+//
+// Ezt használja például a Barlang (Cave Station) a kódex feltöltéséhez.
+// ==========================================
 // backend/routes/entities.js
 const express = require('express');
 const router = express.Router();
@@ -5,7 +11,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 
 router.use(authMiddleware);
 
-// GET /api/entities - Fetch all entities for the Cave Station "book"
+// GET /api/entities - Enemy lekérés
 router.get('/', async (req, res) => {
   const pool = req.pool;
   try {

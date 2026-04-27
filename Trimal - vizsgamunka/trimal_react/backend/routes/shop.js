@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Bolt Útvonalak (Shop Routes)
+// Cél: A kereskedő állomásokkal (Herbalist, Tinkerer) kapcsolatos műveletek.
+//
+// Ide érkeznek a vásárlási és frissítési (reroll) kérelmek.
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const authenticateToken = require('../middleware/authMiddleware');

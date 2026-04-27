@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Hitelesítő Köztesréteg (Auth Middleware)
+// Cél: Megvédi az API végpontokat az illetéktelen hozzáféréstől.
+//
+// Minden védett végpont előtt lefut, ellenőrzi a JWT tokent, és ha érvényes,
+// továbbengedi a kérést.
+// ==========================================
 // backend/middleware/authMiddleware.js
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -13,7 +20,7 @@ module.exports = async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Nincs token' });
+    return res.status(401).json({ success: false, message: 'No token' });
   }
 
   const token = authHeader.split(' ')[1];
@@ -30,23 +37,23 @@ module.exports = async function authMiddleware(req, res, next) {
 
     const user = rows[0];
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Felhasználó nem található' });
+      return res.status(401).json({ success: false, message: 'User not found' });
     }
 
     if (!user.specie_id) {
-      return res.status(401).json({ success: false, message: 'Karakter nem found' });
+      return res.status(401).json({ success: false, message: 'Character not found' });
     }
 
     req.user = {
-      userId:   user.id,
+      userId: user.id,
       specieId: user.specie_id,
     };
 
     next();
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ success: false, message: 'Token lejárt' });
+      return res.status(401).json({ success: false, message: 'Token expired' });
     }
-    return res.status(401).json({ success: false, message: 'Érvénytelen token' });
+    return res.status(401).json({ success: false, message: 'Invalid token' });
   }
 };

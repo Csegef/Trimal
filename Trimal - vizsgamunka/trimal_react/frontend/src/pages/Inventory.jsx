@@ -1,3 +1,10 @@
+// ==========================================
+// Fájl: Eszköztár (Inventory)
+// Cél: A játékos hátizsákja és felszerelése.
+//
+// Itt lehet megnézni, mi van a táskánkban, felvenni a páncélokat, fegyvereket,
+// és szintet lépni a statisztikáink (erő, szerencse stb.) növelésével.
+// ==========================================
 // src/pages/Inventory.jsx
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
@@ -23,7 +30,7 @@ import {
 } from "../models/Item";
 import PlayerPortrait from "../components/PlayerPortrait";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constantok ────────────────────────────────────────────────────────────────
 
 const SLOT_LABELS = {
   weapon: { label: "Weapon" },
@@ -107,7 +114,7 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
   const [hoverRect, setHoverRect] = useState(null);
   const [imgError, setImgError] = useState(false);
 
-  // Reset image error state when equipped item changes
+  // Kep resetelése, ha a felszerelt tárgy megváltozik
   useEffect(() => {
     setImgError(false);
   }, [equippedItem]);
@@ -151,7 +158,7 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
         )}
       </button>
 
-      {/* Hover description tooltip using Portal to avoid clipping */}
+      {/* Hover leírás tooltip - Portál a kattintás elkerüléséhez */}
       {hoverRect && equippedItem && createPortal(
         <div
           className="fixed z-[99999] pointer-events-none"
@@ -170,7 +177,7 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
               borderColor: RARITY_COLOR[rarity] + "55",
             }}
           >
-            {/* Name */}
+            {/* Név */}
             <div
               className="text-[18px] font-title leading-tight mb-0.5"
               style={{ color: RARITY_COLOR[rarity] }}
@@ -190,7 +197,7 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
                 {rarity}
               </span>
             </div>
-            {/* Stats */}
+            {/* Statok */}
             {equippedItem.type === "weapon" && (equippedItem.base_damage != null || equippedItem.weapon_damage != null) && (
               <div className="text-[14px] text-red-400 mb-1 flex flex-col gap-0.5">
                 <span>Item Damage: {equippedItem.weapon_damage || equippedItem.base_damage}</span>
@@ -222,14 +229,14 @@ function EquipSlot({ slotKey, equippedItem, onClick, playerInfo }) {
                 <span className="text-stone-500 font-medium">Duration: {rarity === "legendary" ? "4h" : rarity === "epic" ? "2h" : "30m"}</span>
               </div>
             )}
-            {/* Description */}
+            {/* Leírás */}
             {equippedItem.description && (
               <div className="text-stone-400 text-[13px] leading-tight pt-0.5 border-t border-stone-800">
                 {equippedItem.description}
               </div>
             )}
           </div>
-          {/* Arrow */}
+          {/* Nyíl */}
           <div
             className="mx-auto w-2 h-2 rotate-45 -mt-1 relative z-[99999]"
             style={{ background: "rgba(12,7,2,0.97)", borderRight: `1px solid ${RARITY_COLOR[rarity]}55`, borderBottom: `1px solid ${RARITY_COLOR[rarity]}55` }}
@@ -363,7 +370,7 @@ const Inventory = () => {
       setInventory(inventory);
       setPlayerInfo(playerInfo);
 
-      // Update local storage so next reload starts with correct level
+      // Frissítsd a local storage-t, hogy a következő betöltés helyes szinttel induljon
       const stored = localStorage.getItem("userData");
       if (stored) {
         try {
@@ -446,7 +453,7 @@ const Inventory = () => {
             const res2 = await useItem(item.id, true);
             showToast(res2.message);
           } else {
-            return; // cancelled
+            return;
           }
         } else {
           showToast(res.message);
@@ -561,21 +568,21 @@ const Inventory = () => {
               </div>
             </div>
           ) : (
-            /* Layout: stacked on mobile, two-column on large screens */
+            /* Elrendezés: mobilra egymásra, nagy képernyőn két oszlopos */
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-5">
 
-              {/* ══ LEFT: Character + equipment + stats ══════════════════════ */}
+              {/* ══ Bal oldali: Portré + felszerelés + statok ══════════════════════ */}
               <div className="flex flex-col gap-4">
 
-                {/* Portrait panel */}
+                {/* Portré panel */}
                 <div
                   className="rounded-2xl border border-stone-800/50 p-4"
                   style={{ background: "rgba(14,7,2,0.88)", backdropFilter: "blur(8px)" }}
                 >
-                  {/* 3-col: left slots | portrait | right slots */}
+                  {/* 3-col: Bal slotok | portré | jobboldali slotok */}
                   <div className="grid grid-cols-[1fr_2fr_1fr] gap-3 items-stretch">
 
-                    {/* Left slots */}
+                    {/* Bal slotok */}
                     <div className="flex flex-col gap-2 justify-around">
                       {leftSlots.map((slotKey) => {
                         const eqItem = getEquippedItem(slotKey);
@@ -594,7 +601,7 @@ const Inventory = () => {
                       })}
                     </div>
 
-                    {/* Portrait */}
+                    {/* Portré */}
                     <div
                       className="relative rounded-xl border-4 border-amber-900/60 overflow-hidden shadow-2xl backdrop-blur-sm"
                       style={{
@@ -605,7 +612,7 @@ const Inventory = () => {
                       <PlayerCharacter playerInfo={playerInfo} />
                     </div>
 
-                    {/* Right slots */}
+                    {/* Jobboldali slotok */}
                     <div className="flex flex-col gap-2 justify-around">
                       {rightSlots.map((slotKey) => {
                         const eqItem = getEquippedItem(slotKey);
@@ -649,7 +656,7 @@ const Inventory = () => {
                   )}
                 </div>
 
-                {/* Statistics */}
+                {/* Statisztikák */}
                 <Panel title="Statistics">
                   <div className="flex flex-col gap-2.5">
                     {Object.entries(STAT_LABELS).map(([key, { label }]) => {
@@ -684,7 +691,7 @@ const Inventory = () => {
                   </div>
                 </Panel>
 
-                {/* Active Effects */}
+                {/* Active Effektek */}
                 <Panel title="Active Effects">
                   {(!inventory?.active_buffs || inventory.active_buffs.length === 0) ? (
                     <div className="text-stone-600 text-sm italic">No active effects</div>
@@ -699,7 +706,7 @@ const Inventory = () => {
 
               </div>
 
-              {/* ══ RIGHT: Bag ═══════════════════════════════════════════════ */}
+              {/* ══ JOBB: Bag ═══════════════════════════════════════════════ */}
               <div className="flex flex-col gap-4">
                 <Panel title="Bag">
                   <div className="grid grid-cols-5 gap-3">
@@ -709,7 +716,7 @@ const Inventory = () => {
                       if (item && item.type === "food") actions.push("use");
                       if (item) actions.push("sell");
 
-                      // Find the matching equipped item for comparison
+                      // A megfelelő felszerelt elem megkeresése összehasonlításhoz
                       let equippedForComparison = undefined;
                       if (item && (item.type === 'weapon' || item.type === 'armor')) {
                         const targetSlot = resolveEquipSlot(item);

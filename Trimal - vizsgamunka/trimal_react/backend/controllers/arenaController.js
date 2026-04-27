@@ -1,6 +1,11 @@
+// ==========================================
+// Fájl: Aréna Vezérlő (Arena Controller)
+// Cél: A játékosok közötti (PvP) harc indítása és lezárása,
+// a ranglista (leaderboard) lekérése, és a győzelmi jutalmak (lopott tárgyak) kezelése.
+// ==========================================
 // backend/controllers/arenaController.js
 
-/** Load inventory JSON for a given specie (character) id */
+/** Inventory JSON betöltése egy adott specie (character) id alapján */
 async function loadInventory(pool, specieId) {
   const [rows] = await pool.execute('SELECT inventory_json FROM specie WHERE id = ?', [specieId]);
   if (!rows[0]) return null;
@@ -89,22 +94,22 @@ const startArenaFight = async (req, res) => {
     const { targetSpecieId } = req.body;
     if (!targetSpecieId) return res.status(400).json({ success: false, message: 'Missing target' });
 
-    // Do not fight yourself
+    // Ne harcolj önmagaddal
     if (targetSpecieId === req.user.specieId) {
       return res.status(400).json({ success: false, message: 'You cannot fight yourself!' });
     }
 
     const pool = req.pool;
 
-    // Load caller inventory
+    // Hívó fél inventoryjának betöltése
     const inv = await loadInventory(pool, req.user.specieId);
     if (!inv) return res.status(404).json({ success: false, message: 'Inventory not found' });
     if (inv.active_quest !== null) return res.status(400).json({ success: false, message: 'You are already in a quest or combat' });
 
-    // Cooldown check: 12 hours (43200 seconds) after a successful victory
+    // Cooldown ellenőrzés: 12 óra (43200 másodperc) győzelem után
     const now = Math.floor(Date.now() / 1000);
     const lastPvp = inv.last_pvp_at || 0;
-    const cooldownSeconds = 12 * 60 * 60; // 43200
+    const cooldownSeconds = 12 * 60 * 60; // 43200 másodperc
     if (now - lastPvp < cooldownSeconds) {
       const remainingSec = cooldownSeconds - (now - lastPvp);
       const hours = Math.floor(remainingSec / 3600);
@@ -113,7 +118,7 @@ const startArenaFight = async (req, res) => {
       return res.status(400).json({ success: false, message: `Arena is on cooldown! You can fight again in ${timeStr}.` });
     }
 
-    // Load target stats
+    // Célpont adatainak betöltése
     const [rows] = await pool.execute(`
       SELECT 
         s.id as specie_id, u.nickname, s.specie_name as class, 
@@ -147,7 +152,7 @@ const startArenaFight = async (req, res) => {
       });
     }
 
-    // Set active quest as arena match
+    // Aktív küldetés beállítása aréna mérkőzésként
     const maxHp = (targetRow.base_health || 10) * 25 + (targetRow.lvl || 1) * 50;
 
     inv.active_quest = {
@@ -197,9 +202,9 @@ const claimArenaVictory = async (req, res) => {
     }
 
     const targetSpecieId = inv.active_quest.targetSpecieId;
-    inv.active_quest = null; // clear it immediately
+    inv.active_quest = null; // azonnal töröljük
 
-    // Track achievements
+    // Achievement követése
     const achData = achievementsData || {};
     if (achData.maxCrits > inv.achievements.maxCrits) inv.achievements.maxCrits = achData.maxCrits;
     if (isWin) {
@@ -211,21 +216,21 @@ const claimArenaVictory = async (req, res) => {
     let stolenItem = null;
 
     if (isWin) {
-      // Set cooldown timestamp
+      // Cooldown időbélyeg beállítása
       inv.last_pvp_at = Math.floor(Date.now() / 1000);
 
-      // 15% chance to steal an item (reduced from 40%)
+      // 15% esély tárgylopásra (korábban 40% volt)
       if (Math.random() < 0.15) {
         const targetInv = await loadInventory(pool, targetSpecieId);
         if (targetInv && targetInv.items && targetInv.items.length > 0) {
-          // Weight logic: 1% Legendary, 4% Epic, 25% Rare, 70% Common
+          // Súlyozási logika: 1% Legendary, 4% Epic, 25% Rare, 70% Common
           const roll = Math.random();
           let targetRarity = 'common';
           if (roll < 0.01) targetRarity = 'legendary';
           else if (roll < 0.05) targetRarity = 'epic';
           else if (roll < 0.30) targetRarity = 'rare';
 
-          // Group target items by rarity
+          // Célpont tárgyainak csoportosítása ritkaság szerint
           const itemsByRarity = {
             legendary: [], epic: [], rare: [], common: []
           };
@@ -233,10 +238,10 @@ const claimArenaVictory = async (req, res) => {
           targetInv.items.forEach(i => {
             const r = (i.rarity || 'common').toLowerCase();
             if (itemsByRarity[r]) itemsByRarity[r].push(i);
-            else itemsByRarity['common'].push(i); // fallback
+            else itemsByRarity['common'].push(i); // fallback — ismeretlen ritkaság
           });
 
-          // Try to get targeted rarity, fallback to lower, then any available
+          // Megpróbáljuk a kívánt ritkaságot, fallback az alacsonyabbra, majd bármire
           let poolToPick = itemsByRarity[targetRarity];
           if (poolToPick.length === 0) {
             const fallbacks = ['common', 'rare', 'epic', 'legendary'];
@@ -253,26 +258,26 @@ const claimArenaVictory = async (req, res) => {
             const idxTarget = targetInv.items.findIndex(i => i.id === pickedItem.id && i.type === pickedItem.type);
 
             if (idxTarget !== -1) {
-              // Steal it
+              // Ellop
               stolenItem = { ...targetInv.items[idxTarget], quantity: 1 };
 
-              // Remove from target
+              // Eltávolítás a célponttól
               targetInv.items[idxTarget].quantity -= 1;
               if (targetInv.items[idxTarget].quantity <= 0) {
                 targetInv.items.splice(idxTarget, 1);
               }
-              // recalc target space
+              // Célpont szabad helyek újraszámítása
               targetInv.used = targetInv.items.reduce((sum, item) => sum + (item.inventory_size || 10), 0);
               await saveInventory(pool, targetSpecieId, targetInv);
 
-              // Add to winner
+              // Hozzáadás a győzteshez
               const existing = inv.items.find(i => i.id === stolenItem.id && i.type === stolenItem.type);
               if (existing) {
                 existing.quantity += 1;
               } else {
                 inv.items.push(stolenItem);
               }
-              // recalc winner space
+              // Győztes szabad helyek újraszámítása
               inv.used = inv.items.reduce((sum, item) => sum + (item.inventory_size || 10), 0);
             }
           }

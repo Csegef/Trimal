@@ -1,3 +1,9 @@
+// ==========================================
+// Fájl: Hitelesítési Útvonalak (Auth Routes)
+// Cél: A regisztráció, bejelentkezés, jelszó visszaállítás végpontjai.
+//
+// Ez a fájl kezeli a JWT tokenek kiosztását és a felhasználók beléptetését.
+// ==========================================
 // backend/routes/auth.js
 const express = require('express');
 const router = express.Router();
@@ -24,7 +30,7 @@ router.post('/register', async (req, res) => {
 
   if (!nickname || !email || !password || !character || !character.specie_name) {
     logError('Missing data');
-    return res.status(400).json({ success: false, message: 'Hiányzó adatok' });
+    return res.status(400).json({ success: false, message: 'Missing data' });
   }
 
   const userModel = new User(pool);
@@ -41,13 +47,13 @@ router.post('/register', async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
     logError('Creating user...');
-    // 1. Create User
+    // 1. User létrehozása
     const newUser = await userModel.create({ nickname, email, password, verification_token: verificationToken });
     logError(`User created with ID: ${newUser.id}`);
 
     logError('Creating character...');
 
-    // FETCH RANDOM QUESTS
+    // Véletlenszerű küldetések betöltése
     const [easyQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "easy"');
     const [mediumQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "medium"');
     const [hardQuests] = await pool.execute('SELECT quest_id FROM quest WHERE difficulty = "hard"');
@@ -95,7 +101,7 @@ router.post('/register', async (req, res) => {
       }
     };
 
-    // 2. Create Character
+    // 2. Karakter létrehozása
     const newChar = await charModel.create({
       userId: newUser.id,
       specie_name: character.specie_name,
@@ -113,11 +119,11 @@ router.post('/register', async (req, res) => {
     await generateShopItemsForDay(pool, newChar.id);
     logError('Initial shop items generated');
 
-    // 2.5 Update User with Specie ID
+    // 2.5 User frissítése a Specie ID-val
     await userModel.setSpecieId(newUser.id, newChar.id);
     logError('User linked to character');
 
-    // 3. Send Verification Email
+    // 3. Email küldése
     const { sendVerificationEmail } = require('../utils/mailer');
     logError('Sending email...');
     sendVerificationEmail(email, nickname, verificationToken).catch(err => logError('Email send failed: ' + err));
@@ -129,7 +135,7 @@ router.post('/register', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    logError('EXCEPTION: ' + err.stack); // Log full stack trace
+    logError('EXCEPTION: ' + err.stack);
     res.status(500).json({ success: false, message: 'Error during registration: ' + err.message });
   }
 });
@@ -211,13 +217,7 @@ router.post('/logout', async (req, res) => {
 
   try {
     if (token) {
-      // Itt lehetőséged van:
-
-      // 1. Opció: Blacklistelni a tokent (ha van token blacklist táblád)
-      // await pool.execute('INSERT INTO token_blacklist (token, expires_at) VALUES (?, ?)', 
-      //   [token, new Date(Date.now() + 7*24*60*60*1000)]);
-
-      // 2. Egyszerűbb: Csak sikerüzenet küldése
+      // Sikerüzenet küldése
       // A kliens oldalon úgyis törlődik a token
     }
 
@@ -249,12 +249,12 @@ router.post('/forgot-password', async (req, res) => {
     const user = await userModel.findByEmail(email);
 
     if (!user) {
-      // Return success even if user not found for security reasons
+      // Biztonsági okokból sikerüzenet, ha nincs usert
       return res.json({ success: true, message: 'If the email exists, a reset link was sent.' });
     }
 
     const resetToken = crypto.randomBytes(32).toString('hex');
-    // Token expires in 1 hour
+    // Token lejárata 1 óra
     const expires = new Date(Date.now() + 3600000);
 
     await userModel.setResetToken(email, resetToken, expires);

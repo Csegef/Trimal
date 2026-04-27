@@ -1,10 +1,16 @@
+// ==========================================
+// Fájl: Harc Képernyő Helyőrző (Fight Placeholder)
+// Cél: A harcrendszer grafikus megjelenítése a küldetések közben.
+//
+// Itt láthatjuk életerő sávokkal az ellenfelet és a saját karakterünket.
+// ==========================================
 import React, { useState, useEffect, useRef } from 'react';
 import GameLayout from '../layouts/GameLayout';
 import { useNavigate } from 'react-router-dom';
 import { loadInventoryPage } from '../api/inventoryApi';
 import PlayerPortrait from '../components/PlayerPortrait';
 
-// Assets
+// Assetek
 import damageLeft from '../assets/damage_left.gif';
 import damageRight from '../assets/damage_right.gif';
 import slashLeft from '../assets/user___slash-left.gif';
@@ -22,7 +28,7 @@ const FightPlaceholder = () => {
   const [currency, setCurrency] = useState(null);
   const [rewards, setRewards] = useState(null); // stores { normal, spec, xp } on victory
 
-  // Animations
+  // Animációk
   const [playerAnim, setPlayerAnim] = useState(null);
   const [enemyAnim, setEnemyAnim] = useState(null);
   const [playerDebuffs, setPlayerDebuffs] = useState([]);
@@ -30,7 +36,7 @@ const FightPlaceholder = () => {
   const [enemyDmgText, setEnemyDmgText] = useState(null);
   const [bgImage, setBgImage] = useState(null);
 
-  // Refs for combat state to avoid stale closures in setTimeout sequences
+  // Refek a harci állapot tárolására, hogy elkerüljük a stale closure-öket a setTimeout szekvenciákban
   const combatState = useRef({
     turn: 'player',
     playerHp: 0,
@@ -43,7 +49,7 @@ const FightPlaceholder = () => {
     rageTurns: 0,
     rageTriggered: false,
     sapiensFirstHitUsed: false,
-    // Dungeon enemy-side superpowers
+    // Dungeon ellenfél oldali szupererők
     enemyRageTurns: 0,
     enemyRageTriggered: false,
     enemySapiensFirstHitUsed: false,
@@ -65,7 +71,7 @@ const FightPlaceholder = () => {
     if (logsEndRef.current) logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // Initialization
+  // Inicializálás
   const hasInit = useRef(false);
 
   useEffect(() => {
@@ -82,14 +88,14 @@ const FightPlaceholder = () => {
 
         if (inventory?.currency) setCurrency(inventory.currency);
 
-        // Make sure we have an active quest
+        // Biztosítsuk, hogy legyen egy aktív küldetés
         if (!inventory || !inventory.active_quest) {
           navigate('/maingame');
           return;
         }
 
         if (inventory.active_quest.background) {
-          // Use the background path directly as stored (full path already)
+          // A háttér útvonalát használjuk közvetlenül, ahogy tárolva van (már teljes útvonal)
           const bg = inventory.active_quest.background;
           setBgImage(bg.startsWith('/') ? bg : `/src/assets/design/backgrounds/quest_background/${bg}`);
         }
@@ -141,7 +147,7 @@ const FightPlaceholder = () => {
           weaponDamage: weaponDamage
         };
 
-        // ─── Dungeon: build prehistoric human enemy inline ───────────────────
+        // ─── Dungeon: ősember ellenfél építés ───────────────────
         const isDungeon = !!inventory.active_quest.isDungeon;
         const isArena = !!inventory.active_quest.isArena;
         combatState.current.isDungeon = isDungeon;
@@ -161,10 +167,10 @@ const FightPlaceholder = () => {
           const eName = inventory.active_quest.enemyName || 'Ancient Warrior';
           const dungeonId = inventory.active_quest.dungeonId || 1;
           const eLvl = playerInfo?.lvl || 1;
-          let statMult = 1 + ((eLvl - 1) * 0.40); // slightly harder than animals
-          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Beginner boost for levels 1-3
+          let statMult = 1 + ((eLvl - 1) * 0.40); // kicsit erősebb mint az állatok
+          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Kezdő bónusz szintekhez 1-3
 
-          // Stat bases scale by dungeon tier
+          // Stat-ok skálázása dungeon tier alapján
           const tierMults = { 1: 1.0, 2: 1.25, 3: 1.55 };
           const tier = tierMults[dungeonId] || 1.0;
           const baseStr = Math.ceil(10 * statMult * tier);
@@ -175,7 +181,7 @@ const FightPlaceholder = () => {
 
           eObj = {
             name: eName,
-            iconPath: null,     // will use PlayerPortrait instead
+            iconPath: null,     // PlayerPortrait-ot használjuk helyette
             isDungeonHuman: true,
             enemyPrefix: ePrefix,
             category: 'Medium',
@@ -185,7 +191,7 @@ const FightPlaceholder = () => {
             hp: eMaxHp,
           };
 
-          // Homo Sapiens: coin flip for first turn
+          // Homo Sapiens: érme dobás az első körért
           let startTurn = (eObj.stats.agility > pObj.stats.agility) ? 'enemy' : 'player';
           if (pObj.class === 'Sapiens') startTurn = 'player';
           if (ePrefix === 'hs') {
@@ -194,7 +200,7 @@ const FightPlaceholder = () => {
           }
           combatState.current.turn = startTurn;
         } else {
-          // ─── Normal quest enemy from /api/entities ───────────────────────────
+          // ─── Rendess küldetésbeli ellenfél az /api/entities-ből ───────────────────────────
           const res = await fetch('/api/entities', { headers: { 'Authorization': `Bearer ${token}` } });
           const data = await res.json();
           const enemies = data.data?.enemies || [];
@@ -220,7 +226,7 @@ const FightPlaceholder = () => {
           if (qDifficulty === 'hard') eLvl -= 0.2; // += 0.8 volt, -= 0.5 volt
 
           let statMult = 1 + ((eLvl - 1) * 0.25);
-          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Beginner boost for levels 1-3
+          if (playerInfo?.lvl <= 3) statMult *= 0.5; // Kezdő bónusz szintekhez 1-3
           const eMaxHp = rndEnemyData.base_health * 20 * statMult;
 
           eObj = {
@@ -263,7 +269,6 @@ const FightPlaceholder = () => {
           setTimeout(() => addLog("Beginner Boost: The enemy seems noticeably weaker."), 10);
         }
 
-        // Start combat loop directly
         runCombatLoop(token);
 
 
@@ -286,7 +291,7 @@ const FightPlaceholder = () => {
   };
 
   const skipFight = async () => {
-    // Stop the ongoing animated combat loop
+    // animált harci ciklus leállítása
     combatState.current.active = false;
 
     const token = localStorage.getItem('token');
@@ -295,7 +300,7 @@ const FightPlaceholder = () => {
     const eObj = state.enemyObj;
     if (!pObj || !eObj) return;
 
-    // Simulate combat instantly with the same math, no rendering
+    // Render nélküli szimuláció
     let pHp = pObj.maxHp;
     let eHp = eObj.maxHp;
     let turn = state.turn;
@@ -344,7 +349,7 @@ const FightPlaceholder = () => {
 
     const isWin = eHp <= 0;
     setGameState(isWin ? 'victory' : 'defeat');
-    // Update displayed HP so bars show final state
+    // A megjelenített életerőt megmutassa a végső állapotot
     setPlayer(prev => ({ ...prev, hp: Math.max(0, pHp) }));
     setEnemy(prev => ({ ...prev, hp: Math.max(0, eHp) }));
     await handleQuestEnd(token, isWin);
@@ -360,7 +365,7 @@ const FightPlaceholder = () => {
       const eObj = state.enemyObj;
 
       if (state.turn === 'player') {
-        // --- PLAYER ATTACK ---
+        // --- PLAYER TÁMADÁS ---
         setPlayerAnim('attack');
         await delay(400);
         if (!state.active) break;
@@ -383,7 +388,7 @@ const FightPlaceholder = () => {
           const critChance = pObj.stats.luck + (rageActive ? 40 : 0);
           const isCrit = Math.random() * 100 < critChance;
           let rawDmg = pObj.weaponDamage * 1.5 * (1 + (pObj.stats.strength / 25));
-          rawDmg = rawDmg * (0.9 + Math.random() * 0.2); // +-10% variance
+          rawDmg = rawDmg * (0.9 + Math.random() * 0.2); // +-10% variancia
 
           if (pObj.class === 'Sapiens' && !state.sapiensFirstHitUsed) {
             rawDmg *= 1.25;
@@ -396,7 +401,7 @@ const FightPlaceholder = () => {
             state.rageTurns -= 1;
           }
 
-          // Apply proportional enemy resistance
+          // Az ellenfél rezisztenciájának arányos alkalmazása
           const eReductionMult = 100 / (100 + (eObj.stats.resistance * 2));
           rawDmg = rawDmg * eReductionMult;
 
@@ -423,7 +428,7 @@ const FightPlaceholder = () => {
           setEnemyDmgText(null);
         }
 
-        // Check victory
+        // GYŐZELEM ellenőrzése
         if (state.enemyHp <= 0) {
           state.active = false;
           setGameState('victory');
@@ -434,7 +439,7 @@ const FightPlaceholder = () => {
 
         state.turn = 'enemy';
       } else {
-        // --- ENEMY ATTACK ---
+        // --- ENEMY TÁMADÁS ---
         setEnemyAnim('attack');
         await delay(400);
         if (!state.active) break;
@@ -464,10 +469,10 @@ const FightPlaceholder = () => {
           setPlayerDmgText(null);
           setEnemyAnim(null);
         } else {
-          // Dungeon enemy superpowers (mirror of player classes)
+          // Az ellenfél képességei (a játékos osztályainak tükörképe)
           const ePrefix = state.enemyPrefix;
 
-          // Neanderthal enemy: rage on low HP
+          // Neanderthal enemy: rage keves HP-nél
           if (ePrefix === 'n' && state.enemyRageTurns === 0 && !state.enemyRageTriggered) {
             if ((state.enemyHp / eObj.maxHp) < 0.30) {
               if (Math.random() < 0.40) {
@@ -478,7 +483,7 @@ const FightPlaceholder = () => {
             }
           }
 
-          // Floresiensis enemy: reflex auto-evade on low HP
+          // Floresiensis enemy: reflex auto-evade kevés hp-nél
           let enemyAutoEvade = false;
           if (ePrefix === 'f' && (state.enemyHp / eObj.maxHp) < 0.25) {
             if (Math.random() < 0.50) enemyAutoEvade = true;
@@ -490,14 +495,14 @@ const FightPlaceholder = () => {
             await delay(400);
             setPlayerDmgText(null);
             setEnemyAnim(null);
-            // skip to next turn without hitting the player
+            // átugorja a következő körre a játékos ütése nélkül
           } else {
             let isCrit = Math.random() * 100 < eObj.stats.luck;
             if (eObj.category === 'Heavy') {
-              isCrit = Math.random() * 100 < Math.min(25, eObj.stats.luck * 0.3); // Hard cap at 25%
+              isCrit = Math.random() * 100 < Math.min(25, eObj.stats.luck * 0.3); // max 25% krit
             }
 
-            // Homo Sapiens enemy: +25% on first hit
+            // Homo Sapiens enemy: +25% első ütésnél
             let enemyIncomingDmg = (eObj.stats.strength * 2.5 + 10) * (0.9 + Math.random() * 0.2);
             if (ePrefix === 'hs' && !state.enemySapiensFirstHitUsed) {
               enemyIncomingDmg *= 1.25;
@@ -517,14 +522,14 @@ const FightPlaceholder = () => {
 
             const effectiveArmor = pObj.stats.armor + (pObj.lvl * 3);
 
-            // Logarithmic scaling for armor reduction
+            // A páncél csökkenés logaritmikus skálázása
             const armorReductionMult = 100 / (100 + effectiveArmor);
             let reducedDmg = enemyIncomingDmg * armorReductionMult;
 
             const defReduction = Math.min(0.75, pObj.stats.resistance / 100);
 
             let dmg = Math.floor(reducedDmg * (1 - defReduction));
-            dmg = Math.max(1, dmg); // At least 1 damage taken
+            dmg = Math.max(1, dmg); // minimum 1 sebzés
 
             let newlyApplied = false;
             if (eObj.type !== 'none' && Math.random() < 0.12) {
@@ -556,7 +561,7 @@ const FightPlaceholder = () => {
               addLog(`You suffer ${fDmg} freeze damage.`);
             }
 
-            // Neanderthal: háborgás
+            // Neanderthal: rage
             if (pObj.class === 'Neanderthal' && state.rageTurns === 0 && !state.rageTriggered) {
               if ((state.playerHp / pObj.maxHp) < 0.30) {
                 if (Math.random() < 0.40) {
@@ -578,7 +583,7 @@ const FightPlaceholder = () => {
           } // end enemyAutoEvade else
         }
 
-        // Check defeat
+        // GYŐZELEM ellenőrzése
         if (state.playerHp <= 0) {
           state.active = false;
           setGameState('defeat');
@@ -644,7 +649,7 @@ const FightPlaceholder = () => {
     <GameLayout currency={currency} customBg={bgImage} bgOpacity={50}>
       <div className="relative z-10 w-full max-w-6xl mx-auto flex flex-col py-4 px-2 md:px-6">
 
-        {/* VS Header — centered */}
+        {/* VS Header — középre igazított */}
         <h1 className="text-3xl text-stone-200 tracking-[0.4em] uppercase text-center mb-5 drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
           VS
         </h1>
@@ -760,7 +765,7 @@ const FightPlaceholder = () => {
               </div>
             </div>
 
-            {/* Avatar frame — square */}
+            {/* Avatar frame — négyzet alakú */}
             <div
               className="relative flex items-center justify-center mb-4 rounded-xl border-2 border-red-900/40 shadow-[0_0_30px_rgba(0,0,0,0.7),inset_0_0_20px_rgba(0,0,0,0.4)] bg-black/25"
               style={{ width: '220px', height: '220px' }}
@@ -804,7 +809,7 @@ const FightPlaceholder = () => {
               </div>
             )}
 
-            {/* Enemy Stats */}
+            {/* Enemy Statok */}
             <div className="w-full max-w-[240px] bg-black/40 border border-stone-800/60 p-3 rounded-xl text-[11px] font-bold flex flex-col gap-1 shadow-inner">
               <div className="flex justify-between"><span className="text-stone-500 uppercase">Type</span> <span className={`capitalize ${enemy.type !== 'none' ? 'text-purple-400' : 'text-stone-400'}`}>{enemy.type}</span></div>
               <div className="flex justify-between"><span className="text-stone-500 uppercase">Strength</span> <span className="text-stone-300">{enemy.stats.strength}</span></div>
@@ -814,10 +819,10 @@ const FightPlaceholder = () => {
             </div>
           </div>
 
-        </div>{/* end arena row */}
-      </div>{/* end z-10 content */}
+        </div>
+      </div>
 
-      {/* Victory / Defeat Modal */}
+      {/* Győzelem / Vereség Modal */}
       {(gameState === 'victory' || gameState === 'defeat') && (
         <div className="fixed inset-0 bg-black/85 z-[200] flex items-center justify-center backdrop-blur-md">
           <div className="bg-stone-950/95 border border-stone-800 p-10 rounded-3xl shadow-2xl flex flex-col items-center max-w-md w-full text-center mx-4">
@@ -890,7 +895,7 @@ const FightPlaceholder = () => {
         </div>
       )}
 
-      {/* Keyframe animations */}
+      {/* Az animációk */}
       <style>{`
         @keyframes fadeInOut {
           0%   { opacity: 0; transform: scale(0.8); }

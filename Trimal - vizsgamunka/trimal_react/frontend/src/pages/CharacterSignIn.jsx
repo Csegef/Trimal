@@ -5,12 +5,12 @@ import MainLayout from "../layouts/MainLayout";
 const CharacterSignIn = () => {
     const navigate = useNavigate();
 
-    // Form states
-    const [loginIdentifier, setLoginIdentifier] = useState(""); // Can be username or email
+    // Form statek
+    const [loginIdentifier, setLoginIdentifier] = useState(""); // Username vagy email lehet
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
 
-    // Check for existing session
+    // Meglévő session ellenőrzés
     React.useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -42,7 +42,7 @@ const CharacterSignIn = () => {
             const data = await response.json();
 
             if (data.success) {
-                // Store auth data
+                // Tarolt auth adat
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('userData', JSON.stringify({
                     username: data.user.nickname,

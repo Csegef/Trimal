@@ -1,3 +1,7 @@
+// ==========================================
+// Fájl: Adatkezelési Tájékoztató
+// Cél: Dokumentum, ami leírja, miként kezeljük a játékosok adatait.
+// ==========================================
 import React from "react";
 import MainLayout from "../layouts/MainLayout";
 
